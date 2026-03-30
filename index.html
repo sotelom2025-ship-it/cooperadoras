@@ -618,16 +618,20 @@ function getCordNum(loc){var c=ST.coords.find(function(c){return c.localidades.s
 function getCordLabel(loc){var n=getCordNum(loc);return n?(CORD[n]||'—'):'—'}
 function ddiff(ds){if(!ds)return null;var d=new Date(ds),n=new Date();d.setHours(0,0,0,0);n.setHours(0,0,0,0);return Math.round((d-n)/86400000)}
 function etiq(s){
-  var t=s.TIENE_COOP||'no';
-  if(t==='no')return {l:'Sin cooperadora',c:'tr',i:'🔴'};
-  var ps=pj(s.PERIODOS,[]);
-  if(!ps.length)return {l:'Sin cooperadora',c:'tr',i:'🔴'};
-  if(ps.length===1)return {l:'Creación',c:'tb',i:'🔵'};
-  var last=ps[ps.length-1];
-  if(last.docestado==='PIA firmada')return {l:'PIA firmada',c:'tb',i:'📋'};
-  var rec=ps.slice(-3);
-  if(ps.length>=3&&rec.filter(function(p){return !p.docestado}).length>=3)return {l:'Reorganización',c:'ta',i:'🟡'};
-  if(last.docestado)return {l:'Vigente',c:'tg',i:'🟢'};
+  var t = (s.TIENE_COOP||'').toLowerCase().trim();
+  // Sin cooperadora
+  if(t==='' || t==='no') return {l:'Sin cooperadora',c:'tr',i:'🔴'};
+  // Tuvo cooperadora
+  if(t==='tuvo') return {l:'Tuvo cooperadora',c:'ta',i:'🟡'};
+  // Tiene cooperadora (si) — calcular etiqueta por períodos
+  var ps = pj(s.PERIODOS,[]);
+  if(!ps.length) return {l:'Vigente',c:'tg',i:'🟢'}; // tiene pero sin períodos aún
+  if(ps.length===1) return {l:'Creación',c:'tb',i:'🔵'};
+  var last = ps[ps.length-1];
+  if(last.docestado==='PIA firmada') return {l:'PIA firmada',c:'tb',i:'📋'};
+  var rec = ps.slice(-3);
+  if(ps.length>=3 && rec.filter(function(p){return !p.docestado}).length>=3) return {l:'Reorganización',c:'ta',i:'🟡'};
+  if(last.docestado) return {l:'Vigente',c:'tg',i:'🟢'};
   return {l:'Vigente',c:'tg',i:'🟢'};
 }
 function toast(msg){var t=el('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2800)}
@@ -1305,4 +1309,4 @@ if(_su) ST.gasUrl = _su;
 showScreen('login');
 </script>
 </body>
-</html> 
+</html>
