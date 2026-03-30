@@ -284,6 +284,19 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 .code-w{display:flex;gap:.5rem}
 .code-t{width:110px;flex-shrink:0}
 
+/* ── FOOTER ── */
+.app-footer{
+  text-align:center;
+  padding:.875rem 2rem;
+  font-size:.72rem;
+  color:var(--muted);
+  border-top:1px solid var(--border);
+  background:var(--surface);
+  margin-top:auto;
+  letter-spacing:.02em;
+}
+.app-footer strong{color:var(--text2);font-weight:600}
+
 /* ── TOAST ── */
 #toast{position:fixed;bottom:1.5rem;left:calc(var(--sw) + 2rem);background:#0F1B35;color:#fff;padding:.55rem 1.25rem;border-radius:99px;font-size:.8rem;font-weight:500;z-index:999;opacity:0;transition:opacity .2s,transform .2s;transform:translateY(6px);pointer-events:none;white-space:nowrap;max-width:calc(100vw - 4rem)}
 #toast.show{opacity:1;transform:translateY(0)}
@@ -500,6 +513,9 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       <div class="card card-p" style="max-width:460px"><div id="users-list"></div></div>
     </div>
   </div>
+  <footer class="app-footer">
+    Desarrollado por <strong>Maggie Sotelo</strong> &nbsp;·&nbsp; Consejo Escolar La Matanza
+  </footer>
   </main>
 </div>
 
@@ -512,6 +528,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     <div class="ff"><label class="fl">Código</label><div class="code-w"><select class="fs code-t" id="sm-tip" onchange="toggleOtroInput()"><option>JI</option><option>EP</option><option>ES</option><option>ET</option><option>EEA</option><option>EES</option><option>CEC</option><option>CENS</option><option>CEF</option><option>ISFDyT</option><option>EE</option><option>Otro</option></select><input class="fi" id="sm-otro" placeholder="Especificar" style="width:120px;display:none"><input class="fi" id="sm-num" placeholder="12" style="flex:1"></div></div>
     <div class="ff"><label class="fl">Localidad</label><select class="fs" id="sm-loc"><option value="">Seleccionar...</option></select></div>
     <div class="ff c2"><label class="fl">Dirección</label><input class="fi" id="sm-dir" placeholder="Av. Rivadavia 1234"></div>
+    <div class="ff"><label class="fl">Distrital</label><select class="fs" id="sm-distrital"><option value="">— Sin distrital —</option><option value="Distrital 1">Distrital 1</option><option value="Distrital 2">Distrital 2</option><option value="Distrital 3">Distrital 3</option></select></div>
     <div class="ff"><label class="fl">Nombre asesora/or</label><input class="fi" id="sm-ases-nom" placeholder="Nombre completo"></div>
     <div class="ff"><label class="fl">Contacto asesora/or</label><input class="fi" id="sm-ases-cont" placeholder="Teléfono o email"></div>
     <div class="ff"><label class="fl">¿Tiene cooperadora?</label><select class="fs" id="sm-tc"><option value="si">Sí</option><option value="no">No</option><option value="tuvo">Tuvo</option></select></div>
@@ -821,8 +838,22 @@ function fillSelects(){
   var cur=periodoActual();
   ['sm-per','pm-per'].forEach(function(id){
     var s=el(id);if(!s)return;
-    var v=s.value||cur;s.innerHTML='';
-    getPeriods().forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=pLabel(p);if(p===v)o.selected=true;s.appendChild(o)});
+    var v=s.value||'';
+    s.innerHTML='';
+    var emptyOpt=document.createElement('option');
+    emptyOpt.value='';emptyOpt.textContent='— Sin período —';
+    if(!v)emptyOpt.selected=true;
+    s.appendChild(emptyOpt);
+    var descoOpt=document.createElement('option');
+    descoOpt.value='Desconocido';descoOpt.textContent='Desconocido';
+    if(v==='Desconocido')descoOpt.selected=true;
+    s.appendChild(descoOpt);
+    getPeriods().forEach(function(p){
+      var o=document.createElement('option');
+      o.value=p;o.textContent=pLabel(p);
+      if(p===v)o.selected=true;
+      s.appendChild(o);
+    });
   });
 }
 
@@ -896,11 +927,12 @@ function openSM(id){
     el('sm-loc').value=s.LOCALIDAD||'';el('sm-dir').value=s.DIRECCION||'';
     el('sm-ases-nom').value=s.ASESORA_NOMBRE||'';
     el('sm-ases-cont').value=s.ASESORA_CONTACTO||'';
+    var smDist=el('sm-distrital');if(smDist)smDist.value=s.DISTRITAL||'';
     var smOtro=el('sm-otro');if(smOtro){smOtro.value=s.CODIGO_OTRO||'';smOtro.style.display=splitCode(s.NUMERO).t==='Otro'?'':'none';}
-    el('sm-tc').value=s.TIENE_COOP||'si';el('sm-per').value=s.PERIODO_COOP||periodoActual();
+    el('sm-tc').value=s.TIENE_COOP||'si';el('sm-per').value=s.PERIODO_COOP||'';
   }else{
-    ['sm-nom','sm-num','sm-dir','sm-ases-nom','sm-ases-cont'].forEach(function(i){el(i).value=''});
-    el('sm-tip').value='EP';el('sm-loc').value='';el('sm-tc').value='si';
+    ['sm-nom','sm-num','sm-dir','sm-ases-nom','sm-ases-cont','sm-distrital'].forEach(function(i){var e=el(i);if(e)e.value=''});
+    el('sm-tip').value='EP';el('sm-loc').value='';el('sm-tc').value='no';el('sm-per').value='';
   }
   openMov('sm-ov');
 }
@@ -909,7 +941,7 @@ async function saveSM(){
   if(!ST.editSId&&ST.schools.find(function(s){return s.NOMBRE.toLowerCase()===nom.toLowerCase()})){toast('⚠ Ya existe esa escuela');return}
   var t=el('sm-tip').value,n=el('sm-num').value.trim();
   var smOVal=el('sm-otro');if(t==='Otro'&&smOVal&&smOVal.value.trim())t=smOVal.value.trim();
-  var s={ID:ST.editSId||gid(),NOMBRE:nom,NUMERO:n?(t+' '+n):t,LOCALIDAD:el('sm-loc').value,DIRECCION:el('sm-dir').value.trim(),ASESORA_NOMBRE:el('sm-ases-nom').value.trim(),ASESORA_CONTACTO:el('sm-ases-cont').value.trim(),TIENE_COOP:el('sm-tc').value,PERIODO_COOP:el('sm-per').value,ESTADO_PERIODO_COOP:'Vigente',VISITAS:'[]',PERIODOS:'[]',COM_DIRECTIVA:'{}',COM_REVISORA:'{}'};
+  var s={ID:ST.editSId||gid(),NOMBRE:nom,NUMERO:n?(t+' '+n):t,LOCALIDAD:el('sm-loc').value,DIRECCION:el('sm-dir').value.trim(),ASESORA_NOMBRE:el('sm-ases-nom').value.trim(),ASESORA_CONTACTO:el('sm-ases-cont').value.trim(),DISTRITAL:(el('sm-distrital')?el('sm-distrital').value.trim():''),TIENE_COOP:el('sm-tc').value,PERIODO_COOP:el('sm-per').value,ESTADO_PERIODO_COOP:'Vigente',VISITAS:'[]',PERIODOS:'[]',COM_DIRECTIVA:'{}',COM_REVISORA:'{}'};
   if(ST.editSId){var ex=gS(ST.editSId);if(ex)s=Object.assign({},ex,{NOMBRE:s.NOMBRE,NUMERO:s.NUMERO,LOCALIDAD:s.LOCALIDAD,DIRECCION:s.DIRECCION,TIENE_COOP:s.TIENE_COOP,PERIODO_COOP:s.PERIODO_COOP})}
   var idx=ST.schools.findIndex(function(x){return x.ID===s.ID});
   if(idx>=0)ST.schools[idx]=s;else ST.schools.push(s);
@@ -995,6 +1027,16 @@ function setCodigoOtro(id, val) {
   saveSchoolR(s); toast('Guardado');
 }
 
+
+function buildPeriodOpts(cur) {
+  var opts = '<option value="">— Sin período —</option>';
+  opts += '<option value="Desconocido"'+(cur==='Desconocido'?' selected':'')+'>Desconocido</option>';
+  getPeriods().forEach(function(p){
+    opts += '<option value="'+p+'"'+(cur===p?' selected':'')+'>'+pLabel(p)+'</option>';
+  });
+  return opts;
+}
+
 function tabGen(s,coord,cord){
   var cp=splitCode(s.NUMERO);
   return '<div class="fg" style="max-width:680px">'+
@@ -1002,14 +1044,14 @@ function tabGen(s,coord,cord){
     ff2('Nombre completo','NOMBRE',s,'c2')+
     '<div class="ff"><label class="fl">Código</label>'+renderCodeField(s)+''+
     fsel2('Localidad','LOCALIDAD',s,LOCS)+
-    ff2('Dirección','DIRECCION',s,'c2')+
+    ff2('Dirección','DIRECCION',s,'c2')+'<div class="ff"><label class="fl">Distrital</label><select class="fs" onchange="setF(\''+s.ID+'\',\'DISTRITAL\',this.value)"><option value="">— Sin distrital —</option><option value="Distrital 1"'+(s.DISTRITAL==="Distrital 1"?' selected':'')+'>Distrital 1</option><option value="Distrital 2"'+(s.DISTRITAL==="Distrital 2"?' selected':'')+'>Distrital 2</option><option value="Distrital 3"'+(s.DISTRITAL==="Distrital 3"?' selected':'')+'>Distrital 3</option></select></div>'+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Cooperadora</div>'+
     togRow('¿Tiene cooperadora?','TIENE_COOP',s,[['si','Sí',''],['no','No','or'],['tuvo','Tuvo','oa']])+
-    '<div class="ff"><label class="fl">Período activo</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+getPeriods().map(function(p){return '<option value="'+p+'"'+(s.PERIODO_COOP===p?' selected':'')+'>'+pLabel(p)+'</option>'}).join('')+'</select></div>'+
+    '<div class="ff"><label class="fl">Período activo</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+buildPeriodOpts(s.PERIODO_COOP)+'</select></div>'+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Datos adicionales</div>'+
     '<div class="ff"><label class="fl">Coordinador</label><div class="fi" style="background:var(--bg2);color:var(--muted);cursor:default">'+esc(coord)+'</div></div>'+
     '<div class="ff"><label class="fl">Cordón</label><div class="fi" style="background:var(--bg2);color:var(--muted);cursor:default">'+esc(cord)+'</div></div>'+
-    ff2('Distrital','DISTRITAL',s)+
+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Asesora / Asesor</div>'+
     ff2('Nombre','ASESORA_NOMBRE',s)+
     ff2('Contacto','ASESORA_CONTACTO',s)+
@@ -1028,7 +1070,7 @@ function tabCoop(s,ps){
     togRow('Tipo cooperadora','TIPO_COOP',s,[['Activa','Activa',''],['Administrativa','Administrativa',''],['Peronista','Peronista','']])+
     '<div style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .875rem">Período activo y asamblea</div>'+
     '<div class="fg" style="margin-bottom:.875rem">'+
-      '<div class="ff"><label class="fl">Período</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+getPeriods().map(function(p){return '<option value="'+p+'"'+(s.PERIODO_COOP===p?' selected':'')+'>'+pLabel(p)+'</option>'}).join('')+'</select></div>'+
+      '<div class="ff"><label class="fl">Período activo</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+buildPeriodOpts(s.PERIODO_COOP)+'</select></div>'+
       togRow('Estado período','ESTADO_PERIODO_COOP',s,[['Vigente','Vigente',''],['Vencida','Vencida','or'],['En renovación','En renovación','oa']])+
       '<div class="ff"><label class="fl">Fecha asamblea</label><input class="fi" type="date" value="'+esc(s.FECHA_ASAMBLEA||'')+'" onchange="setF(\''+s.ID+'\',\'FECHA_ASAMBLEA\',this.value)"></div>'+
       togRow('Estado asamblea','ESTADO_ASAMBLEA',s,[['pendiente','Pendiente',''],['realizada','Realizada','og']])+
