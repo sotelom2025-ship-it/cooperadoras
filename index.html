@@ -427,14 +427,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
         <div class="search-row">
           <div class="search-w"><span class="s-ico">🔍</span><input class="s-inp" id="sc-search" placeholder="Buscar por nombre o código..." oninput="renderSchools()"></div>
         </div>
-        <div class="fbar" id="sf-bar">
-          <button class="fp on" data-f="all" onclick="setSF('all')">Todas</button>
-          <button class="fp" data-f="vigente" onclick="setSF('vigente')">🟢 Vigentes</button>
-          <button class="fp" data-f="creacion" onclick="setSF('creacion')">🔵 Creación</button>
-          <button class="fp" data-f="reorg" onclick="setSF('reorg')">🟡 Reorganización</button>
-          <button class="fp" data-f="pia" onclick="setSF('pia')">📋 PIA</button>
-          <button class="fp" data-f="sin" onclick="setSF('sin')">🔴 Sin cooperadora</button>
-        </div>
+
         <div class="fbar">
           <select class="fsel" id="fl-loc" onchange="renderSchools()"><option value="">Localidad</option></select>
           <select class="fsel" id="fl-coord" onchange="renderSchools()"><option value="">Coordinador</option></select>
@@ -519,6 +512,8 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     <div class="ff"><label class="fl">Código</label><div class="code-w"><select class="fs code-t" id="sm-tip"><option>JI</option><option>EP</option><option>ES</option><option>ET</option><option>EEA</option><option>EES</option><option>CEC</option><option>CENS</option><option>CEF</option><option>ISFDyT</option><option>EE</option><option>Otro</option></select><input class="fi" id="sm-num" placeholder="12" style="flex:1"></div></div>
     <div class="ff"><label class="fl">Localidad</label><select class="fs" id="sm-loc"><option value="">Seleccionar...</option></select></div>
     <div class="ff c2"><label class="fl">Dirección</label><input class="fi" id="sm-dir" placeholder="Av. Rivadavia 1234"></div>
+    <div class="ff"><label class="fl">Nombre asesora/or</label><input class="fi" id="sm-ases-nom" placeholder="Nombre completo"></div>
+    <div class="ff"><label class="fl">Contacto asesora/or</label><input class="fi" id="sm-ases-cont" placeholder="Teléfono o email"></div>
     <div class="ff"><label class="fl">¿Tiene cooperadora?</label><select class="fs" id="sm-tc"><option value="si">Sí</option><option value="no">No</option><option value="tuvo">Tuvo</option></select></div>
     <div class="ff"><label class="fl">Período activo</label><select class="fs" id="sm-per"></select></div>
   </div></div>
@@ -880,9 +875,11 @@ function openSM(id){
     var cp=splitCode(s.NUMERO);
     el('sm-nom').value=s.NOMBRE||'';el('sm-tip').value=cp.t||'EP';el('sm-num').value=cp.n||'';
     el('sm-loc').value=s.LOCALIDAD||'';el('sm-dir').value=s.DIRECCION||'';
+    el('sm-ases-nom').value=s.ASESORA_NOMBRE||'';
+    el('sm-ases-cont').value=s.ASESORA_CONTACTO||'';
     el('sm-tc').value=s.TIENE_COOP||'si';el('sm-per').value=s.PERIODO_COOP||periodoActual();
   }else{
-    ['sm-nom','sm-num','sm-dir'].forEach(function(i){el(i).value=''});
+    ['sm-nom','sm-num','sm-dir','sm-ases-nom','sm-ases-cont'].forEach(function(i){el(i).value=''});
     el('sm-tip').value='EP';el('sm-loc').value='';el('sm-tc').value='si';
   }
   openMov('sm-ov');
@@ -891,7 +888,7 @@ async function saveSM(){
   var nom=el('sm-nom').value.trim();if(!nom){toast('⚠ Ingresá el nombre');return}
   if(!ST.editSId&&ST.schools.find(function(s){return s.NOMBRE.toLowerCase()===nom.toLowerCase()})){toast('⚠ Ya existe esa escuela');return}
   var t=el('sm-tip').value,n=el('sm-num').value.trim();
-  var s={ID:ST.editSId||gid(),NOMBRE:nom,NUMERO:n?(t+' '+n):t,LOCALIDAD:el('sm-loc').value,DIRECCION:el('sm-dir').value.trim(),TIENE_COOP:el('sm-tc').value,PERIODO_COOP:el('sm-per').value,ESTADO_PERIODO_COOP:'Vigente',VISITAS:'[]',PERIODOS:'[]',COM_DIRECTIVA:'{}',COM_REVISORA:'{}'};
+  var s={ID:ST.editSId||gid(),NOMBRE:nom,NUMERO:n?(t+' '+n):t,LOCALIDAD:el('sm-loc').value,DIRECCION:el('sm-dir').value.trim(),ASESORA_NOMBRE:el('sm-ases-nom').value.trim(),ASESORA_CONTACTO:el('sm-ases-cont').value.trim(),TIENE_COOP:el('sm-tc').value,PERIODO_COOP:el('sm-per').value,ESTADO_PERIODO_COOP:'Vigente',VISITAS:'[]',PERIODOS:'[]',COM_DIRECTIVA:'{}',COM_REVISORA:'{}'};
   if(ST.editSId){var ex=gS(ST.editSId);if(ex)s=Object.assign({},ex,{NOMBRE:s.NOMBRE,NUMERO:s.NUMERO,LOCALIDAD:s.LOCALIDAD,DIRECCION:s.DIRECCION,TIENE_COOP:s.TIENE_COOP,PERIODO_COOP:s.PERIODO_COOP})}
   var idx=ST.schools.findIndex(function(x){return x.ID===s.ID});
   if(idx>=0)ST.schools[idx]=s;else ST.schools.push(s);
