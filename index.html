@@ -562,6 +562,20 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   <div class="mfoot"><button class="btn btn-s" onclick="closeMov('cm-ov')">Cancelar</button><button class="btn btn-p" onclick="saveCM()">Guardar</button></div>
 </div></div>
 
+
+<!-- MODAL USUARIO -->
+<div class="moverlay" id="um-ov" onclick="closeMov('um-ov',event)">
+<div class="modal" onclick="void(0)" style="max-width:420px">
+  <div class="mhd"><span class="mttl" id="um-title">Nuevo Usuario</span><button class="mcl" onclick="closeMov('um-ov')">✕</button></div>
+  <div class="mbody"><div class="fg">
+    <div class="ff c2"><label class="fl">Nombre completo</label><input class="fi" id="um-name" placeholder="Ej: Juan Pérez"></div>
+    <div class="ff"><label class="fl">Usuario</label><input class="fi" id="um-user" placeholder="Ej: juan"></div>
+    <div class="ff"><label class="fl">Rol</label><select class="fs" id="um-role"><option value="user">👤 Usuario</option><option value="admin">👑 Administrador</option></select></div>
+    <div class="ff c2"><label class="fl">Contraseña</label><input class="fi" type="password" id="um-pass" placeholder="Contraseña"></div>
+  </div></div>
+  <div class="mfoot"><button class="btn btn-s" onclick="closeMov('um-ov')">Cancelar</button><button class="btn btn-p" onclick="saveUserModal()">Guardar</button></div>
+</div></div>
+
 <div id="toast"></div>
 
 <script>
@@ -696,7 +710,7 @@ function togglePw(){var i=el('lg-pass'),b=el('pw-btn');i.type=i.type==='password
 
 function doLogin(){
   var u=el('lg-user').value.trim(),p=el('lg-pass').value;
-  var found=USERS.find(function(x){return x.u.toLowerCase()===u.toLowerCase()&&x.p===p});
+  var found=getUsers().find(function(x){return x.u.toLowerCase()===u.toLowerCase()&&x.p===p});
   if(!found){el('lg-err').style.display='block';return}
   el('lg-err').style.display='none';
   ST.user=found;
@@ -1272,11 +1286,76 @@ function genPDF(){
 // ════════════════════════════════════════════════════════════
 // USUARIOS
 // ════════════════════════════════════════════════════════════
+function getUsers(){
+  try{var s=localStorage.getItem('coop_users');if(s)return JSON.parse(s);}catch(e){}
+  return USERS.map(function(u){return Object.assign({},u)});
+}
+function saveUsers(list){
+  try{localStorage.setItem('coop_users',JSON.stringify(list));}catch(e){}
+}
 function renderUsers(){
   var e=el('users-list');if(!e)return;
-  e.innerHTML=USERS.map(function(u){
-    return '<div class="urow"><div class="uav">'+u.name[0]+'</div><div style="flex:1"><div style="font-weight:600;font-size:.875rem">'+esc(u.name)+'</div><div style="font-size:.73rem;color:var(--muted)">@'+esc(u.u)+' · '+(u.role==='admin'?'👑 Administrador':'👤 Usuario')+'</div></div>'+(ST.user&&u.u===ST.user.u?'<span class="tag tg">Tú</span>':'')+'</div>'
+  var list=getUsers();
+  e.innerHTML='<div style="display:flex;justify-content:flex-end;margin-bottom:1rem">'+
+    '<button class="btn btn-p btn-sm" onclick="openUserModal()">+ Nuevo usuario</button></div>'+
+  list.map(function(u,i){
+    var isMe=ST.user&&u.u===ST.user.u;
+    return '<div class="urow">'+
+      '<div class="uav">'+esc((u.name||u.u)[0].toUpperCase())+'</div>'+
+      '<div style="flex:1">'+
+        '<div style="font-weight:600;font-size:.875rem">'+esc(u.name||u.u)+'</div>'+
+        '<div style="font-size:.73rem;color:var(--muted)">@'+esc(u.u)+' · '+(u.role==='admin'?'👑 Administrador':'👤 Usuario')+'</div>'+
+      '</div>'+
+      (isMe?'<span class="tag tg" style="margin-right:.5rem">Tú</span>':'')+
+      '<button class="btn btn-s btn-xs" onclick="openUserModal('+i+')" style="margin-right:.375rem">✏️</button>'+
+      (!isMe?'<button class="btn btn-d btn-xs" onclick="deleteUser('+i+')">🗑</button>':'')+
+    '</div>';
   }).join('');
+}
+
+var editUserIdx = -1;
+function openUserModal(idx){
+  editUserIdx = (idx !== undefined) ? idx : -1;
+  var list = getUsers();
+  var u = editUserIdx >= 0 ? list[editUserIdx] : null;
+  el('um-title').textContent = u ? 'Editar Usuario' : 'Nuevo Usuario';
+  el('um-name').value = u ? (u.name||'') : '';
+  el('um-user').value = u ? (u.u||'') : '';
+  el('um-pass').value = '';
+  el('um-role').value = u ? (u.role||'user') : 'user';
+  el('um-pass').placeholder = u ? 'Dejar en blanco para no cambiar' : 'Contraseña';
+  openMov('um-ov');
+}
+function saveUserModal(){
+  var name=el('um-name').value.trim();
+  var user=el('um-user').value.trim();
+  var pass=el('um-pass').value.trim();
+  var role=el('um-role').value;
+  if(!name||!user){toast('⚠ Nombre y usuario son requeridos');return;}
+  var list=getUsers();
+  if(editUserIdx>=0){
+    list[editUserIdx].name=name;
+    list[editUserIdx].u=user;
+    list[editUserIdx].role=role;
+    if(pass)list[editUserIdx].p=pass;
+  } else {
+    if(!pass){toast('⚠ La contraseña es requerida');return;}
+    var dup=list.find(function(x){return x.u.toLowerCase()===user.toLowerCase()});
+    if(dup){toast('⚠ Ya existe ese usuario');return;}
+    list.push({u:user,p:pass,role:role,name:name});
+  }
+  saveUsers(list);
+  closeMov('um-ov');
+  renderUsers();
+  toast('✅ Usuario guardado');
+}
+function deleteUser(idx){
+  var list=getUsers();
+  if(!confirm('¿Eliminar al usuario '+list[idx].name+'?'))return;
+  list.splice(idx,1);
+  saveUsers(list);
+  renderUsers();
+  toast('🗑 Usuario eliminado');
 }
 
 // ════════════════════════════════════════════════════════════
