@@ -511,6 +511,17 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     <div class="sec" id="sec-users">
       <div class="ph"><div class="ph-ttl">Usuarios del sistema</div></div>
       <div class="card card-p" style="max-width:460px"><div id="users-list"></div></div>
+      <div class="card card-p" style="max-width:460px;margin-top:.875rem">
+        <div class="fs-ttl">Configuración de Google Sheets</div>
+        <p style="font-size:.82rem;color:var(--text2);margin-bottom:1rem;line-height:1.6">
+          Si cambiás de cuenta de Gmail, necesitás vincular la nueva planilla.<br>
+          <strong>Importante:</strong> antes de cambiar, copiá la planilla actual a tu nueva cuenta de Google para no perder los datos.
+        </p>
+        <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap">
+          <div id="sheets-status" style="font-size:.8rem;color:var(--muted)"></div>
+          <button class="btn btn-s btn-sm" onclick="cambiarSheets()">🔄 Cambiar Google Sheets</button>
+        </div>
+      </div>
     </div>
   </div>
   <footer class="app-footer">
@@ -1335,9 +1346,30 @@ function getUsers(){
 function saveUsers(list){
   try{localStorage.setItem('coop_users',JSON.stringify(list));}catch(e){}
 }
+function cambiarSheets(){
+  if(!confirm('¿Querés cambiar la conexión con Google Sheets?\n\nAsegurate de haber copiado tu planilla a la nueva cuenta antes de continuar.')) return;
+  try{ localStorage.removeItem('coop_gas_url'); }catch(e){}
+  ST.gasUrl = '';
+  // Show onboarding
+  showScreen('onboard');
+}
+
+function updateSheetsStatus(){
+  var el2 = el('sheets-status');
+  if(!el2) return;
+  var url = ST.gasUrl || '';
+  if(url){
+    var short = url.length > 50 ? url.slice(0,50)+'...' : url;
+    el2.innerHTML = '🟢 <strong>Conectado</strong>';
+  } else {
+    el2.innerHTML = '🔴 Sin conexión a Sheets (modo demo)';
+  }
+}
+
 function renderUsers(){
   var e=el('users-list');if(!e)return;
   var list=getUsers();
+  updateSheetsStatus();
   e.innerHTML='<div style="display:flex;justify-content:flex-end;margin-bottom:1rem">'+
     '<button class="btn btn-p btn-sm" onclick="openUserModal()">+ Nuevo usuario</button></div>'+
   list.map(function(u,i){
