@@ -382,6 +382,10 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     </div>
     <button class="btn-login" onclick="doLogin()">Ingresar al sistema</button>
     <div class="lg-foot">Sistema de gestión de cooperadoras escolares<br>Consejo Escolar de La Matanza</div>
+    <div style="text-align:center;margin-top:.875rem;padding-top:.875rem;border-top:1px solid var(--border)">
+      <span style="font-size:.75rem;color:var(--muted)">¿No ves los datos correctos?</span>
+      <button onclick="reconfigSheets()" style="font-size:.75rem;color:var(--navy);font-weight:600;text-decoration:underline;cursor:pointer;background:none;border:none;margin-left:.35rem;font-family:inherit">Reconfigurar conexión</button>
+    </div>
   </div>
 </div>
 </div>
@@ -1454,6 +1458,16 @@ function getUsers(){
 function saveUsers(list){
   try{localStorage.setItem('coop_users',JSON.stringify(list));}catch(e){}
 }
+function reconfigSheets(){
+  if(!confirm('¿Querés reconfigurar la conexión con Google Sheets?\n\nSe va a limpiar la URL guardada y vas a poder ingresar una nueva.')) return;
+  try{ localStorage.removeItem('coop_gas_url'); }catch(e){}
+  ST.gasUrl = '';
+  el('lg-user').value='';
+  el('lg-pass').value='';
+  el('lg-err').style.display='none';
+  showScreen('onboard');
+}
+
 function cambiarSheets(){
   if(!confirm('¿Querés cambiar la conexión con Google Sheets?\n\nAsegurate de haber copiado tu planilla a la nueva cuenta antes de continuar.')) return;
   try{ localStorage.removeItem('coop_gas_url'); }catch(e){}
@@ -1550,7 +1564,7 @@ function closeMov(id,ev){if(ev&&ev.target!==el(id))return;var e=el(id);if(e)e.cl
 // SAMPLE DATA
 // ════════════════════════════════════════════════════════════
 function loadSample(){
-  if(ST.schools.length)return;
+  if(ST.schools.length>0)return;
   var cur=periodoActual();
   ST.schools=[
     {ID:'d1',NOMBRE:'Escuela Primaria Nº 12 Dr. Juan B. Alberdi',NUMERO:'EP 12',LOCALIDAD:'San Justo',DIRECCION:'Av. Rivadavia 1234',TIENE_COOP:'si',PERIODO_COOP:cur,ESTADO_PERIODO_COOP:'Vigente',DOC_ESTADO:'Con reconocimiento oficial DGCyE',TIPO_COOP:'Activa',KIOSCO:'Kiosco licitado',KIOSCO_CAT:'A',KIOSCO_VENC:'2025-12-31',BANCO:'con',PRES_NOMBRE:'María García',PRES_CONTACTO:'11-2345-6789',FECHA_ASAMBLEA:new Date(Date.now()+5*864e5).toISOString().slice(0,10),ESTADO_ASAMBLEA:'pendiente',CUIT:'30-12345678-9',VISITAS:JSON.stringify([{fecha:'2025-03-01',tipo:'Presencial',responsable:'Eze',descripcion:'Reunión con comisión directiva.',proxAccion:'Revisar documentos'}]),PERIODOS:JSON.stringify([{periodo:cur,estado:'Vigente',docestado:'Con reconocimiento oficial DGCyE',fechaAsamblea:'2025-05-20'}]),COM_DIRECTIVA:'{}',COM_REVISORA:'{}'},
