@@ -751,7 +751,27 @@ function togglePw(){var i=el('lg-pass'),b=el('pw-btn');i.type=i.type==='password
 function doLogin(){
   var u=el('lg-user').value.trim(),p=el('lg-pass').value;
   var found=getUsers().find(function(x){return x.u.toLowerCase()===u.toLowerCase()&&x.p===p});
-  if(!found){el('lg-err').style.display='block';return}
+  if(!found){
+    // Try reloading users from Sheets before failing
+    loadUsersFromSheets().then(function(){
+      var found2=getUsers().find(function(x){return x.u.toLowerCase()===u.toLowerCase()&&x.p===p});
+      if(found2){
+        el('lg-err').style.display='none';
+        ST.user=found2;
+        el('u-av').textContent=found2.name[0];
+        el('u-name').textContent=found2.name;
+        el('u-role').textContent=found2.role==='admin'?'Administrador':'Usuario';
+        if(found2.role==='admin'){showEl('nav-usuarios');showEl('bnav-usuarios');}
+        showScreen('app');
+        initApp();
+      } else {
+        el('lg-err').style.display='block';
+      }
+    }).catch(function(){
+      el('lg-err').style.display='block';
+    });
+    return;
+  }
   el('lg-err').style.display='none';
   ST.user=found;
   el('u-av').textContent=found.name[0];
@@ -1704,6 +1724,21 @@ function getUsers(){
   try{var s=localStorage.getItem('coop_users');if(s){var parsed=JSON.parse(s);if(parsed&&parsed.length)return parsed;}}catch(e){}
   return USERS.map(function(u){return Object.assign({},u)});
 }
+
+async function loadUsersFromSheets(){
+  // Called before login to get fresh user list
+  if(!ST.gasUrl) return;
+  try{
+    var r = await gasReq({action:'getUsers'});
+    if(r && r.ok && r.users && r.users.length){
+      ST.users = r.users;
+      try{localStorage.setItem('coop_users', JSON.stringify(r.users));}catch(e){}
+    }
+  }catch(e){
+    console.error('Could not load users:', e);
+    // Fall back to localStorage silently
+  }
+}
 function saveUsers(list){
   ST.users = list;
   // Save to localStorage as backup
@@ -1842,9 +1877,13 @@ window.addEventListener('load', function() {
   var lu2 = document.getElementById('lg-user');
   if(lp2) lp2.addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
   if(lu2) lu2.addEventListener('keydown', function(e){ if(e.key==='Enter') { var p=document.getElementById('lg-pass'); if(p)p.focus(); } });
-  // Show login
+  // Load URL and show login
   var _su = loadUrl();
   if(_su) ST.gasUrl = _su;
+  // Load users from Sheets before showing login (async, non-blocking)
+  loadUsersFromSheets().then(function(){
+    // Users loaded, login is ready
+  }).catch(function(){});
   showScreen('login');
 });
 // Also try immediately in case load already fired
