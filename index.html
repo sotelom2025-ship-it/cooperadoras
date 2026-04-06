@@ -1097,6 +1097,24 @@ function openDetail(id){
   el('detail-view').style.display='block';
   renderDetail(id,'general');
 }
+async function deleteSchool(id){
+  var s = gS(id);
+  if(!s) return;
+  if(!confirm('¿Eliminar "' + s.NOMBRE + '"?\n\nEsta acción no se puede deshacer.')) return;
+  // Remove from local state
+  ST.schools = ST.schools.filter(function(x){ return x.ID !== id; });
+  // Remove from Google Sheets
+  if(ST.gasUrl){
+    try{
+      await gasReq({action:'deleteSchool', id:id});
+    }catch(e){
+      toast('⚠ Eliminado localmente, error en Sheets');
+    }
+  }
+  backToList();
+  toast('🗑 Escuela eliminada');
+}
+
 function backToList(){
   ST.detId=null;
   el('list-view').style.display='';
@@ -1127,6 +1145,7 @@ function renderDetail(id,tab){
         '<div style="font-size:.75rem;color:var(--muted)">'+esc(s.NUMERO||'—')+' · '+esc(s.LOCALIDAD||'—')+' · '+esc(coord)+' · '+esc(cord)+'</div>'+
       '</div>'+
       '<button class="btn btn-s btn-sm" onclick="openSM(\''+esc(id)+'\')">✏️ Editar</button>'+
+      (ST.user&&ST.user.role==='admin'?'<button class="btn btn-d btn-sm" onclick="deleteSchool(\''+esc(id)+'\')">🗑 Eliminar</button>':'')+
     '</div>'+
     '<div class="tabs">'+tabHtml+'</div>'+
     '<div>'+body+'</div>';
