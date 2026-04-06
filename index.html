@@ -748,41 +748,47 @@ function skipOB(){ST.gasUrl='';loadSample();showScreen('login')}
 function toggleOtroInput(){var s=el("sm-tip"),i=el("sm-otro");if(s&&i)i.style.display=s.value==="Otro"?"":"none";}
 function togglePw(){var i=el('lg-pass'),b=el('pw-btn');i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'👁':'🙈'}
 
-function doLogin(){
-  var u=el('lg-user').value.trim(),p=el('lg-pass').value;
-  var found=getUsers().find(function(x){return x.u.toLowerCase()===u.toLowerCase()&&x.p===p});
-  if(!found){
-    // Try reloading users from Sheets before failing
-    loadUsersFromSheets().then(function(){
-      var found2=getUsers().find(function(x){return x.u.toLowerCase()===u.toLowerCase()&&x.p===p});
-      if(found2){
-        el('lg-err').style.display='none';
-        ST.user=found2;
-        el('u-av').textContent=found2.name[0];
-        el('u-name').textContent=found2.name;
-        el('u-role').textContent=found2.role==='admin'?'Administrador':'Usuario';
-        if(found2.role==='admin'){showEl('nav-usuarios');showEl('bnav-usuarios');}
-        showScreen('app');
-        initApp();
-      } else {
-        el('lg-err').style.display='block';
-      }
-    }).catch(function(){
-      el('lg-err').style.display='block';
-    });
-    return;
-  }
+function finishLogin(found){
   el('lg-err').style.display='none';
   ST.user=found;
-  el('u-av').textContent=found.name[0];
-  el('u-name').textContent=found.name;
-  el('u-role').textContent=found.role==='admin'?'Administrador':'Usuario';
-  if(found.role==='admin'){
-    el('ni-users').style.display='';
-    el('bi-users').style.display='';
-  }
+  var av=el('u-av'),sn=el('u-name'),sr=el('u-role');
+  if(av)av.textContent=found.name[0].toUpperCase();
+  if(sn)sn.textContent=found.name;
+  if(sr)sr.textContent=found.role==='admin'?'Administrador':'Usuario';
+  var ni=el('ni-users'),bi=el('bi-users');
+  if(found.role==='admin'){if(ni)ni.style.display='';if(bi)bi.style.display='';}
   showScreen('app');
   initApp();
+}
+
+async function doLogin(){
+  var u=el('lg-user').value.trim(), p=el('lg-pass').value;
+  if(!u||!p){el('lg-err').style.display='block';return;}
+
+  // 1. Check local/cached users
+  var found=getUsers().find(function(x){return x.u.toLowerCase()===u.toLowerCase()&&x.p===p;});
+  if(found){finishLogin(found);return;}
+
+  // 2. Reload from Sheets and retry
+  el('lg-err').style.display='none';
+  try{
+    await loadUsersFromSheets();
+    found=getUsers().find(function(x){return x.u.toLowerCase()===u.toLowerCase()&&x.p===p;});
+    if(found){finishLogin(found);return;}
+
+    // 3. Last resort: getAll also returns users
+    if(ST.gasUrl){
+      var r=await gasReq({action:'getAll'});
+      if(r&&r.users&&r.users.length){
+        ST.users=r.users;
+        try{localStorage.setItem('coop_users',JSON.stringify(r.users));}catch(e){}
+        found=r.users.find(function(x){return x.u.toLowerCase()===u.toLowerCase()&&x.p===p;});
+        if(found){finishLogin(found);return;}
+      }
+    }
+  }catch(e){console.error('Login error:',e);}
+
+  el('lg-err').style.display='block';
 }
 
 function doLogout(){
@@ -1729,10 +1735,21 @@ async function loadUsersFromSheets(){
   // Called before login to get fresh user list
   if(!ST.gasUrl) return;
   try{
+    // Try dedicated getUsers endpoint first
     var r = await gasReq({action:'getUsers'});
     if(r && r.ok && r.users && r.users.length){
       ST.users = r.users;
       try{localStorage.setItem('coop_users', JSON.stringify(r.users));}catch(e){}
+      return;
+    }
+    // Fallback: try getAll which also returns users in updated GAS
+    var r2 = await gasReq({action:'getAll'});
+    if(r2 && r2.ok && r2.users && r2.users.length){
+      ST.users = r2.users;
+      try{localStorage.setItem('coop_users', JSON.stringify(r2.users));}catch(e){}
+      // Also load schools while we're at it
+      if(r2.schools && r2.schools.length) ST.schools = r2.schools;
+      return;
     }
   }catch(e){
     console.error('Could not load users:', e);
