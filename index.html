@@ -649,7 +649,7 @@ var GAS_KEY = 'coop_gas_url';
 // ════════════════════════════════════════════════════════════
 var ST = {
   gasUrl:'', user:null,
-  schools:[], coords:JSON.parse(JSON.stringify(DEF_COORDS)),
+  schools:[], users:[], coords:JSON.parse(JSON.stringify(DEF_COORDS)),
   sf:'all', editSId:null,
   vCtx:{id:null,idx:null}, pCtx:{id:null},
   cIdx:-1, detId:null,
@@ -882,6 +882,13 @@ async function loadData(){
     }
 
     ST.schools=Object.keys(schoolsMap).map(function(k){return schoolsMap[k];});
+
+    // ── Usuarios ──
+    if(r.users&&r.users.length){
+      ST.users=r.users;
+      // Also update localStorage
+      try{localStorage.setItem('coop_users',JSON.stringify(r.users));}catch(e){}
+    }
 
     // ── Coordinadores ──
     if(r.coordinators&&r.coordinators.length){
@@ -1692,11 +1699,21 @@ function genPDF(){
 // USUARIOS
 // ════════════════════════════════════════════════════════════
 function getUsers(){
-  try{var s=localStorage.getItem('coop_users');if(s)return JSON.parse(s);}catch(e){}
+  // Priority: 1) ST.users from Sheets, 2) localStorage, 3) hardcoded defaults
+  if(ST.users && ST.users.length) return ST.users;
+  try{var s=localStorage.getItem('coop_users');if(s){var parsed=JSON.parse(s);if(parsed&&parsed.length)return parsed;}}catch(e){}
   return USERS.map(function(u){return Object.assign({},u)});
 }
 function saveUsers(list){
+  ST.users = list;
+  // Save to localStorage as backup
   try{localStorage.setItem('coop_users',JSON.stringify(list));}catch(e){}
+  // Save to Google Sheets
+  if(ST.gasUrl){
+    gasReq({action:'saveUsers', users:list}).catch(function(e){
+      console.error('Error saving users to Sheets:', e);
+    });
+  }
 }
 function reconfigSheets(){
   if(!confirm('¿Querés reconfigurar la conexión con Google Sheets?\n\nSe va a limpiar la URL guardada y vas a poder ingresar una nueva.')) return;
