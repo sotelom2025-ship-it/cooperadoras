@@ -631,8 +631,6 @@ var USERS = [
   {u:'Marti',p:'consejo2026',role:'user',name:'Marti'},
   {u:'Gael',p:'consejo2025',role:'user',name:'Gael'},
   {u:'Edu',p:'consejo2',role:'user',name:'Edu'},
-  {u:'Romi',p:'cristian77',role:'user',name:'Romi'},
-  {u:'Andrea',p:'123abc',role:'user',name:'Andy'},
 ];
 var LOCS = ['Aldo Bonzi','Ciudad Evita','González Catán','Gregorio de Laferrere','Isidro Casanova','La Tablada','Lomas del Mirador','Manzanares','Ramos Mejía','Rafael Castillo','San Justo','Tapiales','Villa Celina','Villa Luzuriaga','Villa Madero','Virrey del Pino','20 de Junio'];
 var DEF_COORDS = [
@@ -714,7 +712,12 @@ function saveUrl(u){try{localStorage.setItem(GAS_KEY,u)}catch(e){}}
 async function gasReq(payload){
   var res=await fetch(ST.gasUrl,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
   var text=await res.text();
-  return JSON.parse(text);
+  var data=JSON.parse(text);
+  if(data && !data.ok && data.error){
+    console.warn('GAS error ['+payload.action+']:', data.error);
+    throw new Error(data.error);
+  }
+  return data;
 }
 
 // ════════════════════════════════════════════════════════════
@@ -946,7 +949,8 @@ async function saveSchoolR(s){
       ASESORA_NOMBRE:s.ASESORA_NOMBRE||'',ASESORA_CONTACTO:s.ASESORA_CONTACTO||'',
       CUIT:s.CUIT||'',SITUACION_CUIT:s.SITUACION_CUIT||'',
       BANCO:s.BANCO||'',CUENTA:s.CUENTA||'',SUCURSAL:s.SUCURSAL||'',
-      CODIGO_OTRO:s.CODIGO_OTRO||''
+      CODIGO_OTRO:s.CODIGO_OTRO||'',
+      ESPECIALIDADES:s.ESPECIALIDADES||'[]'
     };
     // Save cooperadora data
     var coopData={
@@ -964,19 +968,35 @@ async function saveSchoolR(s){
     var periodos=pj(s.PERIODOS,[]);
     var comDir=pj(s.COM_DIRECTIVA,{});
     var comRev=pj(s.COM_REVISORA,{});
-    await gasReq({
-      action:'saveSchoolFull',
-      school:schoolData,
-      coop:coopData,
-      visitas:visitas,
-      periodos:periodos,
-      comDir:comDir,
-      comRev:comRev
-    });
+    try{
+      // Intentar con GAS nuevo (6 hojas)
+      await gasReq({
+        action:'saveSchoolFull',
+        school:schoolData,
+        coop:coopData,
+        visitas:visitas,
+        periodos:periodos,
+        comDir:comDir,
+        comRev:comRev
+      });
+    }catch(e1){
+      // Fallback: GAS viejo (todo en una hoja)
+      console.warn('saveSchoolFull failed, trying legacy saveSchool:', e1.message);
+      var legacyData = Object.assign({}, schoolData, coopData, {
+        VISITAS: JSON.stringify(visitas),
+        PERIODOS: JSON.stringify(periodos),
+        COM_DIRECTIVA: JSON.stringify(comDir),
+        COM_REVISORA: JSON.stringify(comRev)
+      });
+      delete legacyData.ID_ESCUELA;
+      await gasReq({action:'saveSchool', data:legacyData});
+    }
   }catch(e){
     console.error('Save error:',e);
-    toast('⚠ No se pudo guardar en Sheets');
+    toast('⚠ Error al guardar en Sheets: ' + (e.message||e));
+    return false;
   }
+  return true;
 }
 async function saveCoordR(c,idx){
   if(!ST.gasUrl)return;
@@ -1059,6 +1079,16 @@ function renderSchools(){
     return true;
   });
   if(ST.sf!=='all'){list=list.filter(function(s){var e=etiq(s).l;if(ST.sf==='vigente')return e==='Vigente';if(ST.sf==='creacion')return e==='Creación';if(ST.sf==='reorg')return e==='Reorganización';if(ST.sf==='pia')return e==='PIA firmada';if(ST.sf==='sin')return e==='Sin cooperadora';return true})}
+
+  list.sort(function(a,b){
+    var ca=splitCode(a.NUMERO||''), cb=splitCode(b.NUMERO||'');
+    var ta=(ca.t||'').toUpperCase(), tb=(cb.t||'').toUpperCase();
+    if(ta!==tb) return ta.localeCompare(tb);
+    var na=parseInt(ca.n)||0, nb=parseInt(cb.n)||0;
+    if(na!==nb) return na-nb;
+    return (a.NOMBRE||'').localeCompare(b.NOMBRE||'','es');
+  });
+
   var cnt=el('sc-count'),grid=el('sc-grid');
   if(cnt)cnt.textContent=list.length+' establecimiento'+(list.length!==1?'s':'');
   if(!grid)return;
@@ -1231,6 +1261,32 @@ function buildPeriodOpts(cur) {
   return opts;
 }
 
+function renderEspecialidades(s) {
+  var esp = pj(s.ESPECIALIDADES || '[]', []);
+  var html = '<div class="fg" style="max-width:680px;margin-top:.25rem">';
+  for(var i = 0; i < 5; i++) {
+    var val = esc(esp[i] || '');
+    html += '<div class="ff" style="margin-bottom:.25rem">'
+      + '<label class="fl">Especialidad ' + (i+1) + '</label>'
+      + '<input class="fi" value="' + val + '"'
+      + ' placeholder="' + (i===0 ? 'Ej: Computacion, Ingles...' : '') + '"'
+      + ' onchange="setEspecialidad(\'' + s.ID + '\',' + i + ',this.value)">'
+      + '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+async function setEspecialidad(id, idx, val) {
+  var s = gS(id); if(!s) return;
+  var esp = pj(s.ESPECIALIDADES || '[]', []);
+  while(esp.length < 5) esp.push('');
+  esp[idx] = val.trim();
+  s.ESPECIALIDADES = JSON.stringify(esp);
+  await saveSchoolR(s);
+  toast('💾 Guardado');
+}
+
 function tabGen(s,coord,cord){
   var cp=splitCode(s.NUMERO);
   return '<div class="fg" style="max-width:680px">'+
@@ -1255,6 +1311,8 @@ function tabGen(s,coord,cord){
     ff2('N° cuenta','CUENTA',s)+ff2('N° sucursal','SUCURSAL',s)+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Estatuto</div>'+
     '<div class="ff"><label class="fl">Estado del estatuto</label><select class="fs" onchange="setF(\''+s.ID+'\',\'ESTATUTO\',this.value)"><option value="">— Sin información —</option><option value="Estatuto actualizado"'+(s.ESTATUTO==='Estatuto actualizado'?' selected':'')+'>Estatuto actualizado</option><option value="Estatuto viejo"'+(s.ESTATUTO==='Estatuto viejo'?' selected':'')+'>Estatuto viejo</option><option value="Sin estatuto"'+(s.ESTATUTO==='Sin estatuto'?' selected':'')+'>Sin estatuto</option></select></div>'+
+  '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Especialidades</div>'+
+    renderEspecialidades(s)+
   '</div>'
 }
 
@@ -1313,7 +1371,7 @@ function tabVis(s,vs){
 
 function toggleP(i){var b=el('pb'+i);if(b)b.classList.toggle('open')}
 
-async function setF(id,key,val){var s=gS(id);if(!s)return;s[key]=val;await saveSchoolR(s);toast('💾 Guardado')}
+async function setF(id,key,val){var s=gS(id);if(!s)return;s[key]=val;var ok=await saveSchoolR(s);if(ok!==false)toast('💾 Guardado');}
 async function setFT(id,key,val,elem,cls){
   var s=gS(id);if(!s)return;
   var grp=elem.closest('.tgg');
