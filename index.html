@@ -438,7 +438,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       <div id="list-view">
         <div class="ph">
           <div><div class="ph-ttl">Escuelas</div><div class="ph-sub" id="sc-count">Cargando...</div></div>
-          <button class="btn btn-p" onclick="openSM()">+ Nueva escuela</button>
+          <button class="btn btn-s" onclick="refreshApp()" title="Actualizar datos" style="margin-right:.5rem">🔄</button><button class="btn btn-p" onclick="openSM()">+ Nueva escuela</button>
         </div>
         <div class="stats" id="sc-stats"></div>
         <div class="search-row">
@@ -950,6 +950,7 @@ async function saveSchoolR(s){
       CUIT:s.CUIT||'',SITUACION_CUIT:s.SITUACION_CUIT||'',
       BANCO:s.BANCO||'',CUENTA:s.CUENTA||'',SUCURSAL:s.SUCURSAL||'',
       CODIGO_OTRO:s.CODIGO_OTRO||'',
+      ESPECIALIDADES:s.ESPECIALIDADES||'[]',
       ESPECIALIDADES:s.ESPECIALIDADES||'[]'
     };
     // Save cooperadora data
@@ -1178,6 +1179,22 @@ async function deleteSchool(id){
   }
   backToList();
   toast('🗑 Escuela eliminada');
+}
+
+async function refreshApp(){
+  var btn = document.querySelector('[onclick="refreshApp()"]');
+  if(btn){ btn.textContent='⏳'; btn.disabled=true; }
+  try{
+    await loadData();
+    if(!ST.schools.length) loadSample();
+    fillSelects();
+    renderSchools();
+    renderStats();
+    toast('✅ Datos actualizados');
+  }catch(e){
+    toast('⚠ Error al actualizar');
+  }
+  if(btn){ btn.textContent='🔄'; btn.disabled=false; }
 }
 
 function backToList(){
