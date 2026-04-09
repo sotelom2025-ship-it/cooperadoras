@@ -547,7 +547,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   <div class="mhd"><span class="mttl" id="sm-ttl">Nueva Escuela</span><button class="mcl" onclick="closeMov('sm-ov')">✕</button></div>
   <div class="mbody"><div class="fg">
     <div class="ff c2"><label class="fl">Nombre del establecimiento</label><input class="fi" id="sm-nom" placeholder="Ej: Escuela Primaria Nº 12 Dr. Alberdi"></div>
-    <div class="ff"><label class="fl">Código</label><div class="code-w"><select class="fs code-t" id="sm-tip" onchange="toggleOtroInput()"><option>JI</option><option>EP</option><option>ES</option><option>ET</option><option>EEA</option><option>EES</option><option>CEC</option><option>CENS</option><option>CEF</option><option>ISFDyT</option><option>EE</option><option>Otro</option></select><input class="fi" id="sm-otro" placeholder="Especificar" style="width:120px;display:none"><input class="fi" id="sm-num" placeholder="12" style="flex:1"></div></div>
+    <div class="ff"><label class="fl">Código</label><div class="code-w"><select class="fs code-t" id="sm-tip" onchange="toggleOtroInput()"><option>EP</option><option>EES</option><option>ET</option><option>EEE</option><option>EEPA</option><option>EEA</option><option>EA</option><option>JI</option><option>JC</option><option>JV</option><option>CENS</option><option>CEA</option><option>CFP</option><option>DA</option><option>CEF</option><option>CEC</option><option>CFI</option><option>CEAT</option><option>CEBAS</option><option>CE AGRICOLA</option><option>ISFD</option><option>Otro</option></select><input class="fi" id="sm-otro" placeholder="Especificar" style="width:120px;display:none"><input class="fi" id="sm-num" placeholder="12" style="flex:1"></div></div>
     <div class="ff"><label class="fl">Localidad</label><select class="fs" id="sm-loc"><option value="">Seleccionar...</option></select></div>
     <div class="ff c2"><label class="fl">Dirección</label><input class="fi" id="sm-dir" placeholder="Av. Rivadavia 1234"></div>
     <div class="ff"><label class="fl">Distrital</label><select class="fs" id="sm-distrital"><option value="">— Sin distrital —</option><option value="Distrital 1">Distrital 1</option><option value="Distrital 2">Distrital 2</option><option value="Distrital 3">Distrital 3</option></select></div>
@@ -1245,7 +1245,7 @@ function togRow(lbl,key,s,opts){
 
 function renderCodeField(s) {
   var cp = splitCode(s.NUMERO);
-  var types = ['JI','EP','ES','ET','EEA','EES','CEC','CENS','CEF','ISFDyT','EE','Otro'];
+  var types = ['EP','EES','ET','EEE','EEPA','EEA','EA','JI','JC','JV','CENS','CEA','CFP','DA','CEF','CEC','CFI','CEAT','CEBAS','CE AGRICOLA','ISFD','Otro'];
   var opts = types.map(function(t) {
     return '<option value="'+t+'"'+(cp.t===t?' selected':'')+'>'+t+'</option>';
   }).join('');
