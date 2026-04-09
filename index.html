@@ -921,6 +921,15 @@ async function loadData(){
       try{localStorage.setItem('coop_users',JSON.stringify(r.users));}catch(e){}
     }
 
+    // Limpiar comillas simples que Google Sheets agrega
+    ST.schools.forEach(function(s){
+      ['KIOSCO','TIENE_COOP','DOC_ESTADO','ESTADO_ASAMBLEA','TIPO_COOP','BANCO'].forEach(function(k){
+        if(s[k]){
+          s[k] = s[k].replace(/^'+|'+$/g,'').trim();
+        }
+      });
+    });
+
     // ── Coordinadores ──
     if(r.coordinators&&r.coordinators.length){
       ST.coords=r.coordinators.map(function(c){
@@ -1076,7 +1085,7 @@ function renderSchools(){
     if(fc&&getCoord(s.LOCALIDAD)!==fc)return false;
     if(fco&&getCordNum(s.LOCALIDAD)!==fco)return false;
     if(ft&&s.TIPO_COOP!==ft)return false;
-    if(fk){var h=s.KIOSCO&&s.KIOSCO!=='No'&&s.KIOSCO!=='';if(fk==='con'&&!h)return false;if(fk==='sin'&&h)return false;}
+    if(fk){var h=s.KIOSCO&&(s.KIOSCO.toLowerCase().indexOf('kiosco')>=0);if(fk==='con'&&!h)return false;if(fk==='sin'&&h)return false;}
     return true;
   });
   if(ST.sf!=='all'){list=list.filter(function(s){var e=etiq(s).l;if(ST.sf==='vigente')return e==='Vigente';if(ST.sf==='creacion')return e==='Creación';if(ST.sf==='reorg')return e==='Reorganización';if(ST.sf==='pia')return e==='PIA firmada';if(ST.sf==='sin')return e==='Sin cooperadora';return true})}
@@ -1096,7 +1105,7 @@ function renderSchools(){
   if(!list.length){grid.innerHTML='<div class="es"><div class="ei">🔍</div><div class="et">No se encontraron escuelas</div></div>';return}
   grid.innerHTML=list.map(function(s){
     var e=etiq(s),coord=getCoord(s.LOCALIDAD),cord=getCordLabel(s.LOCALIDAD);
-    var hk=s.KIOSCO&&s.KIOSCO!=='No'&&s.KIOSCO!=='';
+    var hk=s.KIOSCO&&(s.KIOSCO.toLowerCase().indexOf('kiosco')>=0);
     return '<div class="sc" onclick="openDetail(\''+esc(s.ID)+'\')">'+
       '<div class="sc-av">'+esc((s.NUMERO||'?').split(' ').slice(0,2).join(' '))+'</div>'+
       '<div class="sc-info">'+
@@ -1112,7 +1121,7 @@ function renderStats(){
   var e=el('sc-stats');if(!e)return;
   var tot=ST.schools.length,con=ST.schools.filter(function(s){return s.TIENE_COOP==='si'}).length;
   var sin=ST.schools.filter(function(s){return s.TIENE_COOP==='no'}).length;
-  var kk=ST.schools.filter(function(s){return s.KIOSCO&&s.KIOSCO!=='No'&&s.KIOSCO!==''}).length;
+  var kk=ST.schools.filter(function(s){return s.KIOSCO&&(s.KIOSCO.toLowerCase().indexOf('kiosco')>=0)}).length;
   e.innerHTML='<div class="stat"><div class="stat-v">'+tot+'</div><div class="stat-l">Total</div></div>'+
     '<div class="stat"><div class="stat-v" style="color:var(--green)">'+con+'</div><div class="stat-l">Con cooperadora</div></div>'+
     '<div class="stat"><div class="stat-v" style="color:var(--red)">'+sin+'</div><div class="stat-l">Sin cooperadora</div></div>'+
@@ -1632,7 +1641,7 @@ function getPdfList(){
     if(ST.pdf.est.indexOf('con')<0&&t==='si')return false;
     if(ST.pdf.est.indexOf('sin')<0&&t==='no')return false;
     if(ST.pdf.est.indexOf('tuvo')<0&&t==='tuvo')return false;
-    var hk=s.KIOSCO&&s.KIOSCO!=='No'&&s.KIOSCO!=='';
+    var hk=s.KIOSCO&&(s.KIOSCO.toLowerCase().indexOf('kiosco')>=0);
     if(ST.pdf.k.indexOf('con')<0&&hk)return false;
     if(ST.pdf.k.indexOf('sin')<0&&!hk)return false;
     var hb=s.BANCO==='con';
