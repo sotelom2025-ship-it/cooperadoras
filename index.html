@@ -144,11 +144,11 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 .s-ico{position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:.875rem}
 .s-inp{width:100%;padding:.6rem .875rem .6rem 2.25rem;border:1.5px solid var(--border);border-radius:var(--rs);background:var(--surface);font-size:.875rem;transition:border-color .15s}
 .s-inp:focus{outline:none;border-color:var(--navy)}
-.fbar{display:flex;gap:.375rem;flex-wrap:wrap;margin-bottom:.75rem;align-items:center}
+.fbar{display:flex;gap:.375rem;flex-wrap:wrap;margin-bottom:.75rem;align-items:center;width:100%}
 .fp{padding:.3rem .75rem;border:1.5px solid var(--border);border-radius:99px;font-size:.75rem;font-weight:500;cursor:pointer;background:var(--surface);color:var(--muted);transition:all .15s;white-space:nowrap}
 .fp:hover{border-color:var(--navy);color:var(--navy)}
 .fp.on{background:var(--navy);border-color:var(--navy);color:#fff}
-.fsel{padding:.32rem .65rem;border:1.5px solid var(--border);border-radius:var(--rs);font-size:.75rem;background:var(--surface);color:var(--text);cursor:pointer}
+.fsel{min-width:0;flex:1 1 130px;padding:.32rem .65rem;border:1.5px solid var(--border);border-radius:var(--rs);font-size:.75rem;background:var(--surface);color:var(--text);cursor:pointer}
 .fsel:focus{outline:none;border-color:var(--navy)}
 
 /* ── SCHOOL GRID ── */
@@ -318,6 +318,9 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   .stats{gap:.5rem}
   .stat{min-width:75px;padding:.625rem .75rem}
   .stat-v{font-size:1.4rem}
+  .fbar{flex-wrap:wrap;gap:.25rem}
+  .fsel{font-size:.72rem;padding:.28rem .4rem;flex:1 1 120px}
+  .main{padding:.75rem .625rem}
 }
 @media(min-width:600px) and (max-width:1023px){.fg{grid-template-columns:1fr 1fr}}
 @keyframes fi{from{opacity:0}to{opacity:1}}
@@ -365,7 +368,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       <div class="brand-mark" style="font-size:1.5rem">M<span class="o">T</span><span class="b">Z</span></div>
       <div class="brand-text"><strong>Consejo Escolar La Matanza</strong>Intendencia Fernando Espinoza</div>
     </div>
-    <div class="lg-ttl">Comisión de Cooperadoras Escolares · Franco Torales Presidente</div>
+    <div class="lg-ttl">Comisión de Cooperadoras Escolares · Franco Torales</div>
   </div>
   <div class="lg-body">
     <div class="lg-err" id="lg-err">Usuario o contraseña incorrectos.</div>
@@ -453,6 +456,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           <select class="fsel" id="fl-k" onchange="renderSchools()"><option value="">Kiosco</option><option value="con">Con kiosco</option><option value="sin">Sin kiosco</option></select>
           <button class="btn btn-s btn-sm" onclick="clrF()">✕ Limpiar</button>
         </div>
+        <div id="filter-summary" style="display:none;background:var(--navy3);border-radius:var(--rs);padding:.5rem .875rem;font-size:.78rem;color:var(--navy);margin-bottom:.5rem;line-height:1.8;font-weight:500"></div>
         <div class="sg" id="sc-grid"><div class="lw"><div class="spinner"></div><p>Cargando escuelas...</p></div></div>
       </div>
       <div id="detail-view" style="display:none"></div>
@@ -553,7 +557,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     <div class="ff"><label class="fl">Distrital</label><select class="fs" id="sm-distrital"><option value="">— Sin distrital —</option><option value="Distrital 1">Distrital 1</option><option value="Distrital 2">Distrital 2</option><option value="Distrital 3">Distrital 3</option></select></div>
     <div class="ff"><label class="fl">Nombre asesora/or</label><input class="fi" id="sm-ases-nom" placeholder="Nombre completo"></div>
     <div class="ff"><label class="fl">Contacto asesora/or</label><input class="fi" id="sm-ases-cont" placeholder="Teléfono o email"></div>
-    <div class="ff"><label class="fl">¿Tiene cooperadora?</label><select class="fs" id="sm-tc"><option value="si">Sí</option><option value="no">No</option><option value="tuvo">Tuvo</option></select></div>
+    <div class="ff"><label class="fl">¿Tiene cooperadora?</label><select class="fs" id="sm-tc"><option value="si">✅ Vigente (tiene cooperadora)</option><option value="no">❌ No tiene cooperadora</option><option value="tuvo">⚠️ Debe períodos (menos de 3)</option></select></div>
     <div class="ff"><label class="fl">Período activo</label><select class="fs" id="sm-per"></select></div>
     <div class="ff"><label class="fl">Estatuto</label><select class="fs" id="sm-estatuto"><option value="">— Sin información —</option><option value="Estatuto actualizado">Estatuto actualizado</option><option value="Estatuto viejo">Estatuto viejo</option><option value="Sin estatuto">Sin estatuto</option></select></div>
   </div></div>
@@ -676,15 +680,17 @@ function etiq(s){
   // Sin cooperadora
   if(t==='' || t==='no') return {l:'Sin cooperadora',c:'tr',i:'🔴'};
   // Tuvo cooperadora
-  if(t==='tuvo') return {l:'Tuvo cooperadora',c:'ta',i:'🟡'};
+  if(t==='tuvo') return {l:'Debe períodos',c:'ta',i:'⚠️'};
   // Tiene cooperadora (si) — calcular etiqueta por períodos
   var ps = pj(s.PERIODOS,[]);
-  if(!ps.length) return {l:'Vigente',c:'tg',i:'🟢'}; // tiene pero sin períodos aún
+  if(!ps.length) return {l:'Vigente',c:'tg',i:'🟢'};
   if(ps.length===1) return {l:'Creación',c:'tb',i:'🔵'};
   var last = ps[ps.length-1];
   if(last.docestado==='PIA firmada') return {l:'PIA firmada',c:'tb',i:'📋'};
   var rec = ps.slice(-3);
-  if(ps.length>=3 && rec.filter(function(p){return !p.docestado}).length>=3) return {l:'Reorganización',c:'ta',i:'🟡'};
+  var sinDoc = rec.filter(function(p){return !p.docestado||p.docestado===''}).length;
+  if(ps.length>=3 && sinDoc>=3) return {l:'Debe períodos',c:'ta',i:'⚠️'};
+  if(ps.length>=2 && sinDoc>=2) return {l:'Reorganización',c:'ta',i:'🟡'};
   if(last.docestado) return {l:'Vigente',c:'tg',i:'🟢'};
   return {l:'Vigente',c:'tg',i:'🟢'};
 }
@@ -1114,6 +1120,28 @@ function renderSchools(){
       ? tot+' establecimiento'+(tot!==1?'s':'')
       : list.length+' de '+tot+' establecimiento'+(tot!==1?'s':'');
   }
+  // Filter summary bar
+  var fsDiv=el('filter-summary');
+  if(fsDiv){
+    var hasFilter=(q||fl||fc||fco||ft||fk);
+    if(hasFilter && list.length>0){
+      var fCon=list.filter(function(s){return s.TIENE_COOP==='si'}).length;
+      var fSin=list.filter(function(s){return s.TIENE_COOP==='no'}).length;
+      var fTuvo=list.filter(function(s){return s.TIENE_COOP==='tuvo'}).length;
+      var fKiosk=list.filter(function(s){return s.KIOSCO&&s.KIOSCO.toLowerCase().indexOf('kiosco')>=0}).length;
+      var fBanco=list.filter(function(s){return s.BANCO==='con'}).length;
+      var parts=['<strong>'+list.length+' resultado'+(list.length!==1?'s':'')+'</strong>'];
+      if(fCon) parts.push('🟢 Con cooperadora: '+fCon);
+      if(fSin) parts.push('🔴 Sin cooperadora: '+fSin);
+      if(fTuvo) parts.push('🟡 Que tuvieron: '+fTuvo);
+      if(fKiosk) parts.push('🏪 Con kiosco: '+fKiosk);
+      if(fBanco) parts.push('🏦 Con banco: '+fBanco);
+      fsDiv.innerHTML=parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;');
+      fsDiv.style.display='block';
+    } else {
+      fsDiv.style.display='none';
+    }
+  }
   if(!grid)return;
   if(!list.length){grid.innerHTML='<div class="es"><div class="ei">🔍</div><div class="et">No se encontraron escuelas</div></div>';return}
   grid.innerHTML=list.map(function(s){
@@ -1335,12 +1363,9 @@ function tabGen(s,coord,cord){
     fsel2('Localidad','LOCALIDAD',s,LOCS)+
     ff2('Dirección','DIRECCION',s,'c2')+'<div class="ff"><label class="fl">Distrital</label><select class="fs" onchange="setF(\''+s.ID+'\',\'DISTRITAL\',this.value)"><option value="">— Sin distrital —</option><option value="Distrital 1"'+(s.DISTRITAL==="Distrital 1"?' selected':'')+'>Distrital 1</option><option value="Distrital 2"'+(s.DISTRITAL==="Distrital 2"?' selected':'')+'>Distrital 2</option><option value="Distrital 3"'+(s.DISTRITAL==="Distrital 3"?' selected':'')+'>Distrital 3</option></select></div>'+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Cooperadora</div>'+
-    togRow('¿Tiene cooperadora?','TIENE_COOP',s,[['si','Sí',''],['no','No','or'],['tuvo','Tuvo','oa']])+
+    togRow('¿Tiene cooperadora?','TIENE_COOP',s,[['si','✅ Vigente',''],['no','❌ No tiene','or'],['tuvo','⚠️ Debe períodos','oa']])+
     '<div class="ff"><label class="fl">Período activo</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+buildPeriodOpts(s.PERIODO_COOP)+'</select></div>'+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Datos adicionales</div>'+
-    '<div class="ff"><label class="fl">Coordinador</label><div class="fi" style="background:var(--bg2);color:var(--muted);cursor:default">'+esc(coord)+'</div></div>'+
-    '<div class="ff"><label class="fl">Cordón</label><div class="fi" style="background:var(--bg2);color:var(--muted);cursor:default">'+esc(cord)+'</div></div>'+
-
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Asesora / Asesor</div>'+
     ff2('Nombre','ASESORA_NOMBRE',s)+
     ff2('Contacto','ASESORA_CONTACTO',s)+
@@ -1357,7 +1382,13 @@ function tabGen(s,coord,cord){
 
 function tabCoop(s,ps){
   var k=s.KIOSCO||'No';
+  var coord=getCoord(s.LOCALIDAD), cord=getCordLabel(s.LOCALIDAD);
   return '<div style="max-width:680px">'+
+    '<div style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin-bottom:.5rem">Coordinación</div>'+
+    '<div class="fg">'+
+    '<div class="ff"><label class="fl">Coordinador</label><div class="fi" style="background:var(--bg2);color:var(--muted);cursor:default">'+esc(coord)+'</div></div>'+
+    '<div class="ff"><label class="fl">Cordón</label><div class="fi" style="background:var(--bg2);color:var(--muted);cursor:default">'+esc(cord)+'</div></div>'+
+    '</div>'+
     '<div style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin-bottom:.875rem">Documentación y tipo</div>'+
     togRow('Estado documentación','DOC_ESTADO',s,[['','Sin doc','or'],['PIA firmada','PIA firmada',''],['Con reconocimiento oficial DGCyE','Reconocimiento DGCyE','og']])+
     togRow('Tipo cooperadora','TIPO_COOP',s,[['Activa','Activa',''],['Administrativa','Administrativa',''],['✌️','✌️','']])+
@@ -1657,6 +1688,15 @@ function togLoc(el2,l){
   if(el2) el2.classList.toggle('on',ST.pdf.locs.indexOf(l)>=0);
   updPdfPrev();
 }
+function tpdf(btn){
+  var g=btn.dataset.g, v=btn.dataset.v, arr=ST.pdf[g]||(ST.pdf[g]=[]);
+  var i=arr.indexOf(v);
+  if(i>=0) arr.splice(i,1);
+  else arr.push(v);
+  btn.classList.toggle('on', arr.indexOf(v)>=0);
+  updPdfPrev();
+}
+
 function locsAll(){
   var allLocs=[];
   ST.schools.forEach(function(s){if(s.LOCALIDAD&&allLocs.indexOf(s.LOCALIDAD)<0)allLocs.push(s.LOCALIDAD);});
@@ -1733,7 +1773,7 @@ function genPDF(){
   doc.text('CONSEJO ESCOLAR DE LA MATANZA',ML+32,10);
   doc.setFontSize(8);
   doc.setFont('helvetica','normal');
-  doc.text('Comisión de Cooperadoras Escolares · Franco Torales Presidente',ML+32,16);
+  doc.text('Comisión de Cooperadoras Escolares · Franco Torales',ML+32,16);
   y=27;
 
   doc.setTextColor(13,47,110);
@@ -1852,7 +1892,7 @@ function genPDF(){
   doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(11);
   doc.text('CONSEJO ESCOLAR DE LA MATANZA',ML,10);
   doc.setFontSize(8);doc.setFont('helvetica','normal');
-  doc.text('Comisión de Cooperadoras Escolares · Franco Torales Presidente',ML,15);
+  doc.text('Comisión de Cooperadoras Escolares · Franco Torales',ML,15);
   y=24;
   doc.setTextColor(13,47,110);doc.setFont('helvetica','bold');doc.setFontSize(14);
   doc.text('Informe de Cooperadoras Escolares',ML,y);y+=6;
