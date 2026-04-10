@@ -653,7 +653,7 @@ var ST = {
   sf:'all', editSId:null,
   vCtx:{id:null,idx:null}, pCtx:{id:null},
   cIdx:-1, detId:null,
-  pdf:{est:['con','sin','tuvo'],k:['con','sin'],banco:['con','sin'],inc:[],locs:LOCS.slice()}
+  pdf:{est:['con','sin','tuvo'],k:['con','sin'],banco:['con','sin'],inc:[],locs:[]}
 };
 
 // ════════════════════════════════════════════════════════════
@@ -921,13 +921,21 @@ async function loadData(){
       try{localStorage.setItem('coop_users',JSON.stringify(r.users));}catch(e){}
     }
 
-    // Limpiar comillas simples que Google Sheets agrega
+    // Normalizar campos del Sheet (quitar comillas, normalizar valores)
     ST.schools.forEach(function(s){
-      ['KIOSCO','TIENE_COOP','DOC_ESTADO','ESTADO_ASAMBLEA','TIPO_COOP','BANCO'].forEach(function(k){
-        if(s[k]){
-          s[k] = s[k].replace(/^'+|'+$/g,'').trim();
-        }
+      ['KIOSCO','TIENE_COOP','DOC_ESTADO','ESTADO_ASAMBLEA','TIPO_COOP','BANCO',
+       'LOCALIDAD','NOMBRE','NUMERO','DIRECCION'].forEach(function(k){
+        if(s[k]) s[k] = s[k].replace(/^'+|'+$/g,'').trim();
       });
+      // Normalizar BANCO: 'Con banco','si','S','con banco' -> 'con'
+      var b = (s.BANCO||'').toLowerCase();
+      if(b==='con banco'||b==='si'||b==='s'||b==='yes'||b==='con') s.BANCO='con';
+      else if(b==='sin banco'||b==='no'||b==='n'||b==='sin'||b==='') s.BANCO='sin';
+      // Normalizar TIENE_COOP
+      var tc = (s.TIENE_COOP||'').toLowerCase();
+      if(tc==='si'||tc==='sí'||tc==='yes'||tc==='s'||tc==='1'||tc==='true') s.TIENE_COOP='si';
+      else if(tc==='tuvo'||tc==='tuvo cooperadora') s.TIENE_COOP='tuvo';
+      else if(tc===''||tc==='no'||tc==='n'||tc==='0') s.TIENE_COOP='no';
     });
 
     // ── Coordinadores ──
@@ -1100,7 +1108,12 @@ function renderSchools(){
   });
 
   var cnt=el('sc-count'),grid=el('sc-grid');
-  if(cnt)cnt.textContent=list.length+' establecimiento'+(list.length!==1?'s':'');
+  if(cnt){
+    var tot=ST.schools.length;
+    cnt.textContent=list.length===tot
+      ? tot+' establecimiento'+(tot!==1?'s':'')
+      : list.length+' de '+tot+' establecimiento'+(tot!==1?'s':'');
+  }
   if(!grid)return;
   if(!list.length){grid.innerHTML='<div class="es"><div class="ei">🔍</div><div class="et">No se encontraron escuelas</div></div>';return}
   grid.innerHTML=list.map(function(s){
@@ -1624,16 +1637,33 @@ function goToAsam(id){goTo('escuelas');openDetail(id);setTimeout(function(){rend
 // ════════════════════════════════════════════════════════════
 function renderPdfLocs(){
   var e=el('pdf-locs');if(!e)return;
-  e.innerHTML=LOCS.map(function(l){return '<div class="lpill'+(ST.pdf.locs.indexOf(l)>=0?' on':'')+'" onclick="togLoc(\''+l+'\',this)">'+l+'</div>'}).join('');
+  var allLocs=[];
+  ST.schools.forEach(function(s){
+    if(s.LOCALIDAD&&allLocs.indexOf(s.LOCALIDAD)<0) allLocs.push(s.LOCALIDAD);
+  });
+  allLocs.sort(function(a,b){return a.localeCompare(b,'es');});
+  if(!allLocs.length) allLocs=LOCS.slice();
+  if(!ST.pdf.locs.length) ST.pdf.locs=allLocs.slice();
+  e.innerHTML=allLocs.map(function(l){
+    var cls='lpill'+(ST.pdf.locs.indexOf(l)>=0?' on':'');
+    return '<div class="'+cls+'" onclick="togLoc(this,'+JSON.stringify(l)+')">'+l+'</div>';
+  }).join('');
 }
-function togLoc(l,el2){var i=ST.pdf.locs.indexOf(l);if(i>=0)ST.pdf.locs.splice(i,1);else ST.pdf.locs.push(l);el2.classList.toggle('on',ST.pdf.locs.indexOf(l)>=0);updPdfPrev()}
-function locsAll(){ST.pdf.locs=LOCS.slice();renderPdfLocs();updPdfPrev()}
-function locsClear(){ST.pdf.locs=[];renderPdfLocs();updPdfPrev()}
-function tpdf(btn){
-  var g=btn.dataset.g,v=btn.dataset.v,arr=ST.pdf[g]||(ST.pdf[g]=[]);
-  var i=arr.indexOf(v);if(i>=0)arr.splice(i,1);else arr.push(v);
-  btn.classList.toggle('on',arr.indexOf(v)>=0);updPdfPrev();
+function togLoc(el2,l){
+  if(!l && el2 && el2.dataset) l=el2.textContent;
+  var i=ST.pdf.locs.indexOf(l);
+  if(i>=0) ST.pdf.locs.splice(i,1);
+  else ST.pdf.locs.push(l);
+  if(el2) el2.classList.toggle('on',ST.pdf.locs.indexOf(l)>=0);
+  updPdfPrev();
 }
+function locsAll(){
+  var allLocs=[];
+  ST.schools.forEach(function(s){if(s.LOCALIDAD&&allLocs.indexOf(s.LOCALIDAD)<0)allLocs.push(s.LOCALIDAD);});
+  ST.pdf.locs=allLocs.length?allLocs.slice():LOCS.slice();
+  renderPdfLocs();updPdfPrev();
+}
+function locsClear(){ST.pdf.locs=[];renderPdfLocs();updPdfPrev();}
 function getPdfList(){
   return ST.schools.filter(function(s){
     if(ST.pdf.locs.length&&ST.pdf.locs.indexOf(s.LOCALIDAD)<0)return false;
@@ -1653,7 +1683,30 @@ function getPdfList(){
 function updPdfPrev(){
   var e=el('pdf-prev');if(!e)return;
   var list=getPdfList();
-  e.innerHTML='<strong>📋 '+list.length+' establecimiento'+(list.length!==1?'s':'')+' seleccionado'+(list.length!==1?'s':'')+'</strong><br><span style="font-size:.78rem;opacity:.85">Estado: '+ST.pdf.est.join(', ')+' · Kiosco: '+ST.pdf.k.join(', ')+' · Banco: '+ST.pdf.banco.join(', ')+' · Localidades: '+(ST.pdf.locs.length===LOCS.length?'todas':ST.pdf.locs.length+' selec.')+'</span>';
+  var total=ST.schools.length;
+
+  // Build localidades summary
+  var locSummary='';
+  if(ST.pdf.locs.length>0){
+    var locCounts={};
+    list.forEach(function(s){
+      var l=s.LOCALIDAD||'Sin localidad';
+      locCounts[l]=(locCounts[l]||0)+1;
+    });
+    var locParts=Object.keys(locCounts).sort().map(function(l){
+      return l+': '+locCounts[l];
+    });
+    if(locParts.length<=6) locSummary='<div style="margin-top:.375rem;font-size:.73rem;opacity:.8">'+locParts.join(' &nbsp;·&nbsp; ')+'</div>';
+    else locSummary='<div style="margin-top:.375rem;font-size:.73rem;opacity:.8">'+locParts.slice(0,6).join(' &nbsp;·&nbsp; ')+' y '+(locParts.length-6)+' más...</div>';
+  }
+
+  var estLabels={con:'Con coop.',sin:'Sin coop.',tuvo:'Que tuvieron'};
+  e.innerHTML='<strong>📋 '+list.length+' de '+total+' establecimiento'+(total!==1?'s':'')+' seleccionados</strong>'+
+    '<br><span style="font-size:.78rem;opacity:.85">Estado: '+ST.pdf.est.map(function(v){return estLabels[v]||v}).join(', ')+
+    ' · Kiosco: '+(ST.pdf.k.join(', ')||'—')+
+    ' · Banco: '+(ST.pdf.banco.join(', ')||'—')+
+    ' · Localidades: '+(ST.pdf.locs.length===0?'Todas':ST.pdf.locs.length+' sel.')+'</span>'+
+    locSummary;
 }
 function genPDF(){
   if(!window.jspdf){toast('⚠ Cargando jsPDF...');return;}
@@ -1686,7 +1739,10 @@ function genPDF(){
   doc.setTextColor(13,47,110);
   doc.setFont('helvetica','bold');
   doc.setFontSize(14);
-  doc.text('Informe de Cooperadoras Escolares',ML,y);
+  var pdfTitle = 'Informe de Cooperadoras Escolares';
+  if(ST.pdf.est.length===1&&ST.pdf.est[0]==='con') pdfTitle='Informe: Escuelas Con Cooperadora';
+  else if(ST.pdf.est.length===1&&ST.pdf.est[0]==='sin') pdfTitle='Informe: Escuelas Sin Cooperadora';
+  doc.text(pdfTitle,ML,y);
   y+=6;
   doc.setTextColor(100,100,100);
   doc.setFont('helvetica','normal');
@@ -1761,7 +1817,30 @@ function genPDF(){
 function updPdfPrev(){
   var e=el('pdf-prev');if(!e)return;
   var list=getPdfList();
-  e.innerHTML='<strong>📋 '+list.length+' establecimiento'+(list.length!==1?'s':'')+' seleccionado'+(list.length!==1?'s':'')+'</strong><br><span style="font-size:.78rem;opacity:.85">Estado: '+ST.pdf.est.join(', ')+' · Kiosco: '+ST.pdf.k.join(', ')+' · Banco: '+ST.pdf.banco.join(', ')+' · Localidades: '+(ST.pdf.locs.length===LOCS.length?'todas':ST.pdf.locs.length+' selec.')+'</span>';
+  var total=ST.schools.length;
+
+  // Build localidades summary
+  var locSummary='';
+  if(ST.pdf.locs.length>0){
+    var locCounts={};
+    list.forEach(function(s){
+      var l=s.LOCALIDAD||'Sin localidad';
+      locCounts[l]=(locCounts[l]||0)+1;
+    });
+    var locParts=Object.keys(locCounts).sort().map(function(l){
+      return l+': '+locCounts[l];
+    });
+    if(locParts.length<=6) locSummary='<div style="margin-top:.375rem;font-size:.73rem;opacity:.8">'+locParts.join(' &nbsp;·&nbsp; ')+'</div>';
+    else locSummary='<div style="margin-top:.375rem;font-size:.73rem;opacity:.8">'+locParts.slice(0,6).join(' &nbsp;·&nbsp; ')+' y '+(locParts.length-6)+' más...</div>';
+  }
+
+  var estLabels={con:'Con coop.',sin:'Sin coop.',tuvo:'Que tuvieron'};
+  e.innerHTML='<strong>📋 '+list.length+' de '+total+' establecimiento'+(total!==1?'s':'')+' seleccionados</strong>'+
+    '<br><span style="font-size:.78rem;opacity:.85">Estado: '+ST.pdf.est.map(function(v){return estLabels[v]||v}).join(', ')+
+    ' · Kiosco: '+(ST.pdf.k.join(', ')||'—')+
+    ' · Banco: '+(ST.pdf.banco.join(', ')||'—')+
+    ' · Localidades: '+(ST.pdf.locs.length===0?'Todas':ST.pdf.locs.length+' sel.')+'</span>'+
+    locSummary;
 }
 function genPDF(){
   if(!window.jspdf){toast('⚠ Cargando jsPDF...');return}
@@ -1784,6 +1863,54 @@ function genPDF(){
   doc.text('FILTROS:',ML+2,y+5);doc.setFont('helvetica','normal');doc.setTextColor(60,60,60);
   var ft='Estado: '+ST.pdf.est.join(', ')+' | Kiosco: '+ST.pdf.k.join(', ')+' | Banco: '+ST.pdf.banco.join(', ')+' | Loc: '+(ST.pdf.locs.length===LOCS.length?'Todas':ST.pdf.locs.length+' sel.');
   doc.text(doc.splitTextToSize(ft,PW-ML*2-28),ML+28,y+5);y+=16;
+
+  // ── RESUMEN POR LOCALIDAD ──
+  var locMap={};
+  list.forEach(function(s){
+    var l=s.LOCALIDAD||'Sin localidad';
+    if(!locMap[l]) locMap[l]={total:0,con:0,sin:0,kiosco:0};
+    locMap[l].total++;
+    if(s.TIENE_COOP==='si') locMap[l].con++;
+    else if(s.TIENE_COOP==='no') locMap[l].sin++;
+    if(s.KIOSCO&&s.KIOSCO.toLowerCase().indexOf('kiosco')>=0) locMap[l].kiosco++;
+  });
+  var locKeys=Object.keys(locMap).sort();
+  if(locKeys.length>0 && locKeys.length<=30){
+    chk(20+locKeys.length*7+10);
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(13,47,110);
+    doc.text('Resumen por localidad',ML,y);y+=5;
+    // Table header
+    doc.setFillColor(13,47,110);doc.rect(ML,y,PW-ML-MR,6,'F');
+    doc.setTextColor(255,255,255);doc.setFontSize(7.5);doc.setFont('helvetica','bold');
+    doc.text('Localidad',ML+2,y+4);
+    doc.text('Total',ML+90,y+4);doc.text('Con coop.',ML+110,y+4);doc.text('Sin coop.',ML+135,y+4);doc.text('Kiosco',ML+160,y+4);
+    y+=6;
+    locKeys.forEach(function(l,i){
+      var r=locMap[l];
+      doc.setFillColor(i%2===0?249:255,i%2===0?250:255,i%2===0?251:255);
+      doc.rect(ML,y,PW-ML-MR,6,'F');
+      doc.setTextColor(30,30,50);doc.setFont('helvetica','normal');doc.setFontSize(7.5);
+      doc.text(l.length>40?l.slice(0,40)+'...':l,ML+2,y+4);
+      doc.text(String(r.total),ML+90,y+4);
+      doc.text(String(r.con),ML+110,y+4);
+      doc.text(String(r.sin),ML+135,y+4);
+      doc.text(r.kiosco>0?String(r.kiosco):'—',ML+160,y+4);
+      y+=6;
+    });
+    // Total row
+    var totCon=list.filter(function(s){return s.TIENE_COOP==='si'}).length;
+    var totSin=list.filter(function(s){return s.TIENE_COOP==='no'}).length;
+    var totK=list.filter(function(s){return s.KIOSCO&&s.KIOSCO.toLowerCase().indexOf('kiosco')>=0}).length;
+    doc.setFillColor(238,242,251);doc.rect(ML,y,PW-ML-MR,6,'F');
+    doc.setFont('helvetica','bold');doc.setTextColor(13,47,110);doc.setFontSize(7.5);
+    doc.text('TOTAL',ML+2,y+4);
+    doc.text(String(list.length),ML+90,y+4);
+    doc.text(String(totCon),ML+110,y+4);
+    doc.text(String(totSin),ML+135,y+4);
+    doc.text(totK>0?String(totK):'—',ML+160,y+4);
+    y+=10;
+  }
+
   list.forEach(function(s){
     var e2=etiq(s),coord=getCoord(s.LOCALIDAD),vs=pj(s.VISITAS,[]),ps=pj(s.PERIODOS,[]);
     var rh=20+(iT?4:0)+(iP?ps.length*4.5:0)+(iV?Math.min(vs.length,3)*5:0)+3;
