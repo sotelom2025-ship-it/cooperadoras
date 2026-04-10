@@ -1829,10 +1829,10 @@ function genPDF(){
     doc.setFont('helvetica','normal');
     doc.setFontSize(7.5);
     doc.setTextColor(100,100,100);
-    doc.text((s.NUMERO||'—')+' | '+(s.LOCALIDAD||'—')+' | '+coord+(s.DISTRITAL?' | '+s.DISTRITAL:''),ML+3,y+11);
+    doc.text((s.NUMERO||'—')+' | '+(s.LOCALIDAD||'—')+(s.DIRECCION?' | '+s.DIRECCION:'')+(s.DISTRITAL?' | '+s.DISTRITAL:''),ML+3,y+11);
     doc.text('Presidenta: '+(s.PRES_NOMBRE||'—')+(s.PRES_CONTACTO?' ('+s.PRES_CONTACTO+')':''),ML+3,y+16);
     var ry=y+20;
-    if(s.ASESORA_NOMBRE){
+    if(s.ASESORA_NOMBRE||s.ASESORA_CONTACTO){
       doc.text('Asesora/or: '+s.ASESORA_NOMBRE+(s.ASESORA_CONTACTO?' ('+s.ASESORA_CONTACTO+')':''),ML+3,ry);
       ry+=4.5;
     }
