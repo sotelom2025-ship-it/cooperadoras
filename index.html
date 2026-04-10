@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Cooperadoras — Consejo Escolar La Matanza</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
@@ -144,7 +144,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 .s-ico{position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:.875rem}
 .s-inp{width:100%;padding:.6rem .875rem .6rem 2.25rem;border:1.5px solid var(--border);border-radius:var(--rs);background:var(--surface);font-size:.875rem;transition:border-color .15s}
 .s-inp:focus{outline:none;border-color:var(--navy)}
-.fbar{display:flex;gap:.375rem;flex-wrap:wrap;margin-bottom:.75rem;align-items:center;width:100%}
+.fbar{display:flex;gap:.375rem;flex-wrap:wrap;margin-bottom:.75rem;align-items:center;width:100%;box-sizing:border-box}
 .fp{padding:.3rem .75rem;border:1.5px solid var(--border);border-radius:99px;font-size:.75rem;font-weight:500;cursor:pointer;background:var(--surface);color:var(--muted);transition:all .15s;white-space:nowrap}
 .fp:hover{border-color:var(--navy);color:var(--navy)}
 .fp.on{background:var(--navy);border-color:var(--navy);color:#fff}
@@ -306,7 +306,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   .sidebar{display:none}
   .bnav{display:flex}
   .main{margin-left:0}
-  .content{padding:1rem;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
+  .content{padding:.75rem .625rem;padding-bottom:calc(70px + env(safe-area-inset-bottom,0px))}
   #toast{bottom:calc(72px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%) translateY(6px)}
   #toast.show{transform:translateX(-50%) translateY(0)}
 }
@@ -315,14 +315,31 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   .c2,.c3{grid-column:span 1}
   .modal{max-width:100%;border-radius:18px 18px 0 0;margin-top:auto;max-height:92vh}
   .moverlay{align-items:flex-end;padding:0}
-  .stats{gap:.5rem}
-  .stat{min-width:75px;padding:.625rem .75rem}
-  .stat-v{font-size:1.4rem}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:.375rem;margin-bottom:1rem}
+  .stat{min-width:0;padding:.5rem .625rem}
+  .stat-v{font-size:1.35rem}
+  .stat-l{font-size:.62rem}
   .fbar{flex-wrap:wrap;gap:.25rem}
-  .fsel{font-size:.72rem;padding:.28rem .4rem;flex:1 1 120px}
-  .main{padding:.75rem .625rem}
+  .fsel{font-size:.72rem;padding:.28rem .4rem;flex:1 1 110px;min-width:0}
+  .ph{flex-wrap:wrap;gap:.5rem;margin-bottom:1rem}
+  .ph-ttl{font-size:1.1rem}
+  .btn-p{padding:.4rem .8rem;font-size:.78rem}
+  .sc{padding:.625rem .75rem}
+  .sc-av{width:36px;height:36px;font-size:.65rem;border-radius:6px;flex-shrink:0}
+  .sc-nom{font-size:.8rem}
+  .sc-sub{font-size:.68rem}
+  .search-w{margin-bottom:.5rem}
+  .tabs{flex-wrap:wrap;gap:.25rem;margin-bottom:.75rem}
+  .tab{padding:.375rem .625rem;font-size:.75rem}
 }
 @media(min-width:600px) and (max-width:1023px){.fg{grid-template-columns:1fr 1fr}}
+@media(max-width:380px){
+  .stats{grid-template-columns:1fr 1fr}
+  .stat-v{font-size:1.2rem}
+  .fsel{font-size:.68rem;padding:.25rem .3rem;flex:1 1 90px}
+  .bn-i{font-size:.55rem;min-width:0;flex:1}
+  .sc-nom{font-size:.75rem}
+}
 @keyframes fi{from{opacity:0}to{opacity:1}}
 @keyframes su{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -361,7 +378,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 </div>
 
 <!-- LOGIN -->
-<div id="scr-login" class="screen">
+<div id="scr-login" class="screen" style="padding:1rem">
 <div class="lg-card">
   <div class="lg-head">
     <div class="lg-brand">
@@ -410,7 +427,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
       <button class="nav-i" id="ni-users" onclick="goTo('users')" style="display:none"><span class="ico">🔑</span>Usuarios</button>
     </div>
     <div class="sb-foot">
-      <button class="sb-user" onclick="doLogout()">
+      <button class="sb-user" onclick="doLogout()" title="Cerrar sesión">
         <div class="u-av" id="u-av">?</div>
         <div class="u-info"><div class="u-name" id="u-name">—</div><div class="u-role" id="u-role">—</div></div>
         <span class="u-out">⎋</span>
@@ -425,6 +442,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     <button class="bn-i" id="bi-asam" onclick="goTo('asam')"><span class="ico">📅</span>Asambleas</button>
     <button class="bn-i" id="bi-informes" onclick="goTo('informes')"><span class="ico">📄</span>Informes</button>
     <button class="bn-i" id="bi-users" onclick="goTo('users')" style="display:none"><span class="ico">🔑</span>Usuarios</button>
+    <button class="bn-i" onclick="doLogout()" title="Cerrar sesión"><span class="ico">🚪</span>Salir</button>
   </nav>
 
   <!-- MAIN -->
@@ -557,7 +575,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     <div class="ff"><label class="fl">Distrital</label><select class="fs" id="sm-distrital"><option value="">— Sin distrital —</option><option value="Distrital 1">Distrital 1</option><option value="Distrital 2">Distrital 2</option><option value="Distrital 3">Distrital 3</option></select></div>
     <div class="ff"><label class="fl">Nombre asesora/or</label><input class="fi" id="sm-ases-nom" placeholder="Nombre completo"></div>
     <div class="ff"><label class="fl">Contacto asesora/or</label><input class="fi" id="sm-ases-cont" placeholder="Teléfono o email"></div>
-    <div class="ff"><label class="fl">¿Tiene cooperadora?</label><select class="fs" id="sm-tc"><option value="si">✅ Vigente (tiene cooperadora)</option><option value="no">❌ No tiene cooperadora</option><option value="tuvo">⚠️ Debe períodos (menos de 3)</option></select></div>
+    <div class="ff"><label class="fl">¿Tiene cooperadora?</label><select class="fs" id="sm-tc"><option value="si">Vigente</option><option value="tuvo">Debe 3 o menos períodos</option><option value="no">No tiene</option><option value="creacion">Es creación</option></select></div>
     <div class="ff"><label class="fl">Período activo</label><select class="fs" id="sm-per"></select></div>
     <div class="ff"><label class="fl">Estatuto</label><select class="fs" id="sm-estatuto"><option value="">— Sin información —</option><option value="Estatuto actualizado">Estatuto actualizado</option><option value="Estatuto viejo">Estatuto viejo</option><option value="Sin estatuto">Sin estatuto</option></select></div>
   </div></div>
@@ -1363,7 +1381,7 @@ function tabGen(s,coord,cord){
     fsel2('Localidad','LOCALIDAD',s,LOCS)+
     ff2('Dirección','DIRECCION',s,'c2')+'<div class="ff"><label class="fl">Distrital</label><select class="fs" onchange="setF(\''+s.ID+'\',\'DISTRITAL\',this.value)"><option value="">— Sin distrital —</option><option value="Distrital 1"'+(s.DISTRITAL==="Distrital 1"?' selected':'')+'>Distrital 1</option><option value="Distrital 2"'+(s.DISTRITAL==="Distrital 2"?' selected':'')+'>Distrital 2</option><option value="Distrital 3"'+(s.DISTRITAL==="Distrital 3"?' selected':'')+'>Distrital 3</option></select></div>'+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Cooperadora</div>'+
-    togRow('¿Tiene cooperadora?','TIENE_COOP',s,[['si','✅ Vigente',''],['no','❌ No tiene','or'],['tuvo','⚠️ Debe períodos','oa']])+
+    togRow('¿Tiene cooperadora?','TIENE_COOP',s,[['si','Vigente',''],['tuvo','Debe 3 o menos períodos','oa'],['no','No tiene','or'],['creacion','Es creación','tb']])+
     '<div class="ff"><label class="fl">Período activo</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+buildPeriodOpts(s.PERIODO_COOP)+'</select></div>'+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Datos adicionales</div>'+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Asesora / Asesor</div>'+
