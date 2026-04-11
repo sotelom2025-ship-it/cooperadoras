@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Cooperadoras — Consejo Escolar La Matanza</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:14px}
@@ -1058,6 +1058,8 @@ async function loadData(){
       var tc = (s.TIENE_COOP||'').toLowerCase();
       if(tc==='si'||tc==='sí'||tc==='yes'||tc==='s'||tc==='1'||tc==='true') s.TIENE_COOP='si';
       else if(tc==='tuvo'||tc==='tuvo cooperadora') s.TIENE_COOP='tuvo';
+      else if(tc==='reorg'||tc==='reorganizacion'||tc==='reorganización') s.TIENE_COOP='reorg';
+      else if(tc==='creacion'||tc==='creación') s.TIENE_COOP='creacion';
       else if(tc===''||tc==='no'||tc==='n'||tc==='0') s.TIENE_COOP='no';
     });
 
@@ -1287,7 +1289,7 @@ function renderSchools(){
 
 function renderStats(){
   var e=el('sc-stats');if(!e)return;
-  var tot=ST.schools.length,con=ST.schools.filter(function(s){return s.TIENE_COOP==='si'}).length;
+  var tot=ST.schools.length,con=ST.schools.filter(function(s){var t=s.TIENE_COOP||'';return t==='si'||t==='reorg'||t==='creacion';}).length;
   var sin=ST.schools.filter(function(s){var t=s.TIENE_COOP||''; return !t||t==='no';}).length;
   var kk=ST.schools.filter(function(s){return s.KIOSCO&&(s.KIOSCO.toLowerCase().indexOf('kiosco')>=0)}).length;
   e.innerHTML='<div class="stat"><div class="stat-v">'+tot+'</div><div class="stat-l">Total</div></div>'+
@@ -1324,7 +1326,7 @@ async function saveSM(){
   if(!ST.editSId&&ST.schools.find(function(s){return s.NOMBRE.toLowerCase()===nom.toLowerCase()})){toast('⚠ Ya existe esa escuela');return}
   var t=el('sm-tip').value,n=el('sm-num').value.trim();
   var smOVal=el('sm-otro');if(t==='Otro'&&smOVal&&smOVal.value.trim())t=smOVal.value.trim();
-  var s={ID:ST.editSId||gid(),NOMBRE:nom,NUMERO:n?(t+' '+n):t,LOCALIDAD:el('sm-loc').value,DIRECCION:el('sm-dir').value.trim(),ASESORA_NOMBRE:el('sm-ases-nom').value.trim(),ASESORA_CONTACTO:el('sm-ases-cont').value.trim(),DISTRITAL:(el('sm-distrital')?el('sm-distrital').value.trim():''),ESTATUTO:(el('sm-estatuto')?el('sm-estatuto').value:''),TIENE_COOP:el('sm-tc').value,PERIODO_COOP:el('sm-per').value,ESTADO_PERIODO_COOP:'Vigente',VISITAS:'[]',PERIODOS:'[]',COM_DIRECTIVA:'{}',COM_REVISORA:'{}'};
+  var s={ID:ST.editSId||gid(),NOMBRE:nom,NUMERO:n?(t+' '+n):t,LOCALIDAD:el('sm-loc').value,DIRECCION:el('sm-dir').value.trim(),ASESORA_NOMBRE:el('sm-ases-nom').value.trim(),ASESORA_CONTACTO:el('sm-ases-cont').value.trim(),DISTRITAL:(el('sm-distrital')?el('sm-distrital').value.trim():''),ESTATUTO:(el('sm-estatuto')?el('sm-estatuto').value:''),TIENE_COOP:el('sm-tc').value,PERIODO_COOP:el('sm-per').value,ESTADO_PERIODO_COOP:el('sm-tc').value!=='no'?'Vigente':'',VISITAS:'[]',PERIODOS:'[]',COM_DIRECTIVA:'{}',COM_REVISORA:'{}'};
   if(ST.editSId){var ex=gS(ST.editSId);if(ex)s=Object.assign({},ex,{NOMBRE:s.NOMBRE,NUMERO:s.NUMERO,LOCALIDAD:s.LOCALIDAD,DIRECCION:s.DIRECCION,ASESORA_NOMBRE:s.ASESORA_NOMBRE,ASESORA_CONTACTO:s.ASESORA_CONTACTO,DISTRITAL:s.DISTRITAL,ESTATUTO:s.ESTATUTO,TIENE_COOP:s.TIENE_COOP,PERIODO_COOP:s.PERIODO_COOP})}
   var idx=ST.schools.findIndex(function(x){return x.ID===s.ID});
   if(idx>=0)ST.schools[idx]=s;else ST.schools.push(s);
@@ -1385,6 +1387,17 @@ function backToList(){
 
 function renderDetail(id,tab){
   var s=gS(id);if(!s){backToList();return}
+  // If tab is null, keep the currently active tab
+  if(tab===null||tab===undefined){
+    var activeTab=el('detail-view')&&el('detail-view').querySelector('.tab.on');
+    tab=activeTab?activeTab.textContent.trim().replace(/^[^a-z]*/i,'').toLowerCase():'general';
+    // Map label back to key
+    if(tab.indexOf('general')>=0||tab.indexOf('📋')>=0) tab='general';
+    else if(tab.indexOf('cooper')>=0||tab.indexOf('🤝')>=0) tab='cooperadora';
+    else if(tab.indexOf('comis')>=0||tab.indexOf('👤')>=0) tab='comision';
+    else if(tab.indexOf('visita')>=0||tab.indexOf('📍')>=0) tab='visitas';
+    else tab='general';
+  }
   var e=etiq(s),coord=getCoord(s.LOCALIDAD),cord=getCordLabel(s.LOCALIDAD);
   var ps=pj(s.PERIODOS,[]),vs=pj(s.VISITAS,[]);
   var tabs=['general','cooperadora','comision','visitas'];
@@ -1494,7 +1507,7 @@ function tabGen(s,coord,cord){
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Cooperadora</div>'+
     togRow('¿Tiene cooperadora?','TIENE_COOP',s,[['si','Vigente',''],['creacion','Creación','tb'],['reorg','Reorganización','oa'],['tuvo','Puede solicitar reorganización','oa'],['no','No tiene','or']])+
     '<div class="ff"><label class="fl">Período activo</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+buildPeriodOpts(s.PERIODO_COOP)+'</select></div>'+
-    '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Datos adicionales</div>'+
+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Asesora / Asesor</div>'+
     ff2('Nombre','ASESORA_NOMBRE',s)+
     ff2('Contacto','ASESORA_CONTACTO',s)+
@@ -1530,7 +1543,7 @@ function tabCoop(s,ps){
     '</div>'+
     '<div style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .875rem">Kiosco</div>'+
     '<div class="tgg" style="margin-bottom:.875rem">'+
-      ['No','Kiosco licitado','Kiosco propio'].map(function(v){return '<div class="tg-o'+(k===v?' on':'')+'" onclick="setF(\''+s.ID+'\',\'KIOSCO\',\''+v+'\',this);renderDetail(\''+s.ID+'\',\'cooperadora\')">'+v+'</div>'}).join('')+
+      ['No','Kiosco licitado','Kiosco propio'].map(function(v){return '<div class="tg-o'+(k===v?' on':'')+'" onclick="setF(\''+s.ID+'\',\'KIOSCO\',\''+v+'\').then(function(){renderDetail(\''+s.ID+'\',\'cooperadora\')})">'+v+'</div>'}).join('')+
     '</div>'+
     (k==='Kiosco licitado'?'<div class="fg" style="margin-bottom:.875rem"><div class="ff"><label class="fl">Categoría</label><input class="fi" value="'+esc(s.KIOSCO_CAT||'')+'" onchange="setF(\''+s.ID+'\',\'KIOSCO_CAT\',this.value)"></div><div class="ff"><label class="fl">Vencimiento contrato</label><input class="fi" type="date" value="'+esc(s.KIOSCO_VENC||'')+'" onchange="setF(\''+s.ID+'\',\'KIOSCO_VENC\',this.value)"></div></div>':'')+
     '<div style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .875rem">Presidenta y cuota</div>'+
@@ -1564,13 +1577,13 @@ function tabVis(s,vs){
   return '<div style="max-width:680px">'+
     '<div style="display:flex;justify-content:flex-end;margin-bottom:1rem"><button class="btn btn-p" onclick="openVM(\''+s.ID+'\',null)">+ Nueva visita</button></div>'+
     (!vs.length?'<div class="es"><div class="ei">📍</div><div class="et">Sin visitas registradas</div></div>':
-      [].concat(vs).reverse().map(function(v,ri){var i=vs.length-1-ri;return '<div class="vitem" onclick="openVM(\''+s.ID+'\','+i+')"><div class="vhd"><span class="vtipo">'+esc(v.tipo||'Presencial')+'</span><span class="vdate">'+esc(v.fecha||'')+'</span></div><div class="vdesc">'+esc(v.descripcion||'Sin descripción')+'</div>'+(v.responsable?'<div class="vdate" style="margin-top:.2rem">👤 '+esc(v.responsable)+'</div>':'')+(v.proxAccion?'<div class="vprox">→ '+esc(v.proxAccion)+'</div>':'')+'</div>'}).join(''))+
+      [].concat(vs).reverse().map(function(v,ri){var i=vs.length-1-ri;return '<div class="vitem"><div class="vhd"><span class="vtipo">'+esc(v.tipo||'Presencial')+'</span><span class="vdate">'+esc(v.fecha||'')+'</span><div style="display:flex;gap:.35rem;margin-left:auto"><button class="btn btn-s btn-xs" onclick="openVM(\''+s.ID+'\','+i+')">✏️</button><button class="btn btn-d btn-xs" onclick="delV(\''+s.ID+'\','+i+')">🗑</button></div></div><div class="vdesc" onclick="openVM(\''+s.ID+'\','+i+')">'+esc(v.descripcion||'Sin descripción')+'</div>'+(v.responsable?'<div class="vdate" style="margin-top:.2rem">👤 '+esc(v.responsable)+'</div>':'')+(v.proxAccion?'<div class="vprox">→ '+esc(v.proxAccion)+'</div>':'')+'</div>'}).join(''))+
   '</div>'
 }
 
 function toggleP(i){var b=el('pb'+i);if(b)b.classList.toggle('open')}
 
-async function setF(id,key,val){var s=gS(id);if(!s)return;s[key]=val;var ok=await saveSchoolR(s);if(ok!==false)toast('💾 Guardado');}
+async function setF(id,key,val){var s=gS(id);if(!s)return;s[key]=val;var ok=await saveSchoolR(s);if(ok!==false){toast('💾 Guardado');if(ST.detId===id&&['NOMBRE','LOCALIDAD','NUMERO','TIENE_COOP'].indexOf(key)>=0)renderDetail(id,null);}}
 async function setFT(id,key,val,elem,cls){
   var s=gS(id);if(!s)return;
   var grp=elem.closest('.tgg');
@@ -1597,6 +1610,7 @@ async function setCode(id,part,val){
 function setCD(id,role,field,val){var s=gS(id);if(!s)return;var d=pj(s.COM_DIRECTIVA,{});if(!d[role])d[role]={};d[role][field]=val;s.COM_DIRECTIVA=JSON.stringify(d)}
 function setCR(id,role,field,val){var s=gS(id);if(!s)return;var d=pj(s.COM_REVISORA,{});if(!d[role])d[role]={};d[role][field]=val;s.COM_REVISORA=JSON.stringify(d)}
 async function saveCom(id){var s=gS(id);if(!s)return;await saveSchoolR(s);toast('✅ Comisión guardada')}
+async function delV(id,idx){if(!confirm('¿Eliminar esta visita?'))return;var s=gS(id);if(!s)return;var vs=pj(s.VISITAS,[]);vs.splice(idx,1);s.VISITAS=JSON.stringify(vs);await saveSchoolR(s);renderDetail(id,'visitas');toast('🗑 Visita eliminada');}
 async function delP(id,idx){if(!confirm('¿Eliminar este período?'))return;var s=gS(id);if(!s)return;var ps=pj(s.PERIODOS,[]);ps.splice(idx,1);s.PERIODOS=JSON.stringify(ps);await saveSchoolR(s);renderDetail(id,'cooperadora');toast('🗑 Eliminado')}
 
 // ════════════════════════════════════════════════════════════
@@ -1628,8 +1642,10 @@ function openPM(sid){
 }
 async function savePM(){
   var s=gS(ST.pCtx.id);if(!s)return;
+  var per=el('pm-per').value;
   var ps=pj(s.PERIODOS,[]);
-  ps.push({periodo:el('pm-per').value,estado:el('pm-est').value,fechaAsamblea:el('pm-asam').value,docestado:el('pm-doc').value,notas:el('pm-notas').value});
+  if(per && ps.some(function(p){return p.periodo===per})){toast('⚠ Ese período ya está cargado');return;}
+  ps.push({periodo:per,estado:el('pm-est').value,fechaAsamblea:el('pm-asam').value,docestado:el('pm-doc').value,notas:el('pm-notas').value});
   s.PERIODOS=JSON.stringify(ps);await saveSchoolR(s);closeMov('pm-ov');renderDetail(ST.pCtx.id,'cooperadora');toast('✅ Período agregado');
 }
 
@@ -1917,17 +1933,18 @@ function updPdfPrev(){
     locSummary;
 }
 function genPDF(){
-  if(!window.jspdf){toast('⚠ Cargando jsPDF...');return;}
+  var jsPDFClass = (window.jspdf && window.jspdf.jsPDF) || (window.jsPDF);
+  if(!jsPDFClass){toast('⚠ jsPDF no cargó. Revisá la conexión a internet.');return;}
   var list=getPdfList();
   if(!list.length){toast('⚠ No hay establecimientos con esos filtros');return;}
-  var jsPDF=window.jspdf.jsPDF;
+  var jsPDF=jsPDFClass;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
   var iV=ST.pdf.inc.indexOf('visitas')>=0;
   var iT=ST.pdf.inc.indexOf('tipo')>=0;
   var iP=ST.pdf.inc.indexOf('periodos')>=0;
   var PW=210,PH=297,ML=15,MR=15,y=0;
   function aP(){doc.addPage();y=20;}
-  function chk(n){if(y+n>PH-15)aP();}
+  function chk(n){if(y+n>PH-20)aP();}
 
   doc.setFillColor(13,47,110);
   doc.rect(0,0,PW,20,'F');
@@ -1976,6 +1993,68 @@ function genPDF(){
   doc.text(fLines,ML+22,y+5);
   y+=fH+4;
 
+  // ── RESUMEN POR LOCALIDAD ──────────────────────────────────
+  var locMap={};
+  list.forEach(function(s){
+    var l=s.LOCALIDAD||'Sin localidad';
+    if(!locMap[l]) locMap[l]={total:0,con:0,sin:0,tuvo:0,kiosco:0};
+    locMap[l].total++;
+    var tc=(s.TIENE_COOP||'').toLowerCase();
+    if(tc==='si'||tc==='reorg'||tc==='creacion') locMap[l].con++;
+    else if(tc==='tuvo') locMap[l].tuvo++;
+    else locMap[l].sin++;
+    if(s.KIOSCO&&s.KIOSCO.toLowerCase().indexOf('kiosco')>=0) locMap[l].kiosco++;
+  });
+  var locKeys=Object.keys(locMap).sort(function(a,b){return a.localeCompare(b,'es');});
+  if(locKeys.length>0){
+    // Título sección
+    doc.setFillColor(13,47,110);
+    doc.rect(ML,y,PW-ML-MR,7,'F');
+    doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(8);
+    doc.text('RESUMEN POR LOCALIDAD',ML+3,y+5);
+    y+=9;
+    // Cabecera tabla: Localidad | Total | Con coop. | Sin coop. | Tuvo | Kiosco
+    var cW=[74,16,22,22,18,16];
+    var cX=[ML];
+    for(var ci=0;ci<cW.length-1;ci++) cX.push(cX[ci]+cW[ci]);
+    doc.setFillColor(238,242,251);
+    doc.rect(ML,y,PW-ML-MR,6,'F');
+    doc.setTextColor(13,47,110);doc.setFont('helvetica','bold');doc.setFontSize(7);
+    ['Localidad','Total','Con coop.','Sin coop.','Tuvo','Kiosco'].forEach(function(h,i){
+      doc.text(h,cX[i]+1.5,y+4.3);
+    });
+    y+=6;
+    // Filas de datos
+    doc.setFont('helvetica','normal');
+    locKeys.forEach(function(l,i){
+      if(y+6>PH-20){aP();}
+      doc.setFillColor(i%2===0?249:255,i%2===0?250:255,i%2===0?251:255);
+      doc.rect(ML,y,PW-ML-MR,6,'F');
+      doc.setTextColor(30,30,50);doc.setFontSize(7);
+      var r=locMap[l];
+      var vals=[l.length>40?l.slice(0,40)+'...':l,String(r.total),String(r.con),String(r.sin),r.tuvo>0?String(r.tuvo):'—',r.kiosco>0?String(r.kiosco):'—'];
+      vals.forEach(function(v,i){doc.text(v,cX[i]+1.5,y+4.3);});
+      y+=6;
+    });
+    // Fila TOTAL
+    var tCon=list.filter(function(s){var t=(s.TIENE_COOP||'').toLowerCase();return t==='si'||t==='reorg'||t==='creacion';}).length;
+    var tSin=list.filter(function(s){var t=(s.TIENE_COOP||'').toLowerCase();return !t||t==='no';}).length;
+    var tTuvo=list.filter(function(s){return (s.TIENE_COOP||'').toLowerCase()==='tuvo';}).length;
+    var tKio=list.filter(function(s){return s.KIOSCO&&s.KIOSCO.toLowerCase().indexOf('kiosco')>=0;}).length;
+    doc.setFillColor(13,47,110);
+    doc.rect(ML,y,PW-ML-MR,6,'F');
+    doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.setFontSize(7);
+    [' TOTAL',String(list.length),String(tCon),String(tSin),tTuvo>0?String(tTuvo):'—',tKio>0?String(tKio):'—'].forEach(function(v,i){doc.text(v,cX[i]+1.5,y+4.3);});
+    y+=12;
+  }
+
+  // ── DETALLE DE ESTABLECIMIENTOS ───────────────────────────
+  doc.setFillColor(13,47,110);
+  doc.rect(ML,y,PW-ML-MR,7,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(8);
+  doc.text('DETALLE DE ESTABLECIMIENTOS',ML+3,y+5);
+  y+=11;
+
   list.forEach(function(s){
     var e2=etiq(s),coord=getCoord(s.LOCALIDAD);
     var vs=pj(s.VISITAS,[]),ps=pj(s.PERIODOS,[]);
@@ -2022,129 +2101,6 @@ function genPDF(){
 }
 
 
-function updPdfPrev(){
-  var e=el('pdf-prev');if(!e)return;
-  var list=getPdfList();
-  var total=ST.schools.length;
-
-  // Build localidades summary
-  var locSummary='';
-  if(ST.pdf.locs.length>0){
-    var locCounts={};
-    list.forEach(function(s){
-      var l=s.LOCALIDAD||'Sin localidad';
-      locCounts[l]=(locCounts[l]||0)+1;
-    });
-    var locParts=Object.keys(locCounts).sort().map(function(l){
-      return l+': '+locCounts[l];
-    });
-    if(locParts.length<=6) locSummary='<div style="margin-top:.375rem;font-size:.73rem;opacity:.8">'+locParts.join(' &nbsp;·&nbsp; ')+'</div>';
-    else locSummary='<div style="margin-top:.375rem;font-size:.73rem;opacity:.8">'+locParts.slice(0,6).join(' &nbsp;·&nbsp; ')+' y '+(locParts.length-6)+' más...</div>';
-  }
-
-  var estLabels={con:'Con coop.',sin:'Sin coop.',tuvo:'Que tuvieron'};
-  e.innerHTML='<strong>📋 '+list.length+' de '+total+' establecimiento'+(total!==1?'s':'')+' seleccionados</strong>'+
-    '<br><span style="font-size:.78rem;opacity:.85">Estado: '+ST.pdf.est.map(function(v){return estLabels[v]||v}).join(', ')+
-    ' · Kiosco: '+(ST.pdf.k.join(', ')||'—')+
-    ' · Banco: '+(ST.pdf.banco.join(', ')||'—')+
-    ' · Localidades: '+(ST.pdf.locs.length===0?'Todas':ST.pdf.locs.length+' sel.')+'</span>'+
-    locSummary;
-}
-function genPDF(){
-  if(!window.jspdf){toast('⚠ Cargando jsPDF...');return}
-  var jsPDF=window.jspdf.jsPDF,doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
-  var list=getPdfList(),iV=ST.pdf.inc.indexOf('visitas')>=0,iT=ST.pdf.inc.indexOf('tipo')>=0,iP=ST.pdf.inc.indexOf('periodos')>=0;
-  var PW=210,PH=297,ML=15,y=0;
-  function aP(){doc.addPage();y=20}function chk(n){if(y+n>PH-15)aP()}
-  doc.setFillColor(13,47,110);doc.rect(0,0,PW,16,'F');
-  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(11);
-  doc.text('CONSEJO ESCOLAR DE LA MATANZA',ML,10);
-  doc.setFontSize(8);doc.setFont('helvetica','normal');
-  doc.text('Comisión de Cooperadoras Escolares · Franco Torales',ML,15);
-  y=24;
-  doc.setTextColor(13,47,110);doc.setFont('helvetica','bold');doc.setFontSize(14);
-  doc.text('Informe de Cooperadoras Escolares',ML,y);y+=6;
-  doc.setTextColor(100,100,100);doc.setFont('helvetica','normal');doc.setFontSize(8);
-  doc.text('Generado: '+new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'})+' — '+list.length+' establecimiento'+(list.length!==1?'s':''),ML,y);y+=5;
-  doc.setFillColor(238,242,251);doc.roundedRect(ML,y,PW-ML*2,12,2,2,'F');
-  doc.setTextColor(13,47,110);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
-  doc.text('FILTROS:',ML+2,y+5);doc.setFont('helvetica','normal');doc.setTextColor(60,60,60);
-  var ft='Estado: '+ST.pdf.est.join(', ')+' | Kiosco: '+ST.pdf.k.join(', ')+' | Banco: '+ST.pdf.banco.join(', ')+' | Loc: '+(ST.pdf.locs.length===LOCS.length?'Todas':ST.pdf.locs.length+' sel.');
-  doc.text(doc.splitTextToSize(ft,PW-ML*2-28),ML+28,y+5);y+=16;
-
-  // ── RESUMEN POR LOCALIDAD ──
-  var locMap={};
-  list.forEach(function(s){
-    var l=s.LOCALIDAD||'Sin localidad';
-    if(!locMap[l]) locMap[l]={total:0,con:0,sin:0,kiosco:0};
-    locMap[l].total++;
-    if(s.TIENE_COOP==='si') locMap[l].con++;
-    else if(s.TIENE_COOP==='no') locMap[l].sin++;
-    if(s.KIOSCO&&s.KIOSCO.toLowerCase().indexOf('kiosco')>=0) locMap[l].kiosco++;
-  });
-  var locKeys=Object.keys(locMap).sort();
-  if(locKeys.length>0 && locKeys.length<=30){
-    chk(20+locKeys.length*7+10);
-    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(13,47,110);
-    doc.text('Resumen por localidad',ML,y);y+=5;
-    // Table header
-    doc.setFillColor(13,47,110);doc.rect(ML,y,PW-ML-MR,6,'F');
-    doc.setTextColor(255,255,255);doc.setFontSize(7.5);doc.setFont('helvetica','bold');
-    doc.text('Localidad',ML+2,y+4);
-    doc.text('Total',ML+90,y+4);doc.text('Con coop.',ML+110,y+4);doc.text('Sin coop.',ML+135,y+4);doc.text('Kiosco',ML+160,y+4);
-    y+=6;
-    locKeys.forEach(function(l,i){
-      var r=locMap[l];
-      doc.setFillColor(i%2===0?249:255,i%2===0?250:255,i%2===0?251:255);
-      doc.rect(ML,y,PW-ML-MR,6,'F');
-      doc.setTextColor(30,30,50);doc.setFont('helvetica','normal');doc.setFontSize(7.5);
-      doc.text(l.length>40?l.slice(0,40)+'...':l,ML+2,y+4);
-      doc.text(String(r.total),ML+90,y+4);
-      doc.text(String(r.con),ML+110,y+4);
-      doc.text(String(r.sin),ML+135,y+4);
-      doc.text(r.kiosco>0?String(r.kiosco):'—',ML+160,y+4);
-      y+=6;
-    });
-    // Total row
-    var totCon=list.filter(function(s){return s.TIENE_COOP==='si'}).length;
-    var totSin=list.filter(function(s){return s.TIENE_COOP==='no'}).length;
-    var totK=list.filter(function(s){return s.KIOSCO&&s.KIOSCO.toLowerCase().indexOf('kiosco')>=0}).length;
-    doc.setFillColor(238,242,251);doc.rect(ML,y,PW-ML-MR,6,'F');
-    doc.setFont('helvetica','bold');doc.setTextColor(13,47,110);doc.setFontSize(7.5);
-    doc.text('TOTAL',ML+2,y+4);
-    doc.text(String(list.length),ML+90,y+4);
-    doc.text(String(totCon),ML+110,y+4);
-    doc.text(String(totSin),ML+135,y+4);
-    doc.text(totK>0?String(totK):'—',ML+160,y+4);
-    y+=10;
-  }
-
-  list.forEach(function(s){
-    var e2=etiq(s),coord=getCoord(s.LOCALIDAD),vs=pj(s.VISITAS,[]),ps=pj(s.PERIODOS,[]);
-    var rh=20+(iT?4:0)+(iP?ps.length*4.5:0)+(iV?Math.min(vs.length,3)*5:0)+3;
-    chk(rh);
-    doc.setFillColor(249,250,251);doc.roundedRect(ML,y,PW-ML*2,rh-2,2,2,'F');
-    doc.setDrawColor(220,220,220);doc.roundedRect(ML,y,PW-ML*2,rh-2,2,2,'S');
-    doc.setTextColor(20,20,40);doc.setFont('helvetica','bold');doc.setFontSize(9.5);
-    doc.text(s.NOMBRE||'Sin nombre',ML+3,y+6);
-    doc.setFont('helvetica','normal');doc.setFontSize(7.5);doc.setTextColor(100,100,100);
-    doc.text((s.NUMERO||'—')+' | '+(s.LOCALIDAD||'—')+' | '+coord+' | '+e2.l,ML+3,y+11);
-    doc.text('Presidenta: '+(s.PRES_NOMBRE||'—')+(s.PRES_CONTACTO?' ('+s.PRES_CONTACTO+')':''),ML+3,y+15.5);
-    var ry=y+20;
-    if(iT){doc.setTextColor(70,70,120);doc.setFontSize(7);doc.text('Tipo: '+(s.TIPO_COOP||'—')+' | Doc: '+(s.DOC_ESTADO||'—'),ML+4,ry);ry+=4.5}
-    if(iP)ps.forEach(function(p){doc.setTextColor(60,80,140);doc.setFontSize(7);doc.text('  '+pLabel(p.periodo)+' — '+(p.estado||'—')+' — '+(p.docestado||'sin doc'),ML+4,ry);ry+=4.5});
-    if(iV)vs.slice(-3).forEach(function(v){doc.setTextColor(80,80,80);doc.setFontSize(6.5);doc.text('  '+(v.fecha||'—')+' ['+(v.tipo||'—')+'] '+(v.descripcion||'').slice(0,65),ML+4,ry);ry+=5});
-    y+=rh;
-  });
-  var pages=doc.getNumberOfPages();
-  for(var i=1;i<=pages;i++){doc.setPage(i);doc.setFontSize(7);doc.setTextColor(160,160,160);doc.text('Consejo Escolar La Matanza · Cooperadoras · Pág. '+i+'/'+pages,ML,PH-8)}
-  doc.save('cooperadoras_'+new Date().toISOString().slice(0,10)+'.pdf');
-  toast('📄 PDF generado');
-}
-
-// ════════════════════════════════════════════════════════════
-// USUARIOS
-// ════════════════════════════════════════════════════════════
 function getUsers(){
   // Priority: 1) ST.users from Sheets, 2) localStorage, 3) hardcoded defaults
   if(ST.users && ST.users.length) return ST.users;
@@ -2297,8 +2253,8 @@ function loadSample(){
   if(ST.schools.length>0)return;
   var cur=periodoActual();
   ST.schools=[
-    {ID:'d1',NOMBRE:'Escuela Primaria Nº 12 Dr. Juan B. Alberdi',NUMERO:'EP 12',LOCALIDAD:'San Justo',DIRECCION:'Av. Rivadavia 1234',TIENE_COOP:'si',PERIODO_COOP:cur,ESTADO_PERIODO_COOP:'Vigente',DOC_ESTADO:'Con reconocimiento oficial DGCyE',TIPO_COOP:'Activa',KIOSCO:'Kiosco licitado',KIOSCO_CAT:'A',KIOSCO_VENC:'2025-12-31',BANCO:'con',PRES_NOMBRE:'María García',PRES_CONTACTO:'11-2345-6789',FECHA_ASAMBLEA:new Date(Date.now()+5*864e5).toISOString().slice(0,10),ESTADO_ASAMBLEA:'pendiente',CUIT:'30-12345678-9',VISITAS:JSON.stringify([{fecha:'2025-03-01',tipo:'Presencial',responsable:'Eze',descripcion:'Reunión con comisión directiva.',proxAccion:'Revisar documentos'}]),PERIODOS:JSON.stringify([{periodo:cur,estado:'Vigente',docestado:'Con reconocimiento oficial DGCyE',fechaAsamblea:'2025-05-20'}]),COM_DIRECTIVA:'{}',COM_REVISORA:'{}'},
-    {ID:'d2',NOMBRE:'Jardín de Infantes Nº 904',NUMERO:'JI 904',LOCALIDAD:'Ramos Mejía',DIRECCION:'Mitre 567',TIENE_COOP:'si',PERIODO_COOP:cur,ESTADO_PERIODO_COOP:'Vigente',DOC_ESTADO:'PIA firmada',TIPO_COOP:'Administrativa',KIOSCO:'No',BANCO:'sin',PRES_NOMBRE:'Ana López',PRES_CONTACTO:'11-9876-5432',FECHA_ASAMBLEA:'',ESTADO_ASAMBLEA:'pendiente',VISITAS:'[]',PERIODOS:JSON.stringify([{periodo:cur,estado:'Vigente',docestado:'PIA firmada'}]),COM_DIRECTIVA:'{}',COM_REVISORA:'{}'},
+    {ID:'d1',NOMBRE:'Escuela Primaria Nº 12 Dr. Juan B. Alberdi',NUMERO:'EP 12',LOCALIDAD:'San Justo',DIRECCION:'Av. Rivadavia 1234',TIENE_COOP:'si',PERIODO_COOP:cur,ESTADO_PERIODO_COOP:el('sm-tc').value!=='no'?'Vigente':'',DOC_ESTADO:'Con reconocimiento oficial DGCyE',TIPO_COOP:'Activa',KIOSCO:'Kiosco licitado',KIOSCO_CAT:'A',KIOSCO_VENC:'2025-12-31',BANCO:'con',PRES_NOMBRE:'María García',PRES_CONTACTO:'11-2345-6789',FECHA_ASAMBLEA:new Date(Date.now()+5*864e5).toISOString().slice(0,10),ESTADO_ASAMBLEA:'pendiente',CUIT:'30-12345678-9',VISITAS:JSON.stringify([{fecha:'2025-03-01',tipo:'Presencial',responsable:'Eze',descripcion:'Reunión con comisión directiva.',proxAccion:'Revisar documentos'}]),PERIODOS:JSON.stringify([{periodo:cur,estado:'Vigente',docestado:'Con reconocimiento oficial DGCyE',fechaAsamblea:'2025-05-20'}]),COM_DIRECTIVA:'{}',COM_REVISORA:'{}'},
+    {ID:'d2',NOMBRE:'Jardín de Infantes Nº 904',NUMERO:'JI 904',LOCALIDAD:'Ramos Mejía',DIRECCION:'Mitre 567',TIENE_COOP:'si',PERIODO_COOP:cur,ESTADO_PERIODO_COOP:el('sm-tc').value!=='no'?'Vigente':'',DOC_ESTADO:'PIA firmada',TIPO_COOP:'Administrativa',KIOSCO:'No',BANCO:'sin',PRES_NOMBRE:'Ana López',PRES_CONTACTO:'11-9876-5432',FECHA_ASAMBLEA:'',ESTADO_ASAMBLEA:'pendiente',VISITAS:'[]',PERIODOS:JSON.stringify([{periodo:cur,estado:'Vigente',docestado:'PIA firmada'}]),COM_DIRECTIVA:'{}',COM_REVISORA:'{}'},
     {ID:'d3',NOMBRE:'Escuela Secundaria Nº 32',NUMERO:'ES 32',LOCALIDAD:'Isidro Casanova',DIRECCION:'San Lorenzo 890',TIENE_COOP:'no',PERIODO_COOP:'',VISITAS:'[]',PERIODOS:'[]',COM_DIRECTIVA:'{}',COM_REVISORA:'{}'},
     {ID:'d4',NOMBRE:'CENS Nº 453',NUMERO:'CENS 453',LOCALIDAD:'González Catán',DIRECCION:'Belgrano 123',TIENE_COOP:'tuvo',PERIODO_COOP:'',ULTIMA_COOP:'2022',VISITAS:'[]',PERIODOS:JSON.stringify([{periodo:'2021-2022',estado:'Vencida',docestado:''}]),COM_DIRECTIVA:'{}',COM_REVISORA:'{}'},
     {ID:'d5',NOMBRE:'Escuela Técnica Nº 8 "Gral. Manuel Belgrano"',NUMERO:'ET 8',LOCALIDAD:'La Tablada',DIRECCION:'Av. General Paz 2222',TIENE_COOP:'si',PERIODO_COOP:cur,DOC_ESTADO:'',TIPO_COOP:'✌️',KIOSCO:'Kiosco propio',BANCO:'con',PRES_NOMBRE:'Claudia Fernández',FECHA_ASAMBLEA:new Date().toISOString().slice(0,10),ESTADO_ASAMBLEA:'pendiente',VISITAS:'[]',PERIODOS:JSON.stringify([{periodo:'2022-2023',estado:'Vencida',docestado:''},{periodo:'2023-2024',estado:'Vencida',docestado:''},{periodo:cur,estado:'Vigente',docestado:''}]),COM_DIRECTIVA:'{}',COM_REVISORA:'{}'},
