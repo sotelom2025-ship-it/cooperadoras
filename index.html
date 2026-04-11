@@ -946,7 +946,7 @@ async function loadData(){
         var vs=schoolsMap[vKey]||schoolsByNum[vKey.toUpperCase()]||schoolsByNum[vKey.replace(/\s+/g,'').toUpperCase()];
         if(vs) vKey=vs.ID;
         if(!visitasMap[vKey])visitasMap[vKey]=[];
-        visitasMap[v.ID_ESCUELA].push({
+        visitasMap[vKey].push({
           fecha:v.FECHA||'',tipo:v.TIPO||'',responsable:v.RESPONSABLE||'',
           descripcion:v.DESCRIPCION||'',proxAccion:v.PROX_ACCION||'',
           fechaSeguimiento:v.FECHA_SEGUIMIENTO||'',_id:v.ID||''
@@ -965,7 +965,7 @@ async function loadData(){
         var ps2=schoolsMap[pKey]||schoolsByNum[pKey.toUpperCase()]||schoolsByNum[pKey.replace(/\s+/g,'').toUpperCase()];
         if(ps2) pKey=ps2.ID;
         if(!periodosMap[pKey])periodosMap[pKey]=[];
-        periodosMap[p.ID_ESCUELA].push({
+        periodosMap[pKey].push({
           periodo:p.PERIODO||'',estado:p.ESTADO||'',
           fechaAsamblea:p.FECHA_ASAMBLEA||'',docestado:p.DOC_ESTADO||'',
           notas:p.NOTAS||'',_id:p.ID||''
@@ -1090,7 +1090,6 @@ async function saveSchoolR(s){
       CUIT:s.CUIT||'',SITUACION_CUIT:s.SITUACION_CUIT||'',
       BANCO:s.BANCO||'',CUENTA:s.CUENTA||'',SUCURSAL:s.SUCURSAL||'',
       CODIGO_OTRO:s.CODIGO_OTRO||'',
-      ESPECIALIDADES:s.ESPECIALIDADES||'[]',
       ESPECIALIDADES:s.ESPECIALIDADES||'[]'
     };
     // Save cooperadora data
@@ -1326,7 +1325,7 @@ async function saveSM(){
   var t=el('sm-tip').value,n=el('sm-num').value.trim();
   var smOVal=el('sm-otro');if(t==='Otro'&&smOVal&&smOVal.value.trim())t=smOVal.value.trim();
   var s={ID:ST.editSId||gid(),NOMBRE:nom,NUMERO:n?(t+' '+n):t,LOCALIDAD:el('sm-loc').value,DIRECCION:el('sm-dir').value.trim(),ASESORA_NOMBRE:el('sm-ases-nom').value.trim(),ASESORA_CONTACTO:el('sm-ases-cont').value.trim(),DISTRITAL:(el('sm-distrital')?el('sm-distrital').value.trim():''),ESTATUTO:(el('sm-estatuto')?el('sm-estatuto').value:''),TIENE_COOP:el('sm-tc').value,PERIODO_COOP:el('sm-per').value,ESTADO_PERIODO_COOP:'Vigente',VISITAS:'[]',PERIODOS:'[]',COM_DIRECTIVA:'{}',COM_REVISORA:'{}'};
-  if(ST.editSId){var ex=gS(ST.editSId);if(ex)s=Object.assign({},ex,{NOMBRE:s.NOMBRE,NUMERO:s.NUMERO,LOCALIDAD:s.LOCALIDAD,DIRECCION:s.DIRECCION,TIENE_COOP:s.TIENE_COOP,PERIODO_COOP:s.PERIODO_COOP})}
+  if(ST.editSId){var ex=gS(ST.editSId);if(ex)s=Object.assign({},ex,{NOMBRE:s.NOMBRE,NUMERO:s.NUMERO,LOCALIDAD:s.LOCALIDAD,DIRECCION:s.DIRECCION,ASESORA_NOMBRE:s.ASESORA_NOMBRE,ASESORA_CONTACTO:s.ASESORA_CONTACTO,DISTRITAL:s.DISTRITAL,ESTATUTO:s.ESTATUTO,TIENE_COOP:s.TIENE_COOP,PERIODO_COOP:s.PERIODO_COOP})}
   var idx=ST.schools.findIndex(function(x){return x.ID===s.ID});
   if(idx>=0)ST.schools[idx]=s;else ST.schools.push(s);
   await saveSchoolR(s);closeMov('sm-ov');renderSchools();renderStats();toast('✅ Escuela guardada');
@@ -1710,12 +1709,12 @@ async function iniciarNuevoPeriodo() {
   });
 
   if (!afectadas.length) {
-    toast('✓ Todas las escuelas ya están en el período ' + periodoLabel(curPeriod));
+    toast('✓ Todas las escuelas ya están en el período ' + pLabel(curPeriod));
     return;
   }
 
   var msg = [
-    '\u00bfIniciar nuevo per\u00edodo ' + periodoLabel(curPeriod) + '?',
+    '\u00bfIniciar nuevo per\u00edodo ' + pLabel(curPeriod) + '?',
     '',
     'Esto va a:',
     '\u2022 Actualizar ' + afectadas.length + ' escuela(s) al per\u00edodo actual',
@@ -1758,7 +1757,7 @@ async function iniciarNuevoPeriodo() {
   if (errores > 0) {
     toast('⚠ Período iniciado con ' + errores + ' errores de guardado');
   } else {
-    toast('✅ Nuevo período ' + periodoLabel(curPeriod) + ' iniciado para ' + afectadas.length + ' escuela(s)');
+    toast('✅ Nuevo período ' + pLabel(curPeriod) + ' iniciado para ' + afectadas.length + ' escuela(s)');
   }
 
   el('nuevo-periodo-wrap').style.display = 'none';
@@ -1802,6 +1801,7 @@ function renderAsam(){
       items.map(function(s){
         var coord=getCoord(s.LOCALIDAD),dd=s.FECHA_ASAMBLEA?ddiff(s.FECHA_ASAMBLEA):null;
         var badge=dd===null?'<span class="dbadge dn">Sin fecha</span>':dd===0?'<span class="dbadge dt">¡HOY!</span>':dd>0?'<span class="dbadge df">en '+dd+' día'+(dd!==1?'s':'')+'</span>':'<span class="dbadge dp">hace '+Math.abs(dd)+' día'+(Math.abs(dd)!==1?'s':'')+'</span>';
+        var e2=etiq(s);
         return '<div class="aitem" onclick="goToAsam(\''+s.ID+'\')"><div class="sc-av" style="width:36px;height:36px;font-size:.65rem">'+esc(s.NUMERO||'?')+'</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(s.NOMBRE||'—')+'<span class="tag '+e2.c+'" style="font-size:.65rem;margin-left:.4rem;">'+e2.i+' '+e2.l+'</span></div><div style="font-size:.72rem;color:var(--muted)">'+esc(s.LOCALIDAD||'—')+' · '+esc(coord)+'</div></div>'+badge+'</div>'
       }).join('');
   }
