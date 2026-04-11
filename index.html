@@ -501,7 +501,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           <button class="fp on" data-f="all" onclick="setSF('all')">Todas</button>
           <button class="fp" data-f="aldia" onclick="setSF('aldia')">🟢 Al día</button>
           <button class="fp" data-f="vigente" onclick="setSF('vigente')">🔵 Vigente</button>
-          <button class="fp" data-f="sinactiva" onclick="setSF('sinactiva')">⚠️ Sin activa</button>
+          <button class="fp" data-f="sinactiva" onclick="setSF('sinactiva')">📋 Debe doc.</button>
           <button class="fp" data-f="nuncatuvo" onclick="setSF('nuncatuvo')">🔴 Nunca tuvo</button>
         </div>
         <div id="filter-summary" style="display:none;background:var(--navy3);border-radius:var(--rs);padding:.5rem .875rem;font-size:.78rem;color:var(--navy);margin-bottom:.5rem;line-height:1.8;font-weight:500"></div>
@@ -542,17 +542,17 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
             <div>
               <div style="font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.375rem">Con cooperadora</div>
               <div class="ptgg">
-                <button class="tg-o tpdf-group on" id="pest-concoop" onclick="tpdfGroup('concoop')" style="font-weight:700">Todas con cooperadora</button>
-                <button class="tg-o on" data-g="est" data-v="aldia" id="pest-aldia" onclick="tpdfSub(this,'concoop')">🟢 Al día</button>
-                <button class="tg-o on" data-g="est" data-v="vigente" id="pest-vigente" onclick="tpdfSub(this,'concoop')">🔵 Vigente</button>
+                <button class="tg-o tpdf-group on" id="pest-concoop" onclick="tpdfGroup('concoop')" style="font-weight:700">Establecimientos con cooperadora</button>
+                <button class="tg-o on" data-g="est" data-v="aldia" id="pest-aldia" onclick="tpdfSub(this,'concoop')">🟢 Cooperadora al día</button>
+                <button class="tg-o on" data-g="est" data-v="vigente" id="pest-vigente" onclick="tpdfSub(this,'concoop')">🔵 Cooperadora vigente</button>
               </div>
             </div>
             <div>
               <div style="font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.375rem">Sin cooperadora</div>
               <div class="ptgg">
-                <button class="tg-o tpdf-group on" id="pest-sincoop" onclick="tpdfGroup('sincoop')" style="font-weight:700">Todas sin cooperadora</button>
-                <button class="tg-o on" data-g="est" data-v="sinactiva" id="pest-sinactiva" onclick="tpdfSub(this,'sincoop')">⚠️ Sin activa</button>
-                <button class="tg-o on" data-g="est" data-v="nuncatuvo" id="pest-nuncatuvo" onclick="tpdfSub(this,'sincoop')">🔴 Nunca tuvo</button>
+                <button class="tg-o tpdf-group on" id="pest-sincoop" onclick="tpdfGroup('sincoop')" style="font-weight:700">Sin cooperadora (total)</button>
+                <button class="tg-o on" data-g="est" data-v="sinactiva" id="pest-sinactiva" onclick="tpdfSub(this,'sincoop')">📋 Debe documentación</button>
+                <button class="tg-o on" data-g="est" data-v="nuncatuvo" id="pest-nuncatuvo" onclick="tpdfSub(this,'sincoop')">🔴 Nunca tuvo cooperadora</button>
               </div>
             </div>
           </div>
@@ -620,7 +620,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     <div class="ff"><label class="fl">Distrital</label><select class="fs" id="sm-distrital"><option value="">— Sin distrital —</option><option value="Distrital 1">Distrital 1</option><option value="Distrital 2">Distrital 2</option><option value="Distrital 3">Distrital 3</option></select></div>
     <div class="ff"><label class="fl">Nombre asesora/or</label><input class="fi" id="sm-ases-nom" placeholder="Nombre completo"></div>
     <div class="ff"><label class="fl">Contacto asesora/or</label><input class="fi" id="sm-ases-cont" placeholder="Teléfono o email"></div>
-    <div class="ff"><label class="fl">Estado cooperadora</label><select class="fs" id="sm-tc"><option value="si">Con cooperadora</option><option value="tuvo">Sin cooperadora activa</option><option value="no">Nunca tuvo cooperadora</option></select></div>
+    <div class="ff"><label class="fl">Estado cooperadora</label><select class="fs" id="sm-tc"><option value="si">Con cooperadora</option><option value="tuvo">Debe documentación</option><option value="no">Nunca tuvo cooperadora</option></select></div>
     <div class="ff"><label class="fl">Período activo</label><select class="fs" id="sm-per"></select></div>
     <div class="ff"><label class="fl">Estatuto</label><select class="fs" id="sm-estatuto"><option value="">— Sin información —</option><option value="Estatuto actualizado">Estatuto actualizado</option><option value="Estatuto viejo">Estatuto viejo</option><option value="Sin estatuto">Sin estatuto</option></select></div>
   </div></div>
@@ -750,39 +750,43 @@ function parseDate(ds){
 function ddiff(ds){if(!ds)return null;var d=parseDate(ds),n=new Date();if(!d||isNaN(d))return null;d.setHours(0,0,0,0);n.setHours(0,0,0,0);return Math.round((d-n)/86400000)}
 // ── ETIQUETAS ─────────────────────────────────────────────
 // Etiqueta 1: Cooperadora Al día      → tiene coop (si) Y último período tiene doc aprobada
-// Etiqueta 2: Cooperadora Vigente     → tiene coop (si) Y debe menos de 3 períodos sin doc
-// Etiqueta 3: Sin cooperadora activa  → tuvo coop pero debe 3+ períodos, o marcada 'tuvo'
-// Etiqueta 4: Nunca tuvo cooperadora  → nunca tuvo (no / vacío)
+// Etiqueta 2: Cooperadora Vigente     → tiene coop (si), último período SIN doc pero debe menos de 3 períodos consecutivos sin doc
+// Etiqueta 3: Debe documentación      → tiene coop (si) pero debe 3 o más períodos consecutivos sin documentación (desde el más reciente)
+// Etiqueta 4: Nunca tuvo cooperadora  → nunca tuvo (no / vacío) O marcada como 'tuvo'
+// ─────────────────────────────────────────────────────────
+// En informes:
+//   "Establecimientos con cooperadora" = Al día + Vigente
+//   "Cooperadora al día"               = solo Al día
+//   "Cooperadora vigente"              = solo Vigente
+//   "Sin cooperadora"                  = Debe documentación + Nunca tuvo
 function etiq(s){
   var t = (s.TIENE_COOP||'').toLowerCase().trim();
 
-  // Nunca tuvo cooperadora
-  if(t==='' || t==='no') return {l:'Nunca tuvo cooperadora',c:'tr',i:'🔴'};
-
-  // Sin cooperadora activa (marcada manualmente como que tuvo)
-  if(t==='tuvo') return {l:'Sin cooperadora activa',c:'ta',i:'⚠️'};
+  // Nunca tuvo cooperadora (incluye 'tuvo' — sin cooperadora activa)
+  if(t==='' || t==='no' || t==='tuvo') return {l:'Nunca tuvo cooperadora',c:'tr',i:'🔴'};
 
   // Tiene cooperadora activa (si) — evaluar estado por períodos
   var ps = pj(s.PERIODOS,[]);
 
-  // Sin períodos cargados aún
+  // Sin períodos cargados aún → Vigente por defecto
   if(!ps.length) return {l:'Cooperadora Vigente',c:'tb',i:'🔵'};
 
   var last = ps[ps.length-1];
-  // Calcular cuántos períodos seguidos sin documentación tiene (desde el más reciente)
+
+  // Calcular cuántos períodos seguidos sin documentación tiene (desde el más reciente hacia atrás)
   var sinDoc = 0;
   for(var i = ps.length-1; i >= 0; i--){
     if(!ps[i].docestado || ps[i].docestado==='') sinDoc++;
     else break; // se interrumpe en cuanto hay doc presentada
   }
 
-  // Sin cooperadora activa: debe 3 o más períodos consecutivos sin documentación
-  if(sinDoc >= 3) return {l:'Sin cooperadora activa',c:'ta',i:'⚠️'};
-
   // Cooperadora Al día: último período tiene documentación aprobada
   if(last.docestado && last.docestado!=='') return {l:'Cooperadora Al día',c:'tg',i:'🟢'};
 
-  // Cooperadora Vigente: debe menos de 3 períodos
+  // Debe documentación: debe 3 o más períodos consecutivos sin documentación
+  if(sinDoc >= 3) return {l:'Debe documentación',c:'ta',i:'📋'};
+
+  // Cooperadora Vigente: debe menos de 3 períodos sin doc
   return {l:'Cooperadora Vigente',c:'tb',i:'🔵'};
 }
 function toast(msg){var t=el('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2800)}
@@ -1259,7 +1263,7 @@ function renderSchools(){
     if(fk){var h=s.KIOSCO&&(s.KIOSCO.toLowerCase().indexOf('kiosco')>=0);if(fk==='con'&&!h)return false;if(fk==='sin'&&h)return false;}
     return true;
   });
-  if(ST.sf!=='all'){list=list.filter(function(s){var lbl=etiq(s).l;if(ST.sf==='aldia')return lbl==='Cooperadora Al día';if(ST.sf==='vigente')return lbl==='Cooperadora Vigente';if(ST.sf==='sinactiva')return lbl==='Sin cooperadora activa';if(ST.sf==='nuncatuvo')return lbl==='Nunca tuvo cooperadora';if(ST.sf==='sincoop')return lbl==='Sin cooperadora activa'||lbl==='Nunca tuvo cooperadora';return true})}
+  if(ST.sf!=='all'){list=list.filter(function(s){var lbl=etiq(s).l;if(ST.sf==='aldia')return lbl==='Cooperadora Al día';if(ST.sf==='vigente')return lbl==='Cooperadora Vigente';if(ST.sf==='sinactiva')return lbl==='Debe documentación';if(ST.sf==='nuncatuvo')return lbl==='Nunca tuvo cooperadora';if(ST.sf==='sincoop')return lbl==='Debe documentación'||lbl==='Nunca tuvo cooperadora';return true})}
 
   list.sort(function(a,b){
     var ca=splitCode(a.NUMERO||''), cb=splitCode(b.NUMERO||'');
@@ -1284,14 +1288,14 @@ function renderSchools(){
     if(hasFilter && list.length>0){
       var fAldia=list.filter(function(s){return etiq(s).l==='Cooperadora Al día';}).length;
       var fVigente=list.filter(function(s){return etiq(s).l==='Cooperadora Vigente';}).length;
-      var fSinActiva=list.filter(function(s){return etiq(s).l==='Sin cooperadora activa';}).length;
+      var fDebeDoc=list.filter(function(s){return etiq(s).l==='Debe documentación';}).length;
       var fNunca=list.filter(function(s){return etiq(s).l==='Nunca tuvo cooperadora';}).length;
       var fKiosk=list.filter(function(s){return s.KIOSCO&&s.KIOSCO.toLowerCase().indexOf('kiosco')>=0}).length;
       var fBanco=list.filter(function(s){return s.BANCO==='con'}).length;
       var parts=['<strong>'+list.length+' resultado'+(list.length!==1?'s':'')+'</strong>'];
       if(fAldia) parts.push('🟢 Al día: '+fAldia);
       if(fVigente) parts.push('🔵 Vigente: '+fVigente);
-      if(fSinActiva) parts.push('⚠️ Sin activa: '+fSinActiva);
+      if(fDebeDoc) parts.push('📋 Debe doc.: '+fDebeDoc);
       if(fNunca) parts.push('🔴 Nunca tuvo: '+fNunca);
       if(fKiosk) parts.push('🏪 Con kiosco: '+fKiosk);
       if(fBanco) parts.push('🏦 Con banco: '+fBanco);
@@ -1323,15 +1327,15 @@ function renderStats(){
   var alDia=ST.schools.filter(function(s){return etiq(s).l==='Cooperadora Al día';}).length;
   var vigente=ST.schools.filter(function(s){return etiq(s).l==='Cooperadora Vigente';}).length;
   var conCoop=alDia+vigente;
-  var sinActiva=ST.schools.filter(function(s){return etiq(s).l==='Sin cooperadora activa';}).length;
+  var debeDoc=ST.schools.filter(function(s){return etiq(s).l==='Debe documentación';}).length;
   var nuncaTuvo=ST.schools.filter(function(s){return etiq(s).l==='Nunca tuvo cooperadora';}).length;
-  var sinTotal=sinActiva+nuncaTuvo;
+  var sinTotal=debeDoc+nuncaTuvo;
   e.innerHTML=
     '<div class="stat"><div class="stat-v">'+tot+'</div><div class="stat-l">Total escuelas</div></div>'+
-    '<div class="stat"><div class="stat-v" style="color:var(--green)">'+conCoop+'</div><div class="stat-l">Con cooperadora (total)</div></div>'+
+    '<div class="stat"><div class="stat-v" style="color:var(--green)">'+conCoop+'</div><div class="stat-l">Con cooperadora</div></div>'+
     '<div class="stat"><div class="stat-v" style="color:var(--green)">'+alDia+'</div><div class="stat-l">Al día</div></div>'+
     '<div class="stat"><div class="stat-v" style="color:var(--navy2)">'+vigente+'</div><div class="stat-l">Vigente</div></div>'+
-    '<div class="stat"><div class="stat-v" style="color:var(--red)">'+sinTotal+'</div><div class="stat-l">Sin cooperadora activa</div></div>';
+    '<div class="stat"><div class="stat-v" style="color:var(--red)">'+sinTotal+'</div><div class="stat-l">Sin cooperadora</div></div>';
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1541,7 +1545,7 @@ function tabGen(s,coord,cord){
     fsel2('Localidad','LOCALIDAD',s,LOCS)+
     ff2('Dirección','DIRECCION',s,'c2')+'<div class="ff"><label class="fl">Distrital</label><select class="fs" onchange="setF(\''+s.ID+'\',\'DISTRITAL\',this.value)"><option value="">— Sin distrital —</option><option value="Distrital 1"'+(s.DISTRITAL==="Distrital 1"?' selected':'')+'>Distrital 1</option><option value="Distrital 2"'+(s.DISTRITAL==="Distrital 2"?' selected':'')+'>Distrital 2</option><option value="Distrital 3"'+(s.DISTRITAL==="Distrital 3"?' selected':'')+'>Distrital 3</option></select></div>'+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Cooperadora</div>'+
-    togRow('Estado cooperadora','TIENE_COOP',s,[['si','Con cooperadora',''],['tuvo','Sin cooperadora activa','oa'],['no','Nunca tuvo cooperadora','or']])+
+    togRow('Estado cooperadora','TIENE_COOP',s,[['si','Con cooperadora',''],['tuvo','Debe documentación','oa'],['no','Nunca tuvo cooperadora','or']])+
     '<div class="ff"><label class="fl">Período activo</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+buildPeriodOpts(s.PERIODO_COOP)+'</select></div>'+
 
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Asesora / Asesor</div>'+
@@ -1962,7 +1966,7 @@ function getPdfList(){
     if(ST.pdf.locs.length&&!ST.pdf.locs.some(function(l){return l.toLowerCase().trim()===(s.LOCALIDAD||'').toLowerCase().trim();}))return false;
     if(!ST.pdf.locs.length && ST.pdf.locsCleared) return false;
     var lbl=etiq(s).l;
-    var lCat = lbl==='Cooperadora Al día'?'aldia':lbl==='Cooperadora Vigente'?'vigente':lbl==='Sin cooperadora activa'?'sinactiva':'nuncatuvo';
+    var lCat = lbl==='Cooperadora Al día'?'aldia':lbl==='Cooperadora Vigente'?'vigente':lbl==='Debe documentación'?'sinactiva':'nuncatuvo';
     if(ST.pdf.est.indexOf(lCat)<0)return false;
     var hk=s.KIOSCO&&(s.KIOSCO.toLowerCase().indexOf('kiosco')>=0);
     if(ST.pdf.k.indexOf('con')<0&&hk)return false;
@@ -1993,7 +1997,7 @@ function updPdfPrev(){
     else locSummary='<div style="margin-top:.375rem;font-size:.73rem;opacity:.8">'+locParts.slice(0,6).join(' &nbsp;·&nbsp; ')+' y '+(locParts.length-6)+' más...</div>';
   }
 
-  var estLabels={aldia:'Al día',vigente:'Vigente',sinactiva:'Sin activa',nuncatuvo:'Nunca tuvo'};
+  var estLabels={aldia:'Al día',vigente:'Vigente',sinactiva:'Debe doc.',nuncatuvo:'Nunca tuvo'};
   // Build a readable summary of selected states
   var conCoopSels = PDF_GROUPS.concoop.filter(function(v){return ST.pdf.est.indexOf(v)>=0;});
   var sinCoopSels = PDF_GROUPS.sincoop.filter(function(v){return ST.pdf.est.indexOf(v)>=0;});
@@ -2069,10 +2073,10 @@ function genPDF(){
   var _cS=PDF_GROUPS.concoop.filter(function(v){return ST.pdf.est.indexOf(v)>=0;});
   var _sS=PDF_GROUPS.sincoop.filter(function(v){return ST.pdf.est.indexOf(v)>=0;});
   if(_cS.length===2 && _sS.length===0) pdfTitle='Informe: Establecimientos Con Cooperadora';
-  else if(_cS.length===0 && _sS.length===2) pdfTitle='Informe: Establecimientos Sin Cooperadora';
+  else if(_cS.length===0 && _sS.length===2) pdfTitle='Informe: Sin Cooperadora (total)';
   else if(_cS.length===1 && _sS.length===0 && _cS[0]==='aldia') pdfTitle='Informe: Cooperadora Al Día';
   else if(_cS.length===1 && _sS.length===0 && _cS[0]==='vigente') pdfTitle='Informe: Cooperadora Vigente';
-  else if(_cS.length===0 && _sS.length===1 && _sS[0]==='sinactiva') pdfTitle='Informe: Sin Cooperadora Activa';
+  else if(_cS.length===0 && _sS.length===1 && _sS[0]==='sinactiva') pdfTitle='Informe: Debe Documentación';
   else if(_cS.length===0 && _sS.length===1 && _sS[0]==='nuncatuvo') pdfTitle='Informe: Nunca Tuvo Cooperadora';
   doc.text(pdfTitle,ML,y);
   y+=6;
@@ -2082,7 +2086,7 @@ function genPDF(){
   doc.text('Generado: '+new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'})+' — '+list.length+' establecimiento'+(list.length!==1?'s':''),ML,y);
   y+=6;
 
-  var estLabels={aldia:'Al día',vigente:'Vigente',sinactiva:'Sin activa',nuncatuvo:'Nunca tuvo'};
+  var estLabels={aldia:'Al día',vigente:'Vigente',sinactiva:'Debe doc.',nuncatuvo:'Nunca tuvo'};
   var _conSel=PDF_GROUPS.concoop.filter(function(v){return ST.pdf.est.indexOf(v)>=0;});
   var _sinSel=PDF_GROUPS.sincoop.filter(function(v){return ST.pdf.est.indexOf(v)>=0;});
   var _estDesc=[];
