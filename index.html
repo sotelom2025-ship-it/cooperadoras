@@ -909,18 +909,26 @@ async function loadData(){
     if(!r||!r.ok)throw new Error(r&&r.error?r.error:'Error desconocido');
 
     // ── Escuelas base ──
-    var schoolsMap={};
+    var schoolsMap={}, schoolsByNum={};
     if(r.schools&&r.schools.length){
       r.schools.forEach(function(s){
         s.VISITAS='[]';s.PERIODOS='[]';s.COM_DIRECTIVA='{}';s.COM_REVISORA='{}';
-        schoolsMap[s.ID]=s;
+        var id=(s.ID||'').trim();
+        var num=(s.NUMERO||'').trim();
+        schoolsMap[id]=s;
+        if(num) schoolsByNum[num.toUpperCase()]=s;
+        // Also index without spaces: 'JI 930' -> 'JI930'
+        if(num) schoolsByNum[num.replace(/\s+/g,'').toUpperCase()]=s;
       });
     }
 
     // ── Cooperadoras ──
     if(r.cooperadoras&&r.cooperadoras.length){
       r.cooperadoras.forEach(function(co){
-        var s=schoolsMap[co.ID_ESCUELA];
+        var idKey=(co.ID_ESCUELA||'').trim();
+        var s=schoolsMap[idKey]
+          || schoolsByNum[idKey.toUpperCase()]
+          || schoolsByNum[idKey.replace(/\s+/g,'').toUpperCase()];
         if(!s)return;
         var campos=['TIENE_COOP','TIPO_COOP','ULTIMA_COOP','PERIODO_COOP','ESTADO_PERIODO_COOP',
           'DOC_ESTADO','FECHA_ASAMBLEA','ESTADO_ASAMBLEA','PRES_NOMBRE','PRES_CONTACTO',
@@ -933,7 +941,11 @@ async function loadData(){
     if(r.visitas&&r.visitas.length){
       var visitasMap={};
       r.visitas.forEach(function(v){
-        if(!visitasMap[v.ID_ESCUELA])visitasMap[v.ID_ESCUELA]=[];
+        var vKey=(v.ID_ESCUELA||'').trim();
+        // Find school to get canonical ID
+        var vs=schoolsMap[vKey]||schoolsByNum[vKey.toUpperCase()]||schoolsByNum[vKey.replace(/\s+/g,'').toUpperCase()];
+        if(vs) vKey=vs.ID;
+        if(!visitasMap[vKey])visitasMap[vKey]=[];
         visitasMap[v.ID_ESCUELA].push({
           fecha:v.FECHA||'',tipo:v.TIPO||'',responsable:v.RESPONSABLE||'',
           descripcion:v.DESCRIPCION||'',proxAccion:v.PROX_ACCION||'',
@@ -949,7 +961,10 @@ async function loadData(){
     if(r.periodos&&r.periodos.length){
       var periodosMap={};
       r.periodos.forEach(function(p){
-        if(!periodosMap[p.ID_ESCUELA])periodosMap[p.ID_ESCUELA]=[];
+        var pKey=(p.ID_ESCUELA||'').trim();
+        var ps2=schoolsMap[pKey]||schoolsByNum[pKey.toUpperCase()]||schoolsByNum[pKey.replace(/\s+/g,'').toUpperCase()];
+        if(ps2) pKey=ps2.ID;
+        if(!periodosMap[pKey])periodosMap[pKey]=[];
         periodosMap[p.ID_ESCUELA].push({
           periodo:p.PERIODO||'',estado:p.ESTADO||'',
           fechaAsamblea:p.FECHA_ASAMBLEA||'',docestado:p.DOC_ESTADO||'',
@@ -964,7 +979,9 @@ async function loadData(){
     // ── Comisiones ──
     if(r.comisiones&&r.comisiones.length){
       r.comisiones.forEach(function(cm){
-        var s=schoolsMap[cm.ID_ESCUELA];if(!s)return;
+        var cmKey=(cm.ID_ESCUELA||'').trim();
+        var s=schoolsMap[cmKey]||schoolsByNum[cmKey.toUpperCase()]||schoolsByNum[cmKey.replace(/\s+/g,'').toUpperCase()];
+        if(!s)return;
         var cd={
           presidenta:{nombre:cm.PRESIDENTA||'',mandato:cm.PRESIDENTA_MANDATO||''},
           tesorera:{nombre:cm.TESORERA||'',mandato:cm.TESORERA_MANDATO||''},
@@ -1751,6 +1768,10 @@ async function iniciarNuevoPeriodo() {
 function renderAsam(){
   var e=el('asam-cont');if(!e)return;
   var lbl=el('asam-lbl');if(lbl)lbl.textContent='Período '+pLabel(periodoActual());
+  if(!ST.schools.length){
+    e.innerHTML='<div class="es"><div class="ei">⏳</div><div class="et">Cargando datos...</div></div>';
+    return;
+  }
   var fc=((el('af-coord')||{}).value)||'';
   var fe=((el('af-est')||{}).value)||'';
   var list=ST.schools.filter(function(s){
