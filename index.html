@@ -750,9 +750,9 @@ function parseDate(ds){
 function ddiff(ds){if(!ds)return null;var d=parseDate(ds),n=new Date();if(!d||isNaN(d))return null;d.setHours(0,0,0,0);n.setHours(0,0,0,0);return Math.round((d-n)/86400000)}
 // ── ETIQUETAS ─────────────────────────────────────────────
 // Etiqueta 1: Cooperadora Al día      → tiene coop (si) Y último período tiene doc aprobada
-// Etiqueta 2: Cooperadora Vigente     → tiene coop (si), último período SIN doc pero debe menos de 3 períodos consecutivos sin doc
-// Etiqueta 3: Debe documentación      → tiene coop (si) pero debe 3 o más períodos consecutivos sin documentación (desde el más reciente)
-// Etiqueta 4: Nunca tuvo cooperadora  → nunca tuvo (no / vacío) O marcada como 'tuvo'
+// Etiqueta 2: Cooperadora Vigente     → tiene coop (si), último período SIN doc pero menos de 3 períodos consecutivos sin doc
+// Etiqueta 3: Debe documentación      → tiene coop (si) con 3+ períodos sin doc, O marcada manualmente como 'tuvo'
+// Etiqueta 4: Nunca tuvo cooperadora  → nunca tuvo (no / vacío)
 // ─────────────────────────────────────────────────────────
 // En informes:
 //   "Establecimientos con cooperadora" = Al día + Vigente
@@ -762,8 +762,11 @@ function ddiff(ds){if(!ds)return null;var d=parseDate(ds),n=new Date();if(!d||is
 function etiq(s){
   var t = (s.TIENE_COOP||'').toLowerCase().trim();
 
-  // Nunca tuvo cooperadora (incluye 'tuvo' — sin cooperadora activa)
-  if(t==='' || t==='no' || t==='tuvo') return {l:'Nunca tuvo cooperadora',c:'tr',i:'🔴'};
+  // Nunca tuvo cooperadora
+  if(t==='' || t==='no') return {l:'Nunca tuvo cooperadora',c:'tr',i:'🔴'};
+
+  // Debe documentación (marcada manualmente como que no está activa)
+  if(t==='tuvo') return {l:'Debe documentación',c:'ta',i:'📋'};
 
   // Tiene cooperadora activa (si) — evaluar estado por períodos
   var ps = pj(s.PERIODOS,[]);
