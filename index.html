@@ -333,6 +333,29 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   .tab{padding:.375rem .625rem;font-size:.75rem}
 }
 @media(min-width:600px) and (max-width:1023px){.fg{grid-template-columns:1fr 1fr}}
+.fab-back{
+  display:none;
+  position:fixed;
+  bottom:calc(70px + env(safe-area-inset-bottom,16px));
+  left:50%;
+  transform:translateX(-50%);
+  background:var(--navy);
+  color:#fff;
+  border:none;
+  border-radius:99px;
+  padding:.55rem 1.25rem;
+  font-size:.82rem;
+  font-weight:600;
+  font-family:inherit;
+  cursor:pointer;
+  box-shadow:0 4px 16px rgba(13,47,110,.35);
+  z-index:200;
+  white-space:nowrap;
+  align-items:center;
+  gap:.4rem;
+}
+.fab-back.show{display:flex}
+@media(min-width:1024px){.fab-back{display:none!important}}
 @media(max-width:380px){
   .stats{grid-template-columns:1fr 1fr}
   .stat-v{font-size:1.2rem}
@@ -575,7 +598,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     <div class="ff"><label class="fl">Distrital</label><select class="fs" id="sm-distrital"><option value="">— Sin distrital —</option><option value="Distrital 1">Distrital 1</option><option value="Distrital 2">Distrital 2</option><option value="Distrital 3">Distrital 3</option></select></div>
     <div class="ff"><label class="fl">Nombre asesora/or</label><input class="fi" id="sm-ases-nom" placeholder="Nombre completo"></div>
     <div class="ff"><label class="fl">Contacto asesora/or</label><input class="fi" id="sm-ases-cont" placeholder="Teléfono o email"></div>
-    <div class="ff"><label class="fl">¿Tiene cooperadora?</label><select class="fs" id="sm-tc"><option value="si">Vigente</option><option value="tuvo">Debe 3 o menos períodos</option><option value="no">No tiene</option><option value="creacion">Es creación</option></select></div>
+    <div class="ff"><label class="fl">¿Tiene cooperadora?</label><select class="fs" id="sm-tc"><option value="si">Vigente</option><option value="creacion">Creación (primera vez)</option><option value="reorg">Reorganización</option><option value="tuvo">Puede solicitar reorganización</option><option value="no">No tiene</option></select></div>
     <div class="ff"><label class="fl">Período activo</label><select class="fs" id="sm-per"></select></div>
     <div class="ff"><label class="fl">Estatuto</label><select class="fs" id="sm-estatuto"><option value="">— Sin información —</option><option value="Estatuto actualizado">Estatuto actualizado</option><option value="Estatuto viejo">Estatuto viejo</option><option value="Sin estatuto">Sin estatuto</option></select></div>
   </div></div>
@@ -639,6 +662,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 </div></div>
 
 <div id="toast"></div>
+<button class="fab-back" id="fab-back" onclick="backToList()">← Volver a escuelas</button>
 
 <script>
 // ════════════════════════════════════════════════════════════
@@ -695,11 +719,20 @@ function getCordLabel(loc){var n=getCordNum(loc);return n?(CORD[n]||'—'):'—'
 function ddiff(ds){if(!ds)return null;var d=new Date(ds),n=new Date();d.setHours(0,0,0,0);n.setHours(0,0,0,0);return Math.round((d-n)/86400000)}
 function etiq(s){
   var t = (s.TIENE_COOP||'').toLowerCase().trim();
-  // Sin cooperadora
+
+  // Sin cooperadora o no tiene
   if(t==='' || t==='no') return {l:'Sin cooperadora',c:'tr',i:'🔴'};
-  // Tuvo cooperadora
-  if(t==='tuvo') return {l:'Debe períodos',c:'ta',i:'⚠️'};
-  // Tiene cooperadora (si) — calcular etiqueta por períodos
+
+  // Reorganización explícita (marcada manualmente)
+  if(t==='reorg') return {l:'Reorganización',c:'ta',i:'🟡'};
+
+  // Creación (primer período)
+  if(t==='creacion') return {l:'Creación',c:'tb',i:'🔵'};
+
+  // Adeuda períodos (marcada manualmente) — puede solicitar reorganización
+  if(t==='tuvo') return {l:'Puede solicitar reorganización',c:'ta',i:'⚠️'};
+
+  // Tiene cooperadora (si) — calcular automáticamente por historial
   var ps = pj(s.PERIODOS,[]);
   if(!ps.length) return {l:'Vigente',c:'tg',i:'🟢'};
   if(ps.length===1) return {l:'Creación',c:'tb',i:'🔵'};
@@ -707,8 +740,9 @@ function etiq(s){
   if(last.docestado==='PIA firmada') return {l:'PIA firmada',c:'tb',i:'📋'};
   var rec = ps.slice(-3);
   var sinDoc = rec.filter(function(p){return !p.docestado||p.docestado===''}).length;
-  if(ps.length>=3 && sinDoc>=3) return {l:'Debe períodos',c:'ta',i:'⚠️'};
-  if(ps.length>=2 && sinDoc>=2) return {l:'Reorganización',c:'ta',i:'🟡'};
+  // 3+ períodos sin doc ó marcada como que puede reorganizarse
+  if(ps.length>=3 && sinDoc>=3) return {l:'Puede solicitar reorganización',c:'ta',i:'⚠️'};
+  if(ps.length>=2 && sinDoc>=2) return {l:'Reorganización en proceso',c:'ta',i:'🟡'};
   if(last.docestado) return {l:'Vigente',c:'tg',i:'🟢'};
   return {l:'Vigente',c:'tg',i:'🟢'};
 }
@@ -951,6 +985,37 @@ async function loadData(){
        'LOCALIDAD','NOMBRE','NUMERO','DIRECCION'].forEach(function(k){
         if(s[k]) s[k] = s[k].replace(/^'+|'+$/g,'').trim();
       });
+      // Normalizar LOCALIDAD - unify spelling variations
+      if(s.LOCALIDAD){
+        var locMap = {
+          'gonzalez catan':'González Catán','gonzalez catán':'González Catán',
+          'gonzales catan':'González Catán','gonzales catán':'González Catán',
+          'gregory de laferrere':'Gregorio de Laferrere',
+          'gregorio de laferrere':'Gregorio de Laferrere',
+          'gregorio de laferere':'Gregorio de Laferrere',
+          'gregorio de laferre':'Gregorio de Laferrere',
+          'ramos mejia':'Ramos Mejía','ramos mejía':'Ramos Mejía',
+          'villa luzuriaga':'Villa Luzuriaga','villa luzuriga':'Villa Luzuriaga',
+          'villa luzuriaga':'Villa Luzuriaga',
+          'villa madero':'Villa Madero','villa eduardo madero':'Villa Madero',
+          'virrey del pino':'Virrey del Pino','virrey del pino':'Virrey del Pino',
+          'isidro casanova':'Isidro Casanova',
+          'la tablada':'La Tablada',
+          'san justo':'San Justo',
+          'rafael castillo':'Rafael Castillo',
+          'ciudad evita':'Ciudad Evita',
+          'aldo bonzi':'Aldo Bonzi',
+          'tapiales':'Tapiales',
+          'villa celina':'Villa Celina',
+          'lomas del mirador':'Lomas del Mirador','lomas del mirador':'Lomas del Mirador',
+          'manzanares':'Manzanares',
+          '20 de junio':'20 de Junio',
+          'villa insuperable':'Villa Insuperable',
+          'rafael castillo villa scasso':'Rafael Castillo'
+        };
+        var locKey = s.LOCALIDAD.toLowerCase().trim();
+        if(locMap[locKey]) s.LOCALIDAD = locMap[locKey];
+      }
       // Normalizar BANCO: 'Con banco','si','S','con banco' -> 'con'
       var b = (s.BANCO||'').toLowerCase();
       if(b==='con banco'||b==='si'||b==='s'||b==='yes'||b==='con') s.BANCO='con';
@@ -1059,12 +1124,23 @@ async function initApp(){
 // SELECTS
 // ════════════════════════════════════════════════════════════
 function fillSelects(){
-  ['sm-loc','fl-loc'].forEach(function(id){
-    var s=el(id);if(!s)return;
-    var v=s.value;
-    s.innerHTML='<option value="">'+(id==='fl-loc'?'Localidad':'Seleccionar...')+'</option>';
-    LOCS.forEach(function(l){var o=document.createElement('option');o.value=o.textContent=l;if(l===v)o.selected=true;s.appendChild(o)});
-  });
+  // fl-loc: use actual school localidades (sorted, deduplicated)
+  var flLoc=el('fl-loc');
+  if(flLoc){
+    var v=flLoc.value;
+    var actualLocs=[];
+    ST.schools.forEach(function(s){if(s.LOCALIDAD&&actualLocs.indexOf(s.LOCALIDAD)<0)actualLocs.push(s.LOCALIDAD);});
+    actualLocs.sort(function(a,b){return a.localeCompare(b,'es');});
+    flLoc.innerHTML='<option value="">Localidad</option>';
+    actualLocs.forEach(function(l){var o=document.createElement('option');o.value=o.textContent=l;if(l===v)o.selected=true;flLoc.appendChild(o);});
+  }
+  // sm-loc: always use LOCS
+  var smLoc=el('sm-loc');
+  if(smLoc){
+    var v2=smLoc.value;
+    smLoc.innerHTML='<option value="">Seleccionar...</option>';
+    LOCS.forEach(function(l){var o=document.createElement('option');o.value=o.textContent=l;if(l===v2)o.selected=true;smLoc.appendChild(o);});
+  }
   ['fl-coord','af-coord'].forEach(function(id){
     var s=el(id);if(!s)return;
     var v=s.value,first=s.options[0].textContent;
@@ -1113,7 +1189,7 @@ function renderSchools(){
   var fk=((el('fl-k')||{}).value)||'';
   var list=ST.schools.filter(function(s){
     if(q&&!(s.NOMBRE||'').toLowerCase().includes(q)&&!(s.NUMERO||'').toLowerCase().includes(q))return false;
-    if(fl&&s.LOCALIDAD!==fl)return false;
+    if(fl&&(s.LOCALIDAD||'').toLowerCase().trim()!==fl.toLowerCase().trim())return false;
     if(fc&&getCoord(s.LOCALIDAD)!==fc)return false;
     if(fco&&getCordNum(s.LOCALIDAD)!==fco)return false;
     if(ft&&s.TIPO_COOP!==ft)return false;
@@ -1229,6 +1305,7 @@ function openDetail(id){
   ST.detId=id;
   el('list-view').style.display='none';
   el('detail-view').style.display='block';
+  var fab=el('fab-back');if(fab)fab.classList.add('show');
   renderDetail(id,'general');
 }
 async function deleteSchool(id){
@@ -1267,6 +1344,7 @@ async function refreshApp(){
 
 function backToList(){
   ST.detId=null;
+  var fab=el('fab-back');if(fab)fab.classList.remove('show');
   el('list-view').style.display='';
   el('detail-view').style.display='none';
   renderSchools();renderStats();
@@ -1381,7 +1459,7 @@ function tabGen(s,coord,cord){
     fsel2('Localidad','LOCALIDAD',s,LOCS)+
     ff2('Dirección','DIRECCION',s,'c2')+'<div class="ff"><label class="fl">Distrital</label><select class="fs" onchange="setF(\''+s.ID+'\',\'DISTRITAL\',this.value)"><option value="">— Sin distrital —</option><option value="Distrital 1"'+(s.DISTRITAL==="Distrital 1"?' selected':'')+'>Distrital 1</option><option value="Distrital 2"'+(s.DISTRITAL==="Distrital 2"?' selected':'')+'>Distrital 2</option><option value="Distrital 3"'+(s.DISTRITAL==="Distrital 3"?' selected':'')+'>Distrital 3</option></select></div>'+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Cooperadora</div>'+
-    togRow('¿Tiene cooperadora?','TIENE_COOP',s,[['si','Vigente',''],['tuvo','Debe 3 o menos períodos','oa'],['no','No tiene','or'],['creacion','Es creación','tb']])+
+    togRow('¿Tiene cooperadora?','TIENE_COOP',s,[['si','Vigente',''],['creacion','Creación','tb'],['reorg','Reorganización','oa'],['tuvo','Puede solicitar reorganización','oa'],['no','No tiene','or']])+
     '<div class="ff"><label class="fl">Período activo</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+buildPeriodOpts(s.PERIODO_COOP)+'</select></div>'+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Datos adicionales</div>'+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Asesora / Asesor</div>'+
@@ -1659,7 +1737,14 @@ function renderAsam(){
   var fc=((el('af-coord')||{}).value)||'';
   var fe=((el('af-est')||{}).value)||'';
   var list=ST.schools.filter(function(s){
-    if(s.TIENE_COOP!=='si'&&s.TIENE_COOP!=='tuvo')return false;
+    // Incluir todas las escuelas que necesitan asamblea
+    var tc = (s.TIENE_COOP||'').toLowerCase().trim();
+    var e2 = etiq(s);
+    // Incluir todas las que necesitan asamblea
+    var needsAsam = tc==='si' || tc==='tuvo' || tc==='creacion' || tc==='reorg' ||
+      e2.l==='Reorganización' || e2.l==='Reorganización en proceso' ||
+      e2.l==='Puede solicitar reorganización' || e2.l==='Creación';
+    if(!needsAsam) return false;
     if(fc&&getCoord(s.LOCALIDAD)!==fc)return false;
     if(fe&&(s.ESTADO_ASAMBLEA||'pendiente')!==fe)return false;
     return true;
@@ -1673,7 +1758,7 @@ function renderAsam(){
       items.map(function(s){
         var coord=getCoord(s.LOCALIDAD),dd=s.FECHA_ASAMBLEA?ddiff(s.FECHA_ASAMBLEA):null;
         var badge=dd===null?'<span class="dbadge dn">Sin fecha</span>':dd===0?'<span class="dbadge dt">¡HOY!</span>':dd>0?'<span class="dbadge df">en '+dd+' día'+(dd!==1?'s':'')+'</span>':'<span class="dbadge dp">hace '+Math.abs(dd)+' día'+(Math.abs(dd)!==1?'s':'')+'</span>';
-        return '<div class="aitem" onclick="goToAsam(\''+s.ID+'\')"><div class="sc-av" style="width:36px;height:36px;font-size:.65rem">'+esc(s.NUMERO||'?')+'</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(s.NOMBRE||'—')+'</div><div style="font-size:.72rem;color:var(--muted)">'+esc(s.LOCALIDAD||'—')+' · '+esc(coord)+'</div></div>'+badge+'</div>'
+        return '<div class="aitem" onclick="goToAsam(\''+s.ID+'\')"><div class="sc-av" style="width:36px;height:36px;font-size:.65rem">'+esc(s.NUMERO||'?')+'</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(s.NOMBRE||'—')+'<span class="tag '+e2.c+'" style="font-size:.65rem;margin-left:.4rem;">'+e2.i+' '+e2.l+'</span></div><div style="font-size:.72rem;color:var(--muted)">'+esc(s.LOCALIDAD||'—')+' · '+esc(coord)+'</div></div>'+badge+'</div>'
       }).join('');
   }
   var h=grp('PRÓXIMAS',prox,'🔜')+grp('SIN FECHA',sf,'❓')+grp('REALIZADAS',real,'✅');
@@ -1686,24 +1771,28 @@ function goToAsam(id){goTo('escuelas');openDetail(id);setTimeout(function(){rend
 // ════════════════════════════════════════════════════════════
 function renderPdfLocs(){
   var e=el('pdf-locs');if(!e)return;
-  var allLocs=[];
+  // Build deduplicated list (case-insensitive)
+  var seen={}, allLocs=[];
   ST.schools.forEach(function(s){
-    if(s.LOCALIDAD&&allLocs.indexOf(s.LOCALIDAD)<0) allLocs.push(s.LOCALIDAD);
+    if(!s.LOCALIDAD) return;
+    var key=s.LOCALIDAD.toLowerCase().trim();
+    if(!seen[key]){ seen[key]=true; allLocs.push(s.LOCALIDAD); }
   });
   allLocs.sort(function(a,b){return a.localeCompare(b,'es');});
   if(!allLocs.length) allLocs=LOCS.slice();
   if(!ST.pdf.locs.length) ST.pdf.locs=allLocs.slice();
   e.innerHTML=allLocs.map(function(l){
-    var cls='lpill'+(ST.pdf.locs.indexOf(l)>=0?' on':'');
-    return '<div class="'+cls+'" onclick="togLoc(this,'+JSON.stringify(l)+')">'+l+'</div>';
+    var isOn=ST.pdf.locs.some(function(x){return x.toLowerCase().trim()===l.toLowerCase().trim();});
+    return '<div class="lpill'+(isOn?' on':'')+'" onclick="togLoc(this,'+JSON.stringify(l)+')">'+l+'</div>';
   }).join('');
 }
 function togLoc(el2,l){
-  if(!l && el2 && el2.dataset) l=el2.textContent;
-  var i=ST.pdf.locs.indexOf(l);
+  if(!l && el2) l=el2.textContent.trim();
+  var lKey=l.toLowerCase().trim();
+  var i=ST.pdf.locs.findIndex(function(x){return x.toLowerCase().trim()===lKey;});
   if(i>=0) ST.pdf.locs.splice(i,1);
   else ST.pdf.locs.push(l);
-  if(el2) el2.classList.toggle('on',ST.pdf.locs.indexOf(l)>=0);
+  if(el2) el2.classList.toggle('on',ST.pdf.locs.some(function(x){return x.toLowerCase().trim()===lKey;}));
   updPdfPrev();
 }
 function tpdf(btn){
@@ -1716,15 +1805,19 @@ function tpdf(btn){
 }
 
 function locsAll(){
-  var allLocs=[];
-  ST.schools.forEach(function(s){if(s.LOCALIDAD&&allLocs.indexOf(s.LOCALIDAD)<0)allLocs.push(s.LOCALIDAD);});
-  ST.pdf.locs=allLocs.length?allLocs.slice():LOCS.slice();
+  var seen={},allLocs=[];
+  ST.schools.forEach(function(s){
+    if(!s.LOCALIDAD) return;
+    var key=s.LOCALIDAD.toLowerCase().trim();
+    if(!seen[key]){seen[key]=true;allLocs.push(s.LOCALIDAD);}
+  });
+  ST.pdf.locs=allLocs.length?allLocs:LOCS.slice();
   renderPdfLocs();updPdfPrev();
 }
 function locsClear(){ST.pdf.locs=[];renderPdfLocs();updPdfPrev();}
 function getPdfList(){
   return ST.schools.filter(function(s){
-    if(ST.pdf.locs.length&&ST.pdf.locs.indexOf(s.LOCALIDAD)<0)return false;
+    if(ST.pdf.locs.length&&!ST.pdf.locs.some(function(l){return l.toLowerCase().trim()===(s.LOCALIDAD||'').toLowerCase().trim();}))return false;
     var t=s.TIENE_COOP||'no';
     if(ST.pdf.est.indexOf('con')<0&&t==='si')return false;
     if(ST.pdf.est.indexOf('sin')<0&&t==='no')return false;
