@@ -1000,7 +1000,7 @@ async function loadData(){
        'LOCALIDAD','NOMBRE','NUMERO','DIRECCION'].forEach(function(k){
         if(s[k]) s[k] = s[k].replace(/^'+|'+$/g,'').trim();
       // Lowercase estado fields
-      if(k==='ESTADO_ASAMBLEA'||k==='TIENE_COOP') s[k]=s[k].toLowerCase();
+      if((k==='ESTADO_ASAMBLEA'||k==='TIENE_COOP') && s[k]) s[k]=s[k].toLowerCase();
       });
       // Normalizar LOCALIDAD - unify spelling variations
       if(s.LOCALIDAD){
@@ -1768,7 +1768,7 @@ function renderAsam(){
   });
   // Normalize estado
   list.forEach(function(s){
-    if(s.ESTADO_ASAMBLEA) s.ESTADO_ASAMBLEA=s.ESTADO_ASAMBLEA.toLowerCase().trim();
+    if(s.ESTADO_ASAMBLEA) s.ESTADO_ASAMBLEA=(s.ESTADO_ASAMBLEA||'').toLowerCase().trim();
   });
   var notReal=list.filter(function(s){return s.ESTADO_ASAMBLEA!=='realizada';});
   var real=list.filter(function(s){return s.ESTADO_ASAMBLEA==='realizada';}).sort(function(a,b){return new Date(b.FECHA_ASAMBLEA)-new Date(a.FECHA_ASAMBLEA)});
