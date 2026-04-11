@@ -716,7 +716,16 @@ function splitCode(s){var p=(s||'').split(' ');return p.length>=2?{t:p[0],n:p.sl
 function getCoord(loc){var c=ST.coords.find(function(c){return c.localidades.some(function(l){return l.trim().toLowerCase()===(loc||'').trim().toLowerCase()})});return c?c.nombre:'—'}
 function getCordNum(loc){var c=ST.coords.find(function(c){return c.localidades.some(function(l){return l.trim().toLowerCase()===(loc||'').trim().toLowerCase()})});return c?c.cordon:''}
 function getCordLabel(loc){var n=getCordNum(loc);return n?(CORD[n]||'—'):'—'}
-function ddiff(ds){if(!ds)return null;var d=new Date(ds),n=new Date();d.setHours(0,0,0,0);n.setHours(0,0,0,0);return Math.round((d-n)/86400000)}
+function parseDate(ds){
+  if(!ds) return null;
+  // Handle GAS date format: 'Mon May 26 2025 00:00:00 GMT-0300 (...)'
+  var m=ds.match(/(\d{4}-\d{2}-\d{2})/);
+  if(m) return new Date(m[1]+'T00:00:00');
+  var m2=ds.match(/([A-Za-z]{3}\s+[A-Za-z]{3}\s+\d{1,2}\s+\d{4})/);
+  if(m2) return new Date(m2[1]);
+  return new Date(ds);
+}
+function ddiff(ds){if(!ds)return null;var d=parseDate(ds),n=new Date();if(!d||isNaN(d))return null;d.setHours(0,0,0,0);n.setHours(0,0,0,0);return Math.round((d-n)/86400000)}
 function etiq(s){
   var t = (s.TIENE_COOP||'').toLowerCase().trim();
 
@@ -879,10 +888,9 @@ function goTo(name){
   if(name==='coords')renderCoords();
   if(name==='asam'){renderAsam();checkNuevoPeriodo();}
   if(name==='informes'){
-    // Init locs only when first entering (ST.pdf.locs is empty AND schools loaded)
-    if(!ST.pdf.locsInitialized && ST.schools.length){
+    // Init locs if empty and not manually cleared
+    if(!ST.pdf.locs.length && !ST.pdf.locsCleared && ST.schools.length){
       locsAll();
-      ST.pdf.locsInitialized = true;
     }
     renderPdfLocs();updPdfPrev();
   }
@@ -991,6 +999,8 @@ async function loadData(){
       ['KIOSCO','TIENE_COOP','DOC_ESTADO','ESTADO_ASAMBLEA','TIPO_COOP','BANCO',
        'LOCALIDAD','NOMBRE','NUMERO','DIRECCION'].forEach(function(k){
         if(s[k]) s[k] = s[k].replace(/^'+|'+$/g,'').trim();
+      // Lowercase estado fields
+      if(k==='ESTADO_ASAMBLEA'||k==='TIENE_COOP') s[k]=s[k].toLowerCase();
       });
       // Normalizar LOCALIDAD - unify spelling variations
       if(s.LOCALIDAD){
@@ -1756,9 +1766,15 @@ function renderAsam(){
     if(fe&&(s.ESTADO_ASAMBLEA||'pendiente')!==fe)return false;
     return true;
   });
-  var prox=list.filter(function(s){return s.FECHA_ASAMBLEA&&ddiff(s.FECHA_ASAMBLEA)>=0&&s.ESTADO_ASAMBLEA!=='realizada'}).sort(function(a,b){return new Date(a.FECHA_ASAMBLEA)-new Date(b.FECHA_ASAMBLEA)});
-  var sf=list.filter(function(s){return !s.FECHA_ASAMBLEA&&s.ESTADO_ASAMBLEA!=='realizada'});
-  var real=list.filter(function(s){return s.ESTADO_ASAMBLEA==='realizada'}).sort(function(a,b){return new Date(b.FECHA_ASAMBLEA)-new Date(a.FECHA_ASAMBLEA)});
+  // Normalize estado
+  list.forEach(function(s){
+    if(s.ESTADO_ASAMBLEA) s.ESTADO_ASAMBLEA=s.ESTADO_ASAMBLEA.toLowerCase().trim();
+  });
+  var notReal=list.filter(function(s){return s.ESTADO_ASAMBLEA!=='realizada';});
+  var real=list.filter(function(s){return s.ESTADO_ASAMBLEA==='realizada';}).sort(function(a,b){return new Date(b.FECHA_ASAMBLEA)-new Date(a.FECHA_ASAMBLEA)});
+  var prox=notReal.filter(function(s){var d=ddiff(s.FECHA_ASAMBLEA);return s.FECHA_ASAMBLEA&&d!==null&&d>=0;}).sort(function(a,b){return new Date(a.FECHA_ASAMBLEA)-new Date(b.FECHA_ASAMBLEA)});
+  var venc=notReal.filter(function(s){var d=ddiff(s.FECHA_ASAMBLEA);return s.FECHA_ASAMBLEA&&d!==null&&d<0;}).sort(function(a,b){return new Date(b.FECHA_ASAMBLEA)-new Date(a.FECHA_ASAMBLEA)});
+  var sf=notReal.filter(function(s){return !s.FECHA_ASAMBLEA;});
   function grp(ttl,items,ico){
     if(!items.length)return '';
     return '<div class="agrp-ttl">'+ico+' '+ttl+' <span class="acnt">'+items.length+'</span></div>'+
@@ -1768,7 +1784,7 @@ function renderAsam(){
         return '<div class="aitem" onclick="goToAsam(\''+s.ID+'\')"><div class="sc-av" style="width:36px;height:36px;font-size:.65rem">'+esc(s.NUMERO||'?')+'</div><div style="flex:1;min-width:0"><div style="font-weight:600;font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(s.NOMBRE||'—')+'<span class="tag '+e2.c+'" style="font-size:.65rem;margin-left:.4rem;">'+e2.i+' '+e2.l+'</span></div><div style="font-size:.72rem;color:var(--muted)">'+esc(s.LOCALIDAD||'—')+' · '+esc(coord)+'</div></div>'+badge+'</div>'
       }).join('');
   }
-  var h=grp('PRÓXIMAS',prox,'🔜')+grp('SIN FECHA',sf,'❓')+grp('REALIZADAS',real,'✅');
+  var h=grp('PRÓXIMAS',prox,'🔜')+grp('FECHA VENCIDA',venc,'⏰')+grp('SIN FECHA',sf,'❓')+grp('REALIZADAS',real,'✅');
   e.innerHTML=h||'<div class="es"><div class="ei">📅</div><div class="et">Sin asambleas</div></div>';
 }
 function goToAsam(id){goTo('escuelas');openDetail(id);setTimeout(function(){renderDetail(id,'cooperadora')},50)}
