@@ -734,7 +734,7 @@ function etiq(s){
 
   // Tiene cooperadora (si) — calcular automáticamente por historial
   var ps = pj(s.PERIODOS,[]);
-  if(!ps.length) return {l:'Vigente',c:'tg',i:'🟢'};
+  if(!ps.length) return {l:'Sin períodos cargados',c:'ta',i:'📋'};
   if(ps.length===1) return {l:'Creación',c:'tb',i:'🔵'};
   var last = ps[ps.length-1];
   if(last.docestado==='PIA firmada') return {l:'PIA firmada',c:'tb',i:'📋'};
@@ -879,15 +879,10 @@ function goTo(name){
   if(name==='coords')renderCoords();
   if(name==='asam'){renderAsam();checkNuevoPeriodo();}
   if(name==='informes'){
-    // Init locs if empty
-    if(!ST.pdf.locs.length){
-      var seen2={};
-      ST.schools.forEach(function(s){
-        if(s.LOCALIDAD&&!seen2[s.LOCALIDAD.toLowerCase().trim()]){
-          seen2[s.LOCALIDAD.toLowerCase().trim()]=true;
-          ST.pdf.locs.push(s.LOCALIDAD);
-        }
-      });
+    // Init locs only when first entering (ST.pdf.locs is empty AND schools loaded)
+    if(!ST.pdf.locsInitialized && ST.schools.length){
+      locsAll();
+      ST.pdf.locsInitialized = true;
     }
     renderPdfLocs();updPdfPrev();
   }
@@ -1751,8 +1746,12 @@ function renderAsam(){
   var list=ST.schools.filter(function(s){
     // Incluir todas las escuelas que necesitan asamblea
     var tc = (s.TIENE_COOP||'').toLowerCase().trim();
-    // Mostrar todas las que tienen o tuvieron cooperadora (no las que nunca tuvieron)
-    if(!tc || tc==='no') return false;
+    // Excluir solo las que explícitamente no tienen cooperadora
+    if(tc==='no') return false;
+    // Incluir si tiene cooperadora en cualquier estado (si/reorg/creacion/tuvo)
+    // O si tiene datos de asamblea cargados (aunque TIENE_COOP esté vacío)
+    var hasAsamData = s.FECHA_ASAMBLEA || s.ESTADO_ASAMBLEA;
+    if(!tc && !hasAsamData) return false;
     if(fc&&getCoord(s.LOCALIDAD)!==fc)return false;
     if(fe&&(s.ESTADO_ASAMBLEA||'pendiente')!==fe)return false;
     return true;
@@ -1788,19 +1787,27 @@ function renderPdfLocs(){
   });
   allLocs.sort(function(a,b){return a.localeCompare(b,'es');});
   if(!allLocs.length) allLocs=LOCS.slice();
-  if(!ST.pdf.locs.length) ST.pdf.locs=allLocs.slice();
+  // Note: do NOT auto-init ST.pdf.locs here - that prevents Ninguna from working
   e.innerHTML=allLocs.map(function(l){
     var isOn=ST.pdf.locs.some(function(x){return x.toLowerCase().trim()===l.toLowerCase().trim();});
-    return '<div class="lpill'+(isOn?' on':'')+'" onclick="togLoc(this,'+JSON.stringify(l)+')">'+l+'</div>';
+    return '<div class="lpill'+(isOn?' on':'')+'" data-loc="'+l.replace(/"/g,'&quot;')+'" onclick="togLoc(this)">'+l+'</div>';
   }).join('');
 }
 function togLoc(el2,l){
-  if(!l && el2) l=el2.textContent.trim();
+  // Get loc from data attribute (avoids unicode escaping issues) or parameter
+  if(el2 && el2.dataset && el2.dataset.loc) l=el2.dataset.loc;
+  else if(!l && el2) l=el2.textContent.trim();
+  if(!l) return;
   var lKey=l.toLowerCase().trim();
   var i=ST.pdf.locs.findIndex(function(x){return x.toLowerCase().trim()===lKey;});
-  if(i>=0) ST.pdf.locs.splice(i,1);
-  else ST.pdf.locs.push(l);
-  if(el2) el2.classList.toggle('on',ST.pdf.locs.some(function(x){return x.toLowerCase().trim()===lKey;}));
+  if(i>=0){
+    ST.pdf.locs.splice(i,1);
+    ST.pdf.locsCleared = ST.pdf.locs.length===0;
+  } else {
+    ST.pdf.locs.push(l);
+    ST.pdf.locsCleared = false;
+  }
+  if(el2) el2.classList.toggle('on', ST.pdf.locs.some(function(x){return x.toLowerCase().trim()===lKey;}));
   updPdfPrev();
 }
 function tpdf(btn){
@@ -1820,12 +1827,15 @@ function locsAll(){
     if(!seen[key]){seen[key]=true;allLocs.push(s.LOCALIDAD);}
   });
   ST.pdf.locs=allLocs.length?allLocs:LOCS.slice();
+  ST.pdf.locsCleared=false;
   renderPdfLocs();updPdfPrev();
 }
-function locsClear(){ST.pdf.locs=[];renderPdfLocs();updPdfPrev();}
+function locsClear(){ST.pdf.locs=[];ST.pdf.locsCleared=true;renderPdfLocs();updPdfPrev();}
 function getPdfList(){
   return ST.schools.filter(function(s){
+    // If locs empty and not manually cleared -> include all; if cleared -> exclude all
     if(ST.pdf.locs.length&&!ST.pdf.locs.some(function(l){return l.toLowerCase().trim()===(s.LOCALIDAD||'').toLowerCase().trim();}))return false;
+    if(!ST.pdf.locs.length && ST.pdf.locsCleared) return false;
     var t=s.TIENE_COOP||'no';
     // Map all values to con/sin/tuvo for filter
     var tCat = (t==='si'||t==='reorg'||t==='creacion')?'con':(t==='tuvo'?'tuvo':'sin');
