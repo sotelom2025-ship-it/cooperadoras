@@ -28,6 +28,56 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   --r:10px;--rs:6px;
   --sw:240px;
 }
+/* ── DARK MODE ── */
+body.dark{
+  --navy:#4B80E8;--navy2:#6B9BF8;--navy3:#1A2540;
+  --green:#4ADE80;--green2:#052010;
+  --red:#F87171;--red2:#200808;
+  --amber:#FBB040;--amber2:#1F1200;
+  --border:#2A3550;--border2:#3A4A66;
+  --text:#E8EEFF;--text2:#A0B0D0;--muted:#6B7B96;
+  --surface:#141D30;--bg:#0C1220;--bg2:#111827;
+  --shadow:0 1px 3px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+  --shadow2:0 8px 32px rgba(0,0,0,.5);
+}
+body.dark .sidebar{background:#0C1220;border-right:1px solid #1e2a40}
+body.dark .sidebar .sb-mtz,body.dark .nav-i{color:#E8EEFF}
+body.dark .lg-card,body.dark .ob-card{background:var(--surface)}
+body.dark input,body.dark select,body.dark textarea{background:var(--bg2);color:var(--text);border-color:var(--border2)}
+body.dark input:focus,body.dark select:focus,body.dark textarea:focus{background:var(--bg);border-color:var(--navy)}
+body.dark .f-inp{background:var(--bg2);color:var(--text)}
+body.dark .modal{background:var(--surface)}
+body.dark .mhd{background:var(--surface);border-color:var(--border)}
+body.dark #scr-login{background:var(--bg)}
+body.dark .bnav{background:var(--surface);border-color:var(--border)}
+body.dark .conn-banner{background:#200808;border-color:#4a1a1a}
+body.dark .main{background:var(--bg)}
+body.dark .content{background:var(--bg)}
+body.dark .card{background:var(--surface);border-color:var(--border)}
+body.dark .sc{background:var(--surface);border-color:var(--border)}
+body.dark .sc:hover{border-color:var(--navy)}
+body.dark .stat{background:var(--surface);border-color:var(--border)}
+body.dark .pitem{border-color:var(--border)}
+body.dark .phd:hover{background:var(--bg2)}
+body.dark .pbody{background:var(--bg2)}
+body.dark .vitem{border-color:var(--border)}
+body.dark .aitem{background:var(--surface);border-color:var(--border)}
+body.dark .ccard{background:var(--surface);border-color:var(--border)}
+body.dark .rec-item{background:var(--surface);border-color:var(--border)}
+body.dark .rec-item.alerta{background:var(--red2)}
+body.dark .s-inp{background:var(--surface);border-color:var(--border);color:var(--text)}
+body.dark .fsel{background:var(--surface);color:var(--text);border-color:var(--border)}
+body.dark .fp{background:var(--surface);border-color:var(--border);color:var(--text2)}
+body.dark .fp.on{background:var(--navy);color:#fff}
+body.dark .tg-o{border-color:var(--border2);color:var(--text2)}
+body.dark .lpill{background:var(--surface);border-color:var(--border);color:var(--text2)}
+body.dark .lpill.on{background:var(--navy);color:#fff}
+body.dark .back{color:var(--navy2)}
+body.dark .tabs{border-color:var(--border)}
+body.dark .tab{color:var(--muted)}
+body.dark .tab.on{color:var(--navy2);border-bottom-color:var(--navy2)}
+body.dark .fi,body.dark .fs,body.dark .ft{background:var(--bg2);color:var(--text);border-color:var(--border2)}
+body.dark #toast{background:#E8EEFF;color:#0C1220}
 
 /* ── SCREENS ── */
 .screen{display:none;min-height:100vh}
@@ -284,6 +334,73 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
 .code-w{display:flex;gap:.5rem}
 .code-t{width:110px;flex-shrink:0}
 
+/* ── AUTOCOMPLETE ESCUELA ── */
+.ac-wrap{position:relative}
+.ac-inp{width:100%;padding:.6rem .875rem .6rem 2.25rem;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg2);font-size:.875rem;transition:border-color .15s,box-shadow .15s;box-sizing:border-box}
+.ac-inp:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(13,47,110,.08);background:#fff}
+.ac-ico{position:absolute;left:.75rem;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:.9rem}
+.ac-clear{position:absolute;right:.625rem;top:50%;transform:translateY(-50%);color:var(--muted);background:none;border:none;cursor:pointer;font-size:.9rem;padding:.2rem;line-height:1;display:none}
+.ac-clear.show{display:block}
+.ac-drop{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--r);box-shadow:var(--shadow2);z-index:500;max-height:260px;overflow-y:auto;display:none}
+.ac-drop.open{display:block}
+.ac-item{padding:.55rem .875rem;cursor:pointer;display:flex;align-items:center;gap:.625rem;border-bottom:1px solid var(--border);transition:background .1s}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover,.ac-item.active{background:var(--navy3)}
+.ac-av{width:32px;height:32px;border-radius:6px;background:var(--navy3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.6rem;color:var(--navy);flex-shrink:0;text-align:center;line-height:1.2}
+.ac-item:hover .ac-av,.ac-item.active .ac-av{background:var(--navy);color:#fff}
+.ac-info{flex:1;min-width:0}
+.ac-iname{font-size:.83rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ac-imeta{font-size:.7rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ac-empty{padding:1rem;text-align:center;color:var(--muted);font-size:.82rem}
+body.dark .ac-inp{background:var(--bg2);border-color:var(--border2);color:var(--text)}
+body.dark .ac-inp:focus{background:var(--bg)}
+body.dark .ac-drop{background:var(--surface);border-color:var(--border)}
+body.dark .ac-item:hover,body.dark .ac-item.active{background:var(--navy3)}
+
+/* ── AUTOCOMPLETE ESCUELA ── */
+.ac-wrap{position:relative;width:100%}
+.ac-ico{position:absolute;left:.75rem;top:50%;transform:translateY(-50%);font-size:.85rem;pointer-events:none;z-index:1}
+.ac-inp{width:100%;padding:.6rem .875rem .6rem 2.25rem;border:1.5px solid var(--border2);border-radius:var(--rs);background:var(--bg2);font-size:.875rem;font-family:inherit;transition:border-color .15s,box-shadow .15s;color:var(--text)}
+.ac-inp:focus{outline:none;border-color:var(--navy);box-shadow:0 0 0 3px rgba(13,47,110,.08);background:var(--surface)}
+.ac-clear{position:absolute;right:.5rem;top:50%;transform:translateY(-50%);width:22px;height:22px;border-radius:50%;background:var(--border);color:var(--muted);font-size:.75rem;display:none;align-items:center;justify-content:center;cursor:pointer;border:none;line-height:1;padding:0}
+.ac-clear.show{display:flex}
+.ac-drop{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1.5px solid var(--border2);border-radius:var(--rs);box-shadow:var(--shadow2);z-index:500;max-height:260px;overflow-y:auto;display:none}
+.ac-drop.open{display:block}
+.ac-item{padding:.55rem .875rem;cursor:pointer;display:flex;align-items:center;gap:.625rem;transition:background .1s;border-bottom:1px solid var(--border)}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover,.ac-item.active{background:var(--navy3)}
+.ac-num{font-size:.7rem;font-weight:700;color:var(--navy);background:var(--navy3);padding:.1rem .4rem;border-radius:4px;white-space:nowrap;flex-shrink:0}
+.ac-name{font-size:.85rem;font-weight:500;color:var(--text);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ac-loc{font-size:.72rem;color:var(--muted);flex-shrink:0}
+.ac-tag{font-size:.65rem;padding:.1rem .35rem;border-radius:99px;white-space:nowrap;flex-shrink:0}
+.ac-empty{padding:.875rem;text-align:center;color:var(--muted);font-size:.82rem}
+body.dark .ac-inp{background:var(--bg2);color:var(--text);border-color:var(--border2)}
+body.dark .ac-inp:focus{background:var(--bg);border-color:var(--navy)}
+body.dark .ac-drop{background:var(--surface);border-color:var(--border2)}
+body.dark .ac-item:hover,body.dark .ac-item.active{background:var(--navy3)}
+body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
+
+/* ── RECEPCIÓN ── */
+.rec-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.125rem;margin-bottom:.5rem;display:flex;align-items:flex-start;gap:1rem;transition:box-shadow .15s}
+.rec-item:hover{box-shadow:var(--shadow)}
+.rec-item.alerta{border-left:3px solid var(--red);background:var(--red2)}
+.rec-av{width:42px;height:42px;border-radius:8px;background:var(--navy3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65rem;color:var(--navy);flex-shrink:0;text-align:center;line-height:1.2}
+.rec-body{flex:1;min-width:0}
+.rec-name{font-weight:700;font-size:.88rem;margin-bottom:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec-meta{font-size:.73rem;color:var(--muted);margin-bottom:.35rem}
+.rec-obs{font-size:.8rem;color:var(--text2);line-height:1.4;margin-top:.3rem;font-style:italic}
+.rec-tags{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.4rem}
+.rec-missing{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.35rem}
+.rec-missing-row{display:flex;align-items:center;flex-wrap:wrap;gap:.3rem;margin-top:.4rem;padding:.35rem .5rem;background:var(--amber2);border-radius:var(--rs);font-size:.72rem}
+.rec-miss-label{font-weight:700;color:var(--amber);font-size:.68rem;white-space:nowrap}
+.miss-pill{font-size:.67rem;padding:.15rem .5rem;border-radius:99px;background:var(--amber2);color:var(--amber);font-weight:600}
+.alerta-pill{font-size:.67rem;padding:.15rem .5rem;border-radius:99px;background:var(--red2);color:var(--red);font-weight:600;border:1px solid #e0b0b0}
+.rec-actions{display:flex;flex-direction:column;gap:.35rem;flex-shrink:0}
+.rec-date{font-size:.68rem;color:var(--muted);white-space:nowrap}
+/* dark-mode dark toggle button */
+.dark-toggle{width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.1);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:background .15s;flex-shrink:0}
+.dark-toggle:hover{background:rgba(255,255,255,.2)}
+
 /* ── FOOTER ── */
 .app-footer{
   text-align:center;
@@ -444,12 +561,16 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     </div>
     <div class="sb-nav">
       <button class="nav-i on" id="ni-escuelas" onclick="goTo('escuelas')"><span class="ico">🏫</span>Escuelas</button>
+      <button class="nav-i" id="ni-recepcion" onclick="goTo('recepcion')"><span class="ico">📥</span>Recepción</button>
       <button class="nav-i" id="ni-coords" onclick="goTo('coords')"><span class="ico">👥</span>Coordinadores</button>
       <button class="nav-i" id="ni-asam" onclick="goTo('asam')"><span class="ico">📅</span>Asambleas</button>
       <button class="nav-i" id="ni-informes" onclick="goTo('informes')"><span class="ico">📄</span>Informes PDF</button>
       <button class="nav-i" id="ni-users" onclick="goTo('users')" style="display:none"><span class="ico">🔑</span>Usuarios</button>
     </div>
     <div class="sb-foot">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:.5rem">
+        <button class="dark-toggle" onclick="toggleDark()" id="dark-btn" title="Modo oscuro">🌙</button>
+      </div>
       <button class="sb-user" onclick="doLogout()" title="Cerrar sesión">
         <div class="u-av" id="u-av">?</div>
         <div class="u-info"><div class="u-name" id="u-name">—</div><div class="u-role" id="u-role">—</div></div>
@@ -461,7 +582,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
   <!-- BOTTOM NAV -->
   <nav class="bnav">
     <button class="bn-i on" id="bi-escuelas" onclick="goTo('escuelas')"><span class="ico">🏫</span>Escuelas</button>
-    <button class="bn-i" id="bi-coords" onclick="goTo('coords')"><span class="ico">👥</span>Coords.</button>
+    <button class="bn-i" id="bi-recepcion" onclick="goTo('recepcion')"><span class="ico">📥</span>Recepción</button>
     <button class="bn-i" id="bi-asam" onclick="goTo('asam')"><span class="ico">📅</span>Asambleas</button>
     <button class="bn-i" id="bi-informes" onclick="goTo('informes')"><span class="ico">📄</span>Informes</button>
     <button class="bn-i" id="bi-users" onclick="goTo('users')" style="display:none"><span class="ico">🔑</span>Usuarios</button>
@@ -501,7 +622,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           <button class="fp on" data-f="all" onclick="setSF('all')">Todas</button>
           <button class="fp" data-f="aldia" onclick="setSF('aldia')">🟢 Al día</button>
           <button class="fp" data-f="vigente" onclick="setSF('vigente')">🔵 Vigente</button>
-          <button class="fp" data-f="sinactiva" onclick="setSF('sinactiva')">📋 Debe doc.</button>
+          <button class="fp" data-f="sinactiva" onclick="setSF('sinactiva')">⚠️ Sin activa</button>
           <button class="fp" data-f="nuncatuvo" onclick="setSF('nuncatuvo')">🔴 Nunca tuvo</button>
         </div>
         <div id="filter-summary" style="display:none;background:var(--navy3);border-radius:var(--rs);padding:.5rem .875rem;font-size:.78rem;color:var(--navy);margin-bottom:.5rem;line-height:1.8;font-weight:500"></div>
@@ -542,17 +663,17 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
             <div>
               <div style="font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.375rem">Con cooperadora</div>
               <div class="ptgg">
-                <button class="tg-o tpdf-group on" id="pest-concoop" onclick="tpdfGroup('concoop')" style="font-weight:700">Establecimientos con cooperadora</button>
-                <button class="tg-o on" data-g="est" data-v="aldia" id="pest-aldia" onclick="tpdfSub(this,'concoop')">🟢 Cooperadora al día</button>
-                <button class="tg-o on" data-g="est" data-v="vigente" id="pest-vigente" onclick="tpdfSub(this,'concoop')">🔵 Cooperadora vigente</button>
+                <button class="tg-o tpdf-group on" id="pest-concoop" onclick="tpdfGroup('concoop')" style="font-weight:700">Todas con cooperadora</button>
+                <button class="tg-o on" data-g="est" data-v="aldia" id="pest-aldia" onclick="tpdfSub(this,'concoop')">🟢 Al día</button>
+                <button class="tg-o on" data-g="est" data-v="vigente" id="pest-vigente" onclick="tpdfSub(this,'concoop')">🔵 Vigente</button>
               </div>
             </div>
             <div>
               <div style="font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.375rem">Sin cooperadora</div>
               <div class="ptgg">
-                <button class="tg-o tpdf-group on" id="pest-sincoop" onclick="tpdfGroup('sincoop')" style="font-weight:700">Sin cooperadora (total)</button>
-                <button class="tg-o on" data-g="est" data-v="sinactiva" id="pest-sinactiva" onclick="tpdfSub(this,'sincoop')">📋 Debe documentación</button>
-                <button class="tg-o on" data-g="est" data-v="nuncatuvo" id="pest-nuncatuvo" onclick="tpdfSub(this,'sincoop')">🔴 Nunca tuvo cooperadora</button>
+                <button class="tg-o tpdf-group on" id="pest-sincoop" onclick="tpdfGroup('sincoop')" style="font-weight:700">Todas sin cooperadora</button>
+                <button class="tg-o on" data-g="est" data-v="sinactiva" id="pest-sinactiva" onclick="tpdfSub(this,'sincoop')">⚠️ Sin activa</button>
+                <button class="tg-o on" data-g="est" data-v="nuncatuvo" id="pest-nuncatuvo" onclick="tpdfSub(this,'sincoop')">🔴 Nunca tuvo</button>
               </div>
             </div>
           </div>
@@ -583,6 +704,30 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
           <button class="btn btn-s" onclick="updPdfPrev()">Actualizar resumen</button>
         </div>
       </div>
+    </div>
+
+    <!-- RECEPCIÓN -->
+    <div class="sec" id="sec-recepcion">
+      <div class="ph">
+        <div><div class="ph-ttl">📥 Recepción de Escuelas</div><div class="ph-sub">Registrá cada visita de una escuela al Consejo</div></div>
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <button class="btn btn-s" onclick="genInformeRecepcion()">📊 Generar informe</button>
+          <button class="btn btn-p" onclick="openRecModal()">+ Nueva recepción</button>
+        </div>
+      </div>
+      <div class="stats" id="rec-stats"></div>
+      <div class="search-row" style="margin-bottom:.75rem">
+        <div class="search-w"><span class="s-ico">🔍</span><input class="s-inp" id="rec-search" placeholder="Buscar escuela..." oninput="renderRecepcion()"></div>
+        <select class="fsel" id="rec-filter-per" onchange="ST.sharedPeriodo=this.value||periodoActual();renderRecepcion()" style="min-width:150px;flex:0 0 auto">
+          <option value="">Todos los períodos</option>
+        </select>
+        <select class="fsel" id="rec-filter-alert" onchange="renderRecepcion()" style="min-width:130px;flex:0 0 auto">
+          <option value="">Todas</option>
+          <option value="alerta">⚠️ Solo alertas</option>
+          <option value="ok">✅ Sin alertas</option>
+        </select>
+      </div>
+      <div id="rec-list"></div>
     </div>
 
     <!-- USUARIOS -->
@@ -620,7 +765,7 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     <div class="ff"><label class="fl">Distrital</label><select class="fs" id="sm-distrital"><option value="">— Sin distrital —</option><option value="Distrital 1">Distrital 1</option><option value="Distrital 2">Distrital 2</option><option value="Distrital 3">Distrital 3</option></select></div>
     <div class="ff"><label class="fl">Nombre asesora/or</label><input class="fi" id="sm-ases-nom" placeholder="Nombre completo"></div>
     <div class="ff"><label class="fl">Contacto asesora/or</label><input class="fi" id="sm-ases-cont" placeholder="Teléfono o email"></div>
-    <div class="ff"><label class="fl">Estado cooperadora</label><select class="fs" id="sm-tc"><option value="si">Con cooperadora</option><option value="tuvo">Debe documentación</option><option value="no">Nunca tuvo cooperadora</option></select></div>
+    <div class="ff"><label class="fl">Estado cooperadora</label><select class="fs" id="sm-tc"><option value="si">Con cooperadora</option><option value="tuvo">Sin cooperadora activa</option><option value="no">Nunca tuvo cooperadora</option></select></div>
     <div class="ff"><label class="fl">Período activo</label><select class="fs" id="sm-per"></select></div>
     <div class="ff"><label class="fl">Estatuto</label><select class="fs" id="sm-estatuto"><option value="">— Sin información —</option><option value="Estatuto actualizado">Estatuto actualizado</option><option value="Estatuto viejo">Estatuto viejo</option><option value="Sin estatuto">Sin estatuto</option></select></div>
   </div></div>
@@ -640,6 +785,92 @@ input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
     <div class="ff c2"><label class="fl">Próxima acción</label><input class="fi" id="vm-prox"></div>
   </div></div>
   <div class="mfoot"><button class="btn btn-s" onclick="closeMov('vm-ov')">Cancelar</button><button class="btn btn-p" onclick="saveVM()">Guardar visita</button></div>
+</div></div>
+
+<!-- MODAL RECEPCIÓN -->
+<div class="moverlay" id="rm-ov" onclick="closeMov('rm-ov',event)">
+<div class="modal">
+  <div class="mhd"><div class="mttl">📥 Registrar recepción</div><button class="mcl" onclick="closeMov('rm-ov')">✕</button></div>
+  <div class="mbody">
+    <div class="ib ib-b" id="rm-school-info" style="margin-bottom:1rem">Seleccioná una escuela</div>
+    <div class="fg">
+      <div class="ff c2">
+        <label class="fl">Escuela</label>
+        <div class="ac-wrap" id="rm-ac-wrap">
+          <span class="ac-ico">🔍</span>
+          <input class="ac-inp" id="rm-ac-inp" type="text" placeholder="Escribí número o nombre de escuela..." autocomplete="off" oninput="acSearch()" onkeydown="acKey(event)" onfocus="acSearch()">
+          <button class="ac-clear" id="rm-ac-clear" onclick="acClear()" tabindex="-1">✕</button>
+          <div class="ac-drop" id="rm-ac-drop"></div>
+        </div>
+        <input type="hidden" id="rm-school">
+      </div>
+      <div class="ff">
+        <label class="fl">Fecha de recepción</label>
+        <input class="fi" type="date" id="rm-fecha">
+      </div>
+      <div class="ff">
+        <label class="fl">Período lectivo</label>
+        <select class="fs" id="rm-periodo" onchange="onRecPeriodoChange()"></select>
+      </div>
+      <div class="ff c2">
+        <label class="fl">Motivo / Trámite</label>
+        <select class="fs" id="rm-motivo">
+          <option value="Presentación documentación">Presentación documentación</option>
+          <option value="Consulta">Consulta</option>
+          <option value="Rendición de cuentas">Rendición de cuentas</option>
+          <option value="Renovación de autoridades">Renovación de autoridades</option>
+          <option value="Solicitud de reorganización">Solicitud de reorganización</option>
+          <option value="Retiro de comprobantes">Retiro de comprobantes</option>
+          <option value="Otro">Otro</option>
+        </select>
+      </div>
+      <div class="ff c2">
+        <label class="fl">Observaciones</label>
+        <textarea class="ft" id="rm-obs" rows="3" placeholder="Anotá detalles del trámite, documentos recibidos, etc."></textarea>
+      </div>
+      <div class="ff c2">
+        <label class="fl" style="color:var(--red)">⚠️ Marcar como alerta / problemática</label>
+        <div style="display:flex;align-items:center;gap:.75rem;margin-top:.2rem">
+          <input type="checkbox" id="rm-alerta" onchange="toggleAlertaDesc()" style="width:18px;height:18px;cursor:pointer;accent-color:var(--red)">
+          <label for="rm-alerta" style="font-size:.82rem;cursor:pointer">Esta recepción requiere seguimiento especial</label>
+        </div>
+      </div>
+      <div class="ff c2" id="rm-alerta-desc-row" style="display:none">
+        <label class="fl">Descripción de la alerta</label>
+        <input class="fi" id="rm-alerta-desc" placeholder="Describí brevemente la problemática...">
+      </div>
+    </div>
+    <div id="rm-missing-info" style="display:none;margin-top:1rem"></div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-s" onclick="closeMov('rm-ov')">Cancelar</button>
+    <button class="btn btn-p" onclick="saveRecepcion()">💾 Guardar recepción</button>
+  </div>
+</div></div>
+
+<!-- MODAL EDITAR PERÍODO ACTIVO -->
+<div class="moverlay" id="ep-ov" onclick="closeMov('ep-ov',event)">
+<div class="modal" style="max-width:420px">
+  <div class="mhd"><div class="mttl">✏️ Editar período activo</div><button class="mcl" onclick="closeMov('ep-ov')">✕</button></div>
+  <div class="mbody">
+    <div class="ff" style="margin-bottom:1rem">
+      <label class="fl">Período activo de la cooperadora</label>
+      <select class="fs" id="ep-periodo"></select>
+      <div style="font-size:.73rem;color:var(--muted);margin-top:.35rem">Podés seleccionar cualquier año, incluso si el último período fue en el 2000.</div>
+    </div>
+    <div class="ff">
+      <label class="fl">Estado del período</label>
+      <select class="fs" id="ep-estado">
+        <option value="Vigente">Vigente</option>
+        <option value="Vencida">Vencida</option>
+        <option value="En renovación">En renovación</option>
+      </select>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-s" onclick="closeMov('ep-ov')">Cancelar</button>
+    <button class="btn btn-p" onclick="saveEditPeriodo()">💾 Guardar</button>
+  </div>
 </div></div>
 
 <!-- MODAL PERÍODO -->
@@ -721,6 +952,7 @@ var ST = {
   sf:'all', editSId:null,
   vCtx:{id:null,idx:null}, pCtx:{id:null},
   cIdx:-1, detId:null,
+  sharedPeriodo: periodoActual(), // período vinculado entre secciones
   pdf:{est:['aldia','vigente','sinactiva','nuncatuvo'],k:['con','sin'],banco:['con','sin'],inc:[],locs:[]}
 };
 
@@ -750,46 +982,39 @@ function parseDate(ds){
 function ddiff(ds){if(!ds)return null;var d=parseDate(ds),n=new Date();if(!d||isNaN(d))return null;d.setHours(0,0,0,0);n.setHours(0,0,0,0);return Math.round((d-n)/86400000)}
 // ── ETIQUETAS ─────────────────────────────────────────────
 // Etiqueta 1: Cooperadora Al día      → tiene coop (si) Y último período tiene doc aprobada
-// Etiqueta 2: Cooperadora Vigente     → tiene coop (si), último período SIN doc pero menos de 3 períodos consecutivos sin doc
-// Etiqueta 3: Debe documentación      → tiene coop (si) con 3+ períodos sin doc, O marcada manualmente como 'tuvo'
+// Etiqueta 2: Cooperadora Vigente     → tiene coop (si) Y debe menos de 3 períodos sin doc
+// Etiqueta 3: Sin cooperadora activa  → tuvo coop pero debe 3+ períodos, o marcada 'tuvo'
 // Etiqueta 4: Nunca tuvo cooperadora  → nunca tuvo (no / vacío)
-// ─────────────────────────────────────────────────────────
-// En informes:
-//   "Establecimientos con cooperadora" = Al día + Vigente
-//   "Cooperadora al día"               = solo Al día
-//   "Cooperadora vigente"              = solo Vigente
-//   "Sin cooperadora"                  = Debe documentación + Nunca tuvo
 function etiq(s){
   var t = (s.TIENE_COOP||'').toLowerCase().trim();
 
   // Nunca tuvo cooperadora
   if(t==='' || t==='no') return {l:'Nunca tuvo cooperadora',c:'tr',i:'🔴'};
 
-  // Debe documentación (marcada manualmente como que no está activa)
-  if(t==='tuvo') return {l:'Debe documentación',c:'ta',i:'📋'};
+  // Sin cooperadora activa (marcada manualmente como que tuvo)
+  if(t==='tuvo') return {l:'Sin cooperadora activa',c:'ta',i:'⚠️'};
 
   // Tiene cooperadora activa (si) — evaluar estado por períodos
   var ps = pj(s.PERIODOS,[]);
 
-  // Sin períodos cargados aún → Vigente por defecto
+  // Sin períodos cargados aún
   if(!ps.length) return {l:'Cooperadora Vigente',c:'tb',i:'🔵'};
 
   var last = ps[ps.length-1];
-
-  // Calcular cuántos períodos seguidos sin documentación tiene (desde el más reciente hacia atrás)
+  // Calcular cuántos períodos seguidos sin documentación tiene (desde el más reciente)
   var sinDoc = 0;
   for(var i = ps.length-1; i >= 0; i--){
     if(!ps[i].docestado || ps[i].docestado==='') sinDoc++;
     else break; // se interrumpe en cuanto hay doc presentada
   }
 
+  // Sin cooperadora activa: debe 3 o más períodos consecutivos sin documentación
+  if(sinDoc >= 3) return {l:'Sin cooperadora activa',c:'ta',i:'⚠️'};
+
   // Cooperadora Al día: último período tiene documentación aprobada
   if(last.docestado && last.docestado!=='') return {l:'Cooperadora Al día',c:'tg',i:'🟢'};
 
-  // Debe documentación: debe 3 o más períodos consecutivos sin documentación
-  if(sinDoc >= 3) return {l:'Debe documentación',c:'ta',i:'📋'};
-
-  // Cooperadora Vigente: debe menos de 3 períodos sin doc
+  // Cooperadora Vigente: debe menos de 3 períodos
   return {l:'Cooperadora Vigente',c:'tb',i:'🔵'};
 }
 function toast(msg){var t=el('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2800)}
@@ -914,7 +1139,16 @@ function doLogout(){
 // NAVIGATION
 // ════════════════════════════════════════════════════════════
 function goTo(name){
-  ['escuelas','coords','asam','informes','users'].forEach(function(s){
+  if(name==='recepcion'){
+    renderRecepcion(); renderRecStats(); fillRecPerFilter();
+    // Sync period filter to shared period after options are built
+    var recFil = el('rec-filter-per');
+    if(recFil && ST.sharedPeriodo) {
+      var opt = recFil.querySelector('option[value="'+ST.sharedPeriodo+'"]');
+      if(opt) { recFil.value = ST.sharedPeriodo; renderRecepcion(); }
+    }
+  }
+  ['escuelas','coords','asam','informes','users','recepcion'].forEach(function(s){
     var sec=el('sec-'+s);if(sec)sec.className='sec';
     var ni=el('ni-'+s);if(ni)ni.className='nav-i';
     var bi=el('bi-'+s);if(bi)bi.className='bn-i';
@@ -1188,6 +1422,9 @@ async function initApp(){
   renderStats();
   renderPdfLocs();
   updPdfPrev();
+  renderRecepcion();
+  renderRecStats();
+  fillRecPerFilter();
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1266,7 +1503,7 @@ function renderSchools(){
     if(fk){var h=s.KIOSCO&&(s.KIOSCO.toLowerCase().indexOf('kiosco')>=0);if(fk==='con'&&!h)return false;if(fk==='sin'&&h)return false;}
     return true;
   });
-  if(ST.sf!=='all'){list=list.filter(function(s){var lbl=etiq(s).l;if(ST.sf==='aldia')return lbl==='Cooperadora Al día';if(ST.sf==='vigente')return lbl==='Cooperadora Vigente';if(ST.sf==='sinactiva')return lbl==='Debe documentación';if(ST.sf==='nuncatuvo')return lbl==='Nunca tuvo cooperadora';if(ST.sf==='sincoop')return lbl==='Debe documentación'||lbl==='Nunca tuvo cooperadora';return true})}
+  if(ST.sf!=='all'){list=list.filter(function(s){var lbl=etiq(s).l;if(ST.sf==='aldia')return lbl==='Cooperadora Al día';if(ST.sf==='vigente')return lbl==='Cooperadora Vigente';if(ST.sf==='sinactiva')return lbl==='Sin cooperadora activa';if(ST.sf==='nuncatuvo')return lbl==='Nunca tuvo cooperadora';if(ST.sf==='sincoop')return lbl==='Sin cooperadora activa'||lbl==='Nunca tuvo cooperadora';return true})}
 
   list.sort(function(a,b){
     var ca=splitCode(a.NUMERO||''), cb=splitCode(b.NUMERO||'');
@@ -1291,14 +1528,14 @@ function renderSchools(){
     if(hasFilter && list.length>0){
       var fAldia=list.filter(function(s){return etiq(s).l==='Cooperadora Al día';}).length;
       var fVigente=list.filter(function(s){return etiq(s).l==='Cooperadora Vigente';}).length;
-      var fDebeDoc=list.filter(function(s){return etiq(s).l==='Debe documentación';}).length;
+      var fSinActiva=list.filter(function(s){return etiq(s).l==='Sin cooperadora activa';}).length;
       var fNunca=list.filter(function(s){return etiq(s).l==='Nunca tuvo cooperadora';}).length;
       var fKiosk=list.filter(function(s){return s.KIOSCO&&s.KIOSCO.toLowerCase().indexOf('kiosco')>=0}).length;
       var fBanco=list.filter(function(s){return s.BANCO==='con'}).length;
       var parts=['<strong>'+list.length+' resultado'+(list.length!==1?'s':'')+'</strong>'];
       if(fAldia) parts.push('🟢 Al día: '+fAldia);
       if(fVigente) parts.push('🔵 Vigente: '+fVigente);
-      if(fDebeDoc) parts.push('📋 Debe doc.: '+fDebeDoc);
+      if(fSinActiva) parts.push('⚠️ Sin activa: '+fSinActiva);
       if(fNunca) parts.push('🔴 Nunca tuvo: '+fNunca);
       if(fKiosk) parts.push('🏪 Con kiosco: '+fKiosk);
       if(fBanco) parts.push('🏦 Con banco: '+fBanco);
@@ -1330,15 +1567,15 @@ function renderStats(){
   var alDia=ST.schools.filter(function(s){return etiq(s).l==='Cooperadora Al día';}).length;
   var vigente=ST.schools.filter(function(s){return etiq(s).l==='Cooperadora Vigente';}).length;
   var conCoop=alDia+vigente;
-  var debeDoc=ST.schools.filter(function(s){return etiq(s).l==='Debe documentación';}).length;
+  var sinActiva=ST.schools.filter(function(s){return etiq(s).l==='Sin cooperadora activa';}).length;
   var nuncaTuvo=ST.schools.filter(function(s){return etiq(s).l==='Nunca tuvo cooperadora';}).length;
-  var sinTotal=debeDoc+nuncaTuvo;
+  var sinTotal=sinActiva+nuncaTuvo;
   e.innerHTML=
     '<div class="stat"><div class="stat-v">'+tot+'</div><div class="stat-l">Total escuelas</div></div>'+
-    '<div class="stat"><div class="stat-v" style="color:var(--green)">'+conCoop+'</div><div class="stat-l">Con cooperadora</div></div>'+
+    '<div class="stat"><div class="stat-v" style="color:var(--green)">'+conCoop+'</div><div class="stat-l">Con cooperadora (total)</div></div>'+
     '<div class="stat"><div class="stat-v" style="color:var(--green)">'+alDia+'</div><div class="stat-l">Al día</div></div>'+
     '<div class="stat"><div class="stat-v" style="color:var(--navy2)">'+vigente+'</div><div class="stat-l">Vigente</div></div>'+
-    '<div class="stat"><div class="stat-v" style="color:var(--red)">'+sinTotal+'</div><div class="stat-l">Sin cooperadora</div></div>';
+    '<div class="stat"><div class="stat-v" style="color:var(--red)">'+sinTotal+'</div><div class="stat-l">Sin cooperadora activa</div></div>';
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1370,7 +1607,7 @@ async function saveSM(){
   var t=el('sm-tip').value,n=el('sm-num').value.trim();
   var smOVal=el('sm-otro');if(t==='Otro'&&smOVal&&smOVal.value.trim())t=smOVal.value.trim();
   var s={ID:ST.editSId||gid(),NOMBRE:nom,NUMERO:n?(t+' '+n):t,LOCALIDAD:el('sm-loc').value,DIRECCION:el('sm-dir').value.trim(),ASESORA_NOMBRE:el('sm-ases-nom').value.trim(),ASESORA_CONTACTO:el('sm-ases-cont').value.trim(),DISTRITAL:(el('sm-distrital')?el('sm-distrital').value.trim():''),ESTATUTO:(el('sm-estatuto')?el('sm-estatuto').value:''),TIENE_COOP:el('sm-tc').value,PERIODO_COOP:el('sm-per').value,ESTADO_PERIODO_COOP:el('sm-tc').value!=='no'?'Vigente':'',VISITAS:'[]',PERIODOS:'[]',COM_DIRECTIVA:'{}',COM_REVISORA:'{}'};
-  if(ST.editSId){var ex=gS(ST.editSId);if(ex)s=Object.assign({},ex,{NOMBRE:s.NOMBRE,NUMERO:s.NUMERO,LOCALIDAD:s.LOCALIDAD,DIRECCION:s.DIRECCION,ASESORA_NOMBRE:s.ASESORA_NOMBRE,ASESORA_CONTACTO:s.ASESORA_CONTACTO,DISTRITAL:s.DISTRITAL,ESTATUTO:s.ESTATUTO,TIENE_COOP:s.TIENE_COOP,PERIODO_COOP:s.PERIODO_COOP})}
+  if(ST.editSId){var ex=gS(ST.editSId);if(ex)s=Object.assign({},ex,{NOMBRE:s.NOMBRE,NUMERO:s.NUMERO,LOCALIDAD:s.LOCALIDAD,DIRECCION:s.DIRECCION,ASESORA_NOMBRE:s.ASESORA_NOMBRE,ASESORA_CONTACTO:s.ASESORA_CONTACTO,DISTRITAL:s.DISTRITAL,ESTATUTO:s.ESTATUTO,TIENE_COOP:s.TIENE_COOP,PERIODO_COOP:s.PERIODO_COOP,ESTADO_PERIODO_COOP:el('sm-tc').value!=='no'?'Vigente':''})}
   var idx=ST.schools.findIndex(function(x){return x.ID===s.ID});
   if(idx>=0)ST.schools[idx]=s;else ST.schools.push(s);
   await saveSchoolR(s);closeMov('sm-ov');renderSchools();renderStats();toast('✅ Escuela guardada');
@@ -1434,15 +1671,17 @@ function renderDetail(id,tab){
   if(tab===null||tab===undefined){
     var activeTab=el('detail-view')&&el('detail-view').querySelector('.tab.on');
     tab=activeTab?activeTab.textContent.trim().replace(/^[^a-z]*/i,'').toLowerCase():'general';
-    // Map label back to key
-    if(tab.indexOf('general')>=0||tab.indexOf('📋')>=0) tab='general';
-    else if(tab.indexOf('cooper')>=0||tab.indexOf('🤝')>=0) tab='cooperadora';
-    else if(tab.indexOf('comis')>=0||tab.indexOf('👤')>=0) tab='comision';
-    else if(tab.indexOf('visita')>=0||tab.indexOf('📍')>=0) tab='visitas';
+    // Map label back to key (emojis stripped by replace above)
+    if(tab.indexOf('general')>=0) tab='general';
+    else if(tab.indexOf('cooper')>=0) tab='cooperadora';
+    else if(tab.indexOf('comis')>=0) tab='comision';
+    else if(tab.indexOf('visita')>=0) tab='visitas';
     else tab='general';
   }
   var e=etiq(s),coord=getCoord(s.LOCALIDAD),cord=getCordLabel(s.LOCALIDAD);
   var ps=pj(s.PERIODOS,[]),vs=pj(s.VISITAS,[]);
+  // Count receptions for this school
+  var recCount = getRec().filter(function(r){return r.schoolId===id;}).length;
   var tabs=['general','cooperadora','comision','visitas'];
   var tabLabels=['📋 General','🤝 Cooperadora','👤 Comisión','📍 Visitas ('+vs.length+')'];
   var tabHtml=tabs.map(function(t,i){return '<button class="tab'+(tab===t?' on':'')+'" onclick="renderDetail(\''+id+'\',\''+t+'\')">'+tabLabels[i]+'</button>'}).join('');
@@ -1458,9 +1697,11 @@ function renderDetail(id,tab){
         '<div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:.25rem">'+
           '<span style="font-size:1.15rem;font-weight:800">'+esc(s.NOMBRE||'Sin nombre')+'</span>'+
           '<span class="tag '+e.c+'">'+e.i+' '+e.l+'</span>'+
+          (recCount?'<span class="tag tb" title="Recepciones registradas">📥 '+recCount+' recepción'+(recCount!==1?'es':'')+'</span>':'')+
         '</div>'+
         '<div style="font-size:.75rem;color:var(--muted)">'+esc(s.NUMERO||'—')+' · '+esc(s.LOCALIDAD||'—')+' · '+esc(coord)+' · '+esc(cord)+'</div>'+
       '</div>'+
+      '<button class="btn btn-s btn-sm" onclick="openRecModalForSchool(\''+esc(id)+'\')">📥 Recepción</button>'+
       '<button class="btn btn-s btn-sm" onclick="openSM(\''+esc(id)+'\')">✏️ Editar</button>'+
       (ST.user&&ST.user.role==='admin'?'<button class="btn btn-d btn-sm" onclick="deleteSchool(\''+esc(id)+'\')">🗑 Eliminar</button>':'')+
     '</div>'+
@@ -1504,10 +1745,19 @@ function setCodigoOtro(id, val) {
 }
 
 
-function buildPeriodOpts(cur) {
+function buildPeriodOpts(cur, extended) {
   var opts = '<option value="">— Sin período —</option>';
   opts += '<option value="Desconocido"'+(cur==='Desconocido'?' selected':'')+'>Desconocido</option>';
-  getPeriods().forEach(function(p){
+  var periods = getPeriods();
+  if(extended){
+    var curY = parseInt(periodoActual());
+    for(var y = curY-5; y >= 1990; y--){
+      var p2 = y+'-'+(y+1);
+      if(periods.indexOf(p2)<0) periods.push(p2);
+    }
+  }
+  if(cur && cur!=='Desconocido' && periods.indexOf(cur)<0) periods.unshift(cur);
+  periods.forEach(function(p){
     opts += '<option value="'+p+'"'+(cur===p?' selected':'')+'>'+pLabel(p)+'</option>';
   });
   return opts;
@@ -1548,8 +1798,8 @@ function tabGen(s,coord,cord){
     fsel2('Localidad','LOCALIDAD',s,LOCS)+
     ff2('Dirección','DIRECCION',s,'c2')+'<div class="ff"><label class="fl">Distrital</label><select class="fs" onchange="setF(\''+s.ID+'\',\'DISTRITAL\',this.value)"><option value="">— Sin distrital —</option><option value="Distrital 1"'+(s.DISTRITAL==="Distrital 1"?' selected':'')+'>Distrital 1</option><option value="Distrital 2"'+(s.DISTRITAL==="Distrital 2"?' selected':'')+'>Distrital 2</option><option value="Distrital 3"'+(s.DISTRITAL==="Distrital 3"?' selected':'')+'>Distrital 3</option></select></div>'+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Cooperadora</div>'+
-    togRow('Estado cooperadora','TIENE_COOP',s,[['si','Con cooperadora',''],['tuvo','Debe documentación','oa'],['no','Nunca tuvo cooperadora','or']])+
-    '<div class="ff"><label class="fl">Período activo</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+buildPeriodOpts(s.PERIODO_COOP)+'</select></div>'+
+    togRow('Estado cooperadora','TIENE_COOP',s,[['si','Con cooperadora',''],['tuvo','Sin cooperadora activa','oa'],['no','Nunca tuvo cooperadora','or']])+
+    '<div class="ff c2"><label class="fl">Período activo</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+buildPeriodOpts(s.PERIODO_COOP||'',true)+'</select></div>'+
 
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Asesora / Asesor</div>'+
     ff2('Nombre','ASESORA_NOMBRE',s)+
@@ -1578,8 +1828,13 @@ function tabCoop(s,ps){
     togRow('Estado documentación','DOC_ESTADO',s,[['','Sin doc','or'],['PIA firmada','PIA firmada',''],['Con reconocimiento oficial DGCyE','Reconocimiento DGCyE','og']])+
     togRow('Tipo cooperadora','TIPO_COOP',s,[['Activa','Activa',''],['Administrativa','Administrativa',''],['✌️','✌️','']])+
     '<div style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .875rem">Período activo y asamblea</div>'+
+    '<div class="ff" style="margin-bottom:.875rem">'+
+      '<label class="fl">Período activo</label>'+
+      '<select class="fi" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+
+        buildPeriodOpts(s.PERIODO_COOP||'', true)+
+      '</select>'+
+    '</div>'+
     '<div class="fg" style="margin-bottom:.875rem">'+
-      '<div class="ff"><label class="fl">Período activo</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+buildPeriodOpts(s.PERIODO_COOP)+'</select></div>'+
       togRow('Estado período','ESTADO_PERIODO_COOP',s,[['Vigente','Vigente',''],['Vencida','Vencida','or'],['En renovación','En renovación','oa']])+
       '<div class="ff"><label class="fl">Fecha asamblea</label><input class="fi" type="date" value="'+esc(s.FECHA_ASAMBLEA||'')+'" onchange="setF(\''+s.ID+'\',\'FECHA_ASAMBLEA\',this.value)"></div>'+
       togRow('Estado asamblea','ESTADO_ASAMBLEA',s,[['pendiente','Pendiente',''],['realizada','Realizada','og']])+
@@ -1620,7 +1875,10 @@ function tabVis(s,vs){
   return '<div style="max-width:680px">'+
     '<div style="display:flex;justify-content:flex-end;margin-bottom:1rem"><button class="btn btn-p" onclick="openVM(\''+s.ID+'\',null)">+ Nueva visita</button></div>'+
     (!vs.length?'<div class="es"><div class="ei">📍</div><div class="et">Sin visitas registradas</div></div>':
-      [].concat(vs).reverse().map(function(v,ri){var i=vs.length-1-ri;return '<div class="vitem"><div class="vhd"><span class="vtipo">'+esc(v.tipo||'Presencial')+'</span><span class="vdate">'+esc(v.fecha||'')+'</span><div style="display:flex;gap:.35rem;margin-left:auto"><button class="btn btn-s btn-xs" onclick="openVM(\''+s.ID+'\','+i+')">✏️</button><button class="btn btn-d btn-xs" onclick="delV(\''+s.ID+'\','+i+')">🗑</button></div></div><div class="vdesc" onclick="openVM(\''+s.ID+'\','+i+')">'+esc(v.descripcion||'Sin descripción')+'</div>'+(v.responsable?'<div class="vdate" style="margin-top:.2rem">👤 '+esc(v.responsable)+'</div>':'')+(v.proxAccion?'<div class="vprox">→ '+esc(v.proxAccion)+'</div>':'')+'</div>'}).join(''))+
+      [].concat(vs).reverse().map(function(v,ri){var i=vs.length-1-ri;
+        var recBadge = v.fromRecepcion ? '<span class="tag tb" style="font-size:.62rem;padding:.1rem .4rem;margin-left:.35rem">📥 Recepción</span>' : '';
+        return '<div class="vitem"><div class="vhd"><span class="vtipo">'+esc(v.tipo||'Presencial')+'</span>'+recBadge+'<span class="vdate">'+esc(v.fecha||'')+'</span><div style="display:flex;gap:.35rem;margin-left:auto">'+(!v.fromRecepcion?'<button class="btn btn-s btn-xs" onclick="openVM(\''+s.ID+'\','+i+')">✏️</button>':'')+'<button class="btn btn-d btn-xs" onclick="delV(\''+s.ID+'\','+i+')">🗑</button></div></div><div class="vdesc" '+(v.fromRecepcion?'':' onclick="openVM(\''+s.ID+'\','+i+')"')+'>'+esc(v.descripcion||'Sin descripción')+'</div>'+(v.responsable?'<div class="vdate" style="margin-top:.2rem">👤 '+esc(v.responsable)+'</div>':'')+(v.proxAccion?'<div class="vprox">→ '+esc(v.proxAccion)+'</div>':'')+'</div>';
+      }).join(''))+
   '</div>'
 }
 
@@ -1679,8 +1937,12 @@ async function saveVM(){
 // PERIOD MODAL
 // ════════════════════════════════════════════════════════════
 function openPM(sid){
-  ST.pCtx={id:sid};fillSelects();
+  ST.pCtx={id:sid};
+  // Use extended periods (back to 1990) for manual period entry
+  var pmPer=el('pm-per');
+  if(pmPer) pmPer.innerHTML=buildPeriodOpts(periodoActual(), true);
   el('pm-notas').value='';el('pm-doc').value='';el('pm-asam').value='';
+  el('pm-est').value='Vigente';
   openMov('pm-ov');
 }
 async function savePM(){
@@ -1969,7 +2231,7 @@ function getPdfList(){
     if(ST.pdf.locs.length&&!ST.pdf.locs.some(function(l){return l.toLowerCase().trim()===(s.LOCALIDAD||'').toLowerCase().trim();}))return false;
     if(!ST.pdf.locs.length && ST.pdf.locsCleared) return false;
     var lbl=etiq(s).l;
-    var lCat = lbl==='Cooperadora Al día'?'aldia':lbl==='Cooperadora Vigente'?'vigente':lbl==='Debe documentación'?'sinactiva':'nuncatuvo';
+    var lCat = lbl==='Cooperadora Al día'?'aldia':lbl==='Cooperadora Vigente'?'vigente':lbl==='Sin cooperadora activa'?'sinactiva':'nuncatuvo';
     if(ST.pdf.est.indexOf(lCat)<0)return false;
     var hk=s.KIOSCO&&(s.KIOSCO.toLowerCase().indexOf('kiosco')>=0);
     if(ST.pdf.k.indexOf('con')<0&&hk)return false;
@@ -2000,7 +2262,7 @@ function updPdfPrev(){
     else locSummary='<div style="margin-top:.375rem;font-size:.73rem;opacity:.8">'+locParts.slice(0,6).join(' &nbsp;·&nbsp; ')+' y '+(locParts.length-6)+' más...</div>';
   }
 
-  var estLabels={aldia:'Al día',vigente:'Vigente',sinactiva:'Debe doc.',nuncatuvo:'Nunca tuvo'};
+  var estLabels={aldia:'Al día',vigente:'Vigente',sinactiva:'Sin activa',nuncatuvo:'Nunca tuvo'};
   // Build a readable summary of selected states
   var conCoopSels = PDF_GROUPS.concoop.filter(function(v){return ST.pdf.est.indexOf(v)>=0;});
   var sinCoopSels = PDF_GROUPS.sincoop.filter(function(v){return ST.pdf.est.indexOf(v)>=0;});
@@ -2076,10 +2338,10 @@ function genPDF(){
   var _cS=PDF_GROUPS.concoop.filter(function(v){return ST.pdf.est.indexOf(v)>=0;});
   var _sS=PDF_GROUPS.sincoop.filter(function(v){return ST.pdf.est.indexOf(v)>=0;});
   if(_cS.length===2 && _sS.length===0) pdfTitle='Informe: Establecimientos Con Cooperadora';
-  else if(_cS.length===0 && _sS.length===2) pdfTitle='Informe: Sin Cooperadora (total)';
+  else if(_cS.length===0 && _sS.length===2) pdfTitle='Informe: Establecimientos Sin Cooperadora';
   else if(_cS.length===1 && _sS.length===0 && _cS[0]==='aldia') pdfTitle='Informe: Cooperadora Al Día';
   else if(_cS.length===1 && _sS.length===0 && _cS[0]==='vigente') pdfTitle='Informe: Cooperadora Vigente';
-  else if(_cS.length===0 && _sS.length===1 && _sS[0]==='sinactiva') pdfTitle='Informe: Debe Documentación';
+  else if(_cS.length===0 && _sS.length===1 && _sS[0]==='sinactiva') pdfTitle='Informe: Sin Cooperadora Activa';
   else if(_cS.length===0 && _sS.length===1 && _sS[0]==='nuncatuvo') pdfTitle='Informe: Nunca Tuvo Cooperadora';
   doc.text(pdfTitle,ML,y);
   y+=6;
@@ -2089,7 +2351,7 @@ function genPDF(){
   doc.text('Generado: '+new Date().toLocaleDateString('es-AR',{day:'2-digit',month:'long',year:'numeric'})+' — '+list.length+' establecimiento'+(list.length!==1?'s':''),ML,y);
   y+=6;
 
-  var estLabels={aldia:'Al día',vigente:'Vigente',sinactiva:'Debe doc.',nuncatuvo:'Nunca tuvo'};
+  var estLabels={aldia:'Al día',vigente:'Vigente',sinactiva:'Sin activa',nuncatuvo:'Nunca tuvo'};
   var _conSel=PDF_GROUPS.concoop.filter(function(v){return ST.pdf.est.indexOf(v)>=0;});
   var _sinSel=PDF_GROUPS.sincoop.filter(function(v){return ST.pdf.est.indexOf(v)>=0;});
   var _estDesc=[];
@@ -2383,6 +2645,480 @@ function loadSample(){
 }
 
 // ════════════════════════════════════════════════════════════
+// DARK MODE
+// ════════════════════════════════════════════════════════════
+function toggleDark(){
+  var dark = document.body.classList.toggle('dark');
+  try{localStorage.setItem('coop_dark', dark?'1':'0')}catch(e){}
+  var btn = el('dark-btn');
+  if(btn) btn.textContent = dark ? '☀️' : '🌙';
+}
+function initDark(){
+  var pref = '0';
+  try{pref = localStorage.getItem('coop_dark')||'0'}catch(e){}
+  if(pref==='1'){
+    document.body.classList.add('dark');
+    var btn = el('dark-btn');
+    if(btn) btn.textContent = '☀️';
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// EDITAR PERÍODO ACTIVO
+// ════════════════════════════════════════════════════════════
+var ST_EP = {id:null};
+function openEditPeriodo(id){
+  ST_EP.id = id;
+  var s = gS(id); if(!s) return;
+  var sel = el('ep-periodo');
+  sel.innerHTML = buildPeriodOpts(s.PERIODO_COOP, true);
+  var estSel = el('ep-estado');
+  estSel.value = s.ESTADO_PERIODO_COOP || 'Vigente';
+  openMov('ep-ov');
+}
+async function saveEditPeriodo(){
+  var s = gS(ST_EP.id); if(!s) return;
+  s.PERIODO_COOP = el('ep-periodo').value;
+  s.ESTADO_PERIODO_COOP = el('ep-estado').value;
+  var ok = await saveSchoolR(s);
+  if(ok !== false){ toast('✅ Período actualizado'); closeMov('ep-ov'); renderDetail(ST_EP.id, 'cooperadora'); }
+}
+
+// ════════════════════════════════════════════════════════════
+// RECEPCIÓN
+// ════════════════════════════════════════════════════════════
+function getRec(){ try{var r=localStorage.getItem('coop_rec');return r?JSON.parse(r):[]}catch(e){return []} }
+function saveRec(arr){ try{localStorage.setItem('coop_rec',JSON.stringify(arr))}catch(e){} }
+
+// ── AUTOCOMPLETE ESCUELA (recepción) ──────────────────────
+var AC = { selectedId: null, results: [], activeIdx: -1 };
+
+function acClose(){
+  var drop = el('rm-ac-drop');
+  if(drop) drop.classList.remove('open');
+  AC.activeIdx = -1;
+}
+
+function acHighlight(){
+  var drop = el('rm-ac-drop'); if(!drop) return;
+  var items = drop.querySelectorAll('.ac-item');
+  items.forEach(function(it, i){ it.classList.toggle('active', i === AC.activeIdx); });
+  if(AC.activeIdx >= 0 && items[AC.activeIdx]) items[AC.activeIdx].scrollIntoView({block:'nearest'});
+}
+
+function acSearch(){
+  var q = (el('rm-ac-inp').value||'').toLowerCase().trim();
+  var drop = el('rm-ac-drop');
+  var clr = el('rm-ac-clear');
+  if(clr) clr.classList.toggle('show', q.length > 0 || !!AC.selectedId);
+
+  if(!q && AC.selectedId){ acClear(); return; }
+  if(!q){ acClose(); AC.results = []; return; }
+
+  var sorted = ST.schools.slice().sort(function(a,b){
+    return (a.NUMERO||'').localeCompare(b.NUMERO||'','es',{numeric:true});
+  });
+  AC.results = sorted.filter(function(s){
+    return (s.NUMERO||'').toLowerCase().includes(q) ||
+           (s.NOMBRE||'').toLowerCase().includes(q) ||
+           (s.LOCALIDAD||'').toLowerCase().includes(q);
+  }).slice(0, 40);
+
+  AC.activeIdx = -1;
+  renderAcDrop();
+  if(drop) drop.classList.toggle('open', AC.results.length > 0);
+}
+
+function renderAcDrop(){
+  var drop = el('rm-ac-drop'); if(!drop) return;
+  if(!AC.results.length){
+    drop.innerHTML = '<div class="ac-empty">Sin resultados. Probá con otro término.</div>';
+    return;
+  }
+  drop.innerHTML = AC.results.map(function(s, i){
+    var e2 = etiq(s);
+    var num = (s.NUMERO||'').split(' ').slice(0,2).join(' ');
+    var sid = esc(s.ID).replace(/'/g,'&#39;');
+    return '<div class="ac-item'+(i===AC.activeIdx?' active':'')+'" data-id="'+esc(s.ID)+'" onmousedown="acSelect(\''+sid+'\')">'+
+      '<div class="ac-av">'+esc(num)+'</div>'+
+      '<div class="ac-info">'+
+        '<div class="ac-iname">'+esc(s.NOMBRE||'—')+'</div>'+
+        '<div class="ac-imeta">'+esc(s.LOCALIDAD||'—')+' <span class="tag '+e2.c+'" style="font-size:.62rem;padding:.1rem .35rem">'+e2.i+' '+e2.l+'</span></div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function acKey(e){
+  var drop = el('rm-ac-drop');
+  if(!drop || !drop.classList.contains('open')) return;
+  if(e.key==='ArrowDown'){
+    e.preventDefault();
+    AC.activeIdx = Math.min(AC.activeIdx+1, AC.results.length-1);
+    acHighlight();
+  } else if(e.key==='ArrowUp'){
+    e.preventDefault();
+    AC.activeIdx = Math.max(AC.activeIdx-1, 0);
+    acHighlight();
+  } else if(e.key==='Enter'){
+    e.preventDefault();
+    if(AC.activeIdx>=0 && AC.results[AC.activeIdx]) acSelect(AC.results[AC.activeIdx].ID);
+    else if(AC.results.length===1) acSelect(AC.results[0].ID);
+  } else if(e.key==='Escape'){
+    acClose();
+  }
+}
+
+function acSelect(id){
+  var s = gS(id); if(!s) return;
+  AC.selectedId = id;
+  el('rm-school').value = id;
+  el('rm-ac-inp').value = s.NUMERO + ' – ' + s.NOMBRE;
+  acClose();
+  var clr = el('rm-ac-clear'); if(clr) clr.classList.add('show');
+  AC.results = [];
+  onRmSchoolChange();
+}
+
+function acClear(){
+  AC.selectedId = null; AC.results = []; AC.activeIdx = -1;
+  var inp = el('rm-ac-inp'); if(inp){ inp.value = ''; }
+  el('rm-school').value = '';
+  acClose();
+  var clr = el('rm-ac-clear'); if(clr) clr.classList.remove('show');
+  var info = el('rm-school-info'); if(info) info.innerHTML = 'Seleccioná una escuela para ver su información';
+  var miss = el('rm-missing-info'); if(miss) miss.style.display = 'none';
+}
+
+// Cerrar dropdown al hacer click fuera (único listener)
+document.addEventListener('click', function(e){
+  var wrap = el('rm-ac-wrap');
+  if(wrap && !wrap.contains(e.target)) acClose();
+});
+
+// Open recepcion modal pre-filled with a specific school
+function openRecModalForSchool(schoolId){
+  openRecModal();
+  setTimeout(function(){
+    var s = gS(schoolId);
+    if(!s) return;
+    AC.selectedId = schoolId;
+    el('rm-school').value = schoolId;
+    el('rm-ac-inp').value = s.NUMERO + ' – ' + s.NOMBRE;
+    var clr = el('rm-ac-clear');
+    if(clr) clr.classList.add('show');
+    acClose();
+    onRmSchoolChange();
+  }, 200);
+}
+
+function onRecPeriodoChange(){
+  var sel = el('rm-periodo');
+  if(sel && sel.value) {
+    ST.sharedPeriodo = sel.value;
+  }
+}
+
+function openRecModal(){
+  acClear();
+  var hoy = new Date(); var m=hoy.getMonth()+1, d=hoy.getDate();
+  el('rm-fecha').value = hoy.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(d<10?'0':'')+d;
+  var perSel = el('rm-periodo');
+  perSel.innerHTML = buildPeriodOpts(ST.sharedPeriodo || periodoActual(), true);
+  perSel.value = ST.sharedPeriodo || periodoActual();
+  el('rm-obs').value = '';
+  el('rm-motivo').value = 'Presentación documentación';
+  el('rm-alerta').checked = false;
+  el('rm-alerta-desc').value = '';
+  el('rm-alerta-desc-row').style.display = 'none';
+  openMov('rm-ov');
+  setTimeout(function(){ var inp=el('rm-ac-inp'); if(inp) inp.focus(); }, 120);
+}
+
+function toggleAlertaDesc(){
+  el('rm-alerta-desc-row').style.display = el('rm-alerta').checked ? '' : 'none';
+}
+
+function onRmSchoolChange(){
+  var id = el('rm-school').value;
+  if(!id){ el('rm-school-info').innerHTML='Seleccioná una escuela'; el('rm-missing-info').style.display='none'; return; }
+  var s = gS(id); if(!s) return;
+  var e2 = etiq(s);
+  el('rm-school-info').innerHTML =
+    '<strong>'+esc(s.NOMBRE)+'</strong><br>'+
+    '<span style="font-size:.78rem;color:var(--muted)">'+esc(s.LOCALIDAD||'—')+' · '+esc(s.NUMERO||'—')+'</span>&nbsp;'+
+    '<span class="tag '+e2.c+'">'+e2.i+' '+e2.l+'</span>';
+  var missing = [];
+  if(!s.ASESORA_NOMBRE) missing.push('Nombre del asesor/a');
+  if(!s.ASESORA_CONTACTO) missing.push('Contacto del asesor/a');
+  if(!s.PRES_NOMBRE) missing.push('Nombre presidenta');
+  if(!s.PRES_CONTACTO) missing.push('Contacto presidenta');
+  if(!s.DIRECCION) missing.push('Dirección');
+  if(!s.CUIT) missing.push('CUIT');
+  var md = el('rm-missing-info');
+  if(missing.length){
+    md.style.display='';
+    md.innerHTML='<div class="ib ib-a"><strong>⚠️ Datos incompletos:</strong><div class="rec-missing" style="margin-top:.5rem">'+
+      missing.map(function(m){return '<span class="miss-pill">'+esc(m)+'</span>';}).join('')+
+      '</div><button class="btn btn-s btn-sm" style="margin-top:.625rem" onclick="closeMov(\'rm-ov\');openDetail(\''+esc(s.ID)+'\')">✏️ Completar ahora</button></div>';
+  } else { md.style.display='none'; }
+}
+
+async function saveRecepcion(){
+  var sid = el('rm-school').value;
+  if(!sid){ toast('⚠ Seleccioná una escuela'); return; }
+  var s = gS(sid); if(!s) return;
+  var rec = getRec();
+  var entry = {
+    id: gid(), schoolId: sid, schoolNombre: s.NOMBRE, schoolNumero: s.NUMERO,
+    schoolLocalidad: s.LOCALIDAD, fecha: el('rm-fecha').value||new Date().toISOString().slice(0,10),
+    periodo: el('rm-periodo').value, motivo: el('rm-motivo').value,
+    obs: el('rm-obs').value.trim(), alerta: el('rm-alerta').checked,
+    alertaDesc: el('rm-alerta-desc').value.trim(), etiq: etiq(s).l
+  };
+  rec.unshift(entry);
+  saveRec(rec);
+  if(ST.gasUrl){ try{ await gasReq({action:'saveRecepcion',data:entry}); }catch(e){ console.warn('GAS rec:',e); } }
+
+  // Guardar también como visita en la escuela (tipo Presencial Consejo Escolar)
+  var vs = pj(s.VISITAS, []);
+  var motivoTexto = entry.motivo + (entry.obs ? ' – ' + entry.obs : '');
+  var visitaRec = {
+    fecha: entry.fecha,
+    tipo: 'Presencial Consejo Escolar',
+    responsable: ST.user ? ST.user.name : '',
+    descripcion: '📥 [Recepción] ' + motivoTexto + (entry.alerta ? ' ⚠️ ' + (entry.alertaDesc||'Requiere seguimiento') : ''),
+    proxAccion: '',
+    fechaSeguimiento: '',
+    fromRecepcion: true
+  };
+  vs.push(visitaRec);
+  s.VISITAS = JSON.stringify(vs);
+  try { await saveSchoolR(s); } catch(e) { console.warn('Visita desde recepción:', e); }
+
+  // Sync shared period
+  if(entry.periodo) ST.sharedPeriodo = entry.periodo;
+
+  closeMov('rm-ov');
+  renderRecepcion(); renderRecStats(); fillRecPerFilter();
+  // Re-apply period filter so the new entry is visible
+  var recFil = el('rec-filter-per');
+  if(recFil && entry.periodo) {
+    var opt = recFil.querySelector('option[value="'+entry.periodo+'"]');
+    if(opt){ recFil.value = entry.periodo; renderRecepcion(); }
+  }
+  toast('✅ Recepción registrada y visita guardada – '+esc(s.NOMBRE));
+}
+
+function formatFecha(ds){
+  if(!ds) return '—';
+  var p=ds.split('-'); if(p.length<3) return ds;
+  var meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  return parseInt(p[2])+' de '+meses[parseInt(p[1])-1]+' de '+p[0];
+}
+
+async function deleteRecepcion(id){
+  if(!confirm('¿Eliminar este registro?')) return;
+  saveRec(getRec().filter(function(r){ return r.id!==id; }));
+  renderRecepcion(); renderRecStats(); fillRecPerFilter();
+  toast('🗑 Recepción eliminada');
+}
+
+function renderRecepcion(){
+  var e = el('rec-list'); if(!e) return;
+  var q = ((el('rec-search')||{}).value||'').toLowerCase();
+  var fp = (el('rec-filter-per')||{}).value||'';
+  var fa = (el('rec-filter-alert')||{}).value||'';
+  var rec = getRec().filter(function(r){
+    if(q && !(r.schoolNombre||'').toLowerCase().includes(q) && !(r.schoolNumero||'').toLowerCase().includes(q)) return false;
+    if(fp && r.periodo!==fp) return false;
+    if(fa==='alerta' && !r.alerta) return false;
+    if(fa==='ok' && r.alerta) return false;
+    return true;
+  });
+  if(!rec.length){
+    e.innerHTML='<div class="es"><div class="ei">📥</div><div class="et">No hay recepciones registradas'+(q||fp||fa?' con esos filtros':'')+'.</div></div>';
+    return;
+  }
+  e.innerHTML = rec.map(function(r){
+    // Check if school has missing data
+    var s = gS(r.schoolId);
+    var missing = [];
+    if(s){
+      if(!s.ASESORA_NOMBRE) missing.push('Asesor/a');
+      if(!s.ASESORA_CONTACTO) missing.push('Contacto');
+      if(!s.PRES_NOMBRE) missing.push('Presidenta');
+      if(!s.PRES_CONTACTO) missing.push('Cont. presidenta');
+      if(!s.DIRECCION) missing.push('Dirección');
+      if(!s.CUIT) missing.push('CUIT');
+    }
+    var missingHtml = missing.length
+      ? '<div class="rec-missing-row">'+
+          '<span class="rec-miss-label">⚠️ Incompleto:</span> '+
+          missing.map(function(m){return '<span class="miss-pill">'+esc(m)+'</span>';}).join(' ')+
+          ' <button class="btn btn-p btn-xs" onclick="goToRecSchool(\''+esc(r.schoolId)+'\');" title="Abrir ficha para completar datos" style="margin-left:.35rem;background:var(--amber);border:none">✏️ Completar</button>'+
+        '</div>'
+      : '';
+    return '<div class="rec-item'+(r.alerta?' alerta':'')+'">'+
+      '<div class="rec-av">'+esc((r.schoolNumero||'').split(' ').slice(0,2).join(' '))+'</div>'+
+      '<div class="rec-body">'+
+        '<div class="rec-name">'+esc(r.schoolNombre||'—')+'</div>'+
+        '<div class="rec-meta">📅 '+esc(formatFecha(r.fecha))+' · '+esc(r.motivo||'—')+(r.periodo?' · <em>'+esc(pLabel(r.periodo))+'</em>':'')+'</div>'+
+        (r.obs?'<div class="rec-obs">"'+esc(r.obs)+'"</div>':'')+
+        (r.alerta?'<div class="rec-tags"><span class="alerta-pill">⚠️ '+esc(r.alertaDesc||'Requiere seguimiento')+'</span></div>':'')+
+        missingHtml+
+      '</div>'+
+      '<div class="rec-actions">'+
+        '<span class="rec-date">'+esc(r.fecha||'')+'</span>'+
+        '<button class="btn btn-s btn-xs" onclick="goToRecSchool(\''+esc(r.schoolId)+'\');">Ver escuela</button>'+
+        '<button class="btn btn-d btn-xs" onclick="deleteRecepcion(\''+esc(r.id)+'\');">🗑</button>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+}
+
+function renderRecStats(){
+  var e = el('rec-stats'); if(!e) return;
+  var rec = getRec();
+  var hoy = new Date().toISOString().slice(0,10);
+  var semana = new Date(Date.now() - 6*864e5).toISOString().slice(0,10);
+  var enHoy = rec.filter(function(r){ return r.fecha === hoy; }).length;
+  var enSemana = rec.filter(function(r){ return r.fecha >= semana; }).length;
+  var alertas = rec.filter(function(r){ return r.alerta; }).length;
+  e.innerHTML=
+    '<div class="stat"><div class="stat-v">'+rec.length+'</div><div class="stat-l">Total recepciones</div></div>'+
+    '<div class="stat"><div class="stat-v" style="color:var(--navy)">'+enHoy+'</div><div class="stat-l">Hoy</div></div>'+
+    '<div class="stat"><div class="stat-v" style="color:var(--green)">'+enSemana+'</div><div class="stat-l">Últimos 7 días</div></div>'+
+    '<div class="stat"><div class="stat-v" style="color:var(--red)">'+alertas+'</div><div class="stat-l">Con alertas</div></div>';
+}
+
+function fillRecPerFilter(){
+  var sel = el('rec-filter-per'); if(!sel) return;
+  var prev = sel.value; // preserve current selection
+  var _allP=getRec().map(function(r){return r.periodo;}).filter(Boolean);
+  var _seen={};var periods=[];_allP.forEach(function(p){if(!_seen[p]){_seen[p]=1;periods.push(p);}});periods.sort().reverse();
+  sel.innerHTML='<option value="">Todos los períodos</option>'+
+    periods.map(function(p){return '<option value="'+esc(p)+'">'+esc(pLabel(p))+'</option>';}).join('');
+  // Restore previous selection if still valid
+  if(prev && sel.querySelector('option[value="'+prev+'"]')) sel.value = prev;
+}
+
+function goToRecSchool(id){
+  goTo('escuelas');
+  // Ensure list is visible before opening detail
+  var lv=el('list-view'), dv=el('detail-view');
+  if(lv) lv.style.display='';
+  if(dv) dv.style.display='none';
+  openDetail(id);
+  // Check for missing data and scroll to top
+  setTimeout(function(){ window.scrollTo(0,0); }, 100);
+}
+
+function genInformeRecepcion(){
+  var rec = getRec();
+  if(!rec.length){ toast('⚠ Sin recepciones registradas'); return; }
+
+  var hoy = new Date();
+  var hoyStr = hoy.toISOString().slice(0,10);
+
+  // ── Rangos ──────────────────────────────────────────────
+  var semanaIni = new Date(hoy); semanaIni.setDate(hoy.getDate()-6);
+  var semanaStr = semanaIni.toISOString().slice(0,10);
+
+  var mesIni = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  var mesStr = mesIni.toISOString().slice(0,10);
+
+  var anioIni = new Date(hoy.getFullYear(), 0, 1);
+  var anioStr = anioIni.toISOString().slice(0,10);
+
+  var recSemana = rec.filter(function(r){ return r.fecha >= semanaStr; });
+  var recMes    = rec.filter(function(r){ return r.fecha >= mesStr; });
+  var recAnio   = rec.filter(function(r){ return r.fecha >= anioStr; });
+
+  function fDate(d){ return d ? d.split('-').reverse().join('/') : '—'; }
+  function pct(n,t){ return t ? Math.round(n/t*100)+'%' : '0%'; }
+
+  function buildResumen(arr, titulo){
+    if(!arr.length) return '<p style="color:#888;font-style:italic">Sin recepciones en este período.</p>';
+    var escuelas = new Set(arr.map(function(r){return r.schoolId;})).size;
+    var alertas = arr.filter(function(r){return r.alerta;});
+    var motivos = {};
+    arr.forEach(function(r){ var m=r.motivo||'Sin motivo'; motivos[m]=(motivos[m]||0)+1; });
+    var motivoRows = Object.keys(motivos).sort(function(a,b){return motivos[b]-motivos[a];})
+      .map(function(k){
+        return '<tr><td>'+k+'</td><td style="text-align:center;font-weight:700">'+motivos[k]+'</td><td style="text-align:center;color:#666">'+pct(motivos[k],arr.length)+'</td></tr>';
+      }).join('');
+    var alertaRows = alertas.map(function(r){
+      return '<tr><td>'+esc(r.schoolNombre||'—')+'</td><td>'+esc(r.schoolNumero||'—')+'</td><td>'+fDate(r.fecha)+'</td><td>'+esc(r.alertaDesc||'Requiere seguimiento')+'</td></tr>';
+    }).join('');
+    var detRows = [].concat(arr).sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');}).map(function(r){
+      return '<tr><td>'+fDate(r.fecha)+'</td><td>'+esc(r.schoolNumero||'—')+'</td><td>'+esc(r.schoolNombre||'—')+'</td><td>'+esc(r.schoolLocalidad||'—')+'</td><td>'+esc(r.motivo||'—')+'</td><td>'+esc(r.obs||'')+'</td><td style="text-align:center">'+(r.alerta?'⚠️':'')+'</td></tr>';
+    }).join('');
+    return '<div class="blk">'+
+      '<div class="kpis">'+
+        '<div class="kpi"><span class="kv">'+arr.length+'</span><span class="kl">Recepciones</span></div>'+
+        '<div class="kpi"><span class="kv">'+escuelas+'</span><span class="kl">Escuelas distintas</span></div>'+
+        '<div class="kpi" style="color:#b91c1c"><span class="kv" style="color:#b91c1c">'+alertas.length+'</span><span class="kl">Con alertas</span></div>'+
+      '</div>'+
+    '</div>'+
+    '<h3>Motivos de concurrencia</h3>'+
+    '<table><thead><tr><th>Motivo</th><th>Cant.</th><th>%</th></tr></thead><tbody>'+motivoRows+'</tbody></table>'+
+    (alertas.length?
+      '<h3 style="color:#b91c1c">⚠️ Alertas / Seguimiento pendiente</h3>'+
+      '<table><thead><tr><th>Escuela</th><th>Nº</th><th>Fecha</th><th>Descripción</th></tr></thead><tbody>'+alertaRows+'</tbody></table>'
+    :'')+
+    '<h3>Detalle de recepciones</h3>'+
+    '<table><thead><tr><th>Fecha</th><th>Nº</th><th>Escuela</th><th>Localidad</th><th>Motivo</th><th>Observaciones</th><th>⚠️</th></tr></thead><tbody>'+detRows+'</tbody></table>';
+  }
+
+  var css = '<style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;margin:0;padding:0;color:#111;font-size:.88rem}'+
+    '.toolbar{display:flex;align-items:center;gap:.5rem;padding:.75rem 1.25rem;background:#0D2F6E;color:#fff;position:sticky;top:0;z-index:10}'+
+    '.toolbar h1{font-size:1rem;margin:0;flex:1}'+
+    '.toolbar button{padding:.4rem .9rem;background:rgba(255,255,255,.18);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:5px;cursor:pointer;font-size:.8rem}'+
+    '.toolbar button:hover{background:rgba(255,255,255,.3)}'+
+    '.tabs{display:flex;gap:0;border-bottom:2px solid #0D2F6E;margin:0 1.25rem}'+
+    '.tab{padding:.6rem 1.2rem;cursor:pointer;font-size:.85rem;font-weight:600;color:#555;border:none;background:none;border-bottom:3px solid transparent;margin-bottom:-2px}'+
+    '.tab.on{color:#0D2F6E;border-bottom-color:#0D2F6E}'+
+    '.tab:hover{color:#0D2F6E}'+
+    '.panel{display:none;padding:1.25rem}'+
+    '.panel.on{display:block}'+
+    'h3{font-size:.82rem;text-transform:uppercase;letter-spacing:.05em;color:#0D2F6E;margin:1.25rem 0 .5rem;border-bottom:1px solid #dde3f0;padding-bottom:.3rem}'+
+    'table{width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:1rem}'+
+    'th{background:#0D2F6E;color:#fff;padding:.45rem .6rem;text-align:left;font-weight:600}'+
+    'td{padding:.4rem .6rem;border-bottom:1px solid #eaedf5}'+
+    'tr:hover td{background:#f5f7ff}'+
+    '.kpis{display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}'+
+    '.kpi{background:#f0f4ff;border-radius:8px;padding:.75rem 1.25rem;text-align:center;min-width:110px}'+
+    '.kv{display:block;font-size:2rem;font-weight:800;color:#0D2F6E;line-height:1.1}'+
+    '.kl{display:block;font-size:.68rem;color:#666;text-transform:uppercase;letter-spacing:.04em;margin-top:.2rem}'+
+    '.blk{margin-bottom:.5rem}'+
+    '@media print{.toolbar{display:none}.tabs{display:none}.panel{display:block!important;page-break-before:always}.panel:first-child{page-break-before:avoid}}'+
+    '</style>';
+
+  var fechaGen = hoy.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Informe de Recepción</title>'+css+'</head><body>'+
+    '<div class="toolbar">'+
+      '<h1>📥 Informe de Recepción — Consejo Escolar La Matanza</h1>'+
+      '<span style="font-size:.75rem;opacity:.8">'+fechaGen+'</span>'+
+      '<button onclick="window.print()">🖨️ Imprimir</button>'+
+    '</div>'+
+    '<div class="tabs">'+
+      '<button class="tab on" onclick="showTab(\'sem\',this)">📅 Semanal</button>'+
+      '<button class="tab" onclick="showTab(\'mes\',this)">🗓 Mensual</button>'+
+      '<button class="tab" onclick="showTab(\'ani\',this)">📆 Anual</button>'+
+    '</div>'+
+    '<div id="sem" class="panel on"><h3>Semana del '+fDate(semanaStr)+' al '+fDate(hoyStr)+'</h3>'+buildResumen(recSemana,'semanal')+'</div>'+
+    '<div id="mes" class="panel"><h3>Mes de '+hoy.toLocaleDateString('es-AR',{month:'long',year:'numeric'})+'</h3>'+buildResumen(recMes,'mensual')+'</div>'+
+    '<div id="ani" class="panel"><h3>Año '+hoy.getFullYear()+'</h3>'+buildResumen(recAnio,'anual')+'</div>'+
+    '<script>function showTab(id,btn){document.querySelectorAll(".panel").forEach(function(p){p.classList.remove("on")});document.querySelectorAll(".tab").forEach(function(t){t.classList.remove("on")});document.getElementById(id).classList.add("on");btn.classList.add("on");}<\/script>'+
+    '</body></html>';
+
+  var w = window.open('','_blank','width=900,height=700');
+  if(w){ w.document.write(html); w.document.close(); }
+  else { toast('⚠ El navegador bloqueó la ventana emergente. Habilitá los pop-ups para este sitio.'); }
+}
+
+// ════════════════════════════════════════════════════════════
 // ARRANQUE — el script está al final del body, el DOM ya existe
 // ════════════════════════════════════════════════════════════
 // Boot: wait for full page load including deferred scripts
@@ -2399,12 +3135,20 @@ window.addEventListener('load', function() {
   loadUsersFromSheets().then(function(){
     // Users loaded, login is ready
   }).catch(function(){});
+  initDark();
+  renderRecepcion();
+  renderRecStats();
+  fillRecPerFilter();
   showScreen('login');
 });
 // Also try immediately in case load already fired
 if(document.readyState === 'complete') {
   var _su2 = loadUrl();
   if(_su2) ST.gasUrl = _su2;
+  initDark();
+  renderRecepcion();
+  renderRecStats();
+  fillRecPerFilter();
   showScreen('login');
 }
 </script>
