@@ -790,7 +790,8 @@ body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
 <!-- MODAL RECEPCIÓN -->
 <div class="moverlay" id="rm-ov" onclick="closeMov('rm-ov',event)">
 <div class="modal">
-  <div class="mhd"><div class="mttl">📥 Registrar recepción</div><button class="mcl" onclick="closeMov('rm-ov')">✕</button></div>
+  <div class="mhd"><div class="mttl" id="rm-title">📥 Registrar recepción</div><button class="mcl" onclick="closeMov('rm-ov')">✕</button></div>
+  <input type="hidden" id="rm-edit-id">
   <div class="mbody">
     <div class="ib ib-b" id="rm-school-info" style="margin-bottom:1rem">Seleccioná una escuela</div>
     <div class="fg">
@@ -844,7 +845,7 @@ body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
   </div>
   <div class="mfoot">
     <button class="btn btn-s" onclick="closeMov('rm-ov')">Cancelar</button>
-    <button class="btn btn-p" onclick="saveRecepcion()">💾 Guardar recepción</button>
+    <button class="btn btn-p" id="rm-save-btn" onclick="saveRecepcion()">💾 Guardar recepción</button>
   </div>
 </div></div>
 
@@ -994,27 +995,18 @@ function etiq(s){
   // Sin cooperadora activa (marcada manualmente como que tuvo)
   if(t==='tuvo') return {l:'Sin cooperadora activa',c:'ta',i:'⚠️'};
 
-  // Tiene cooperadora activa (si) — evaluar estado por períodos
-  var ps = pj(s.PERIODOS,[]);
+  // Tiene cooperadora (si) — evaluar estado
+  var cur = periodoActual();
 
-  // Sin períodos cargados aún
-  if(!ps.length) return {l:'Cooperadora Vigente',c:'tb',i:'🔵'};
+  // Al día: período activo es el actual Y asamblea realizada
+  if(s.PERIODO_COOP === cur && (s.ESTADO_ASAMBLEA||'').toLowerCase() === 'realizada')
+    return {l:'Cooperadora Al día',c:'tg',i:'🟢'};
 
-  var last = ps[ps.length-1];
-  // Calcular cuántos períodos seguidos sin documentación tiene (desde el más reciente)
-  var sinDoc = 0;
-  for(var i = ps.length-1; i >= 0; i--){
-    if(!ps[i].docestado || ps[i].docestado==='') sinDoc++;
-    else break; // se interrumpe en cuanto hay doc presentada
-  }
+  // Sin cooperadora activa: tiene cooperadora pero el período activo no es el actual
+  if(!s.PERIODO_COOP || s.PERIODO_COOP !== cur)
+    return {l:'Sin cooperadora activa',c:'ta',i:'⚠️'};
 
-  // Sin cooperadora activa: debe 3 o más períodos consecutivos sin documentación
-  if(sinDoc >= 3) return {l:'Sin cooperadora activa',c:'ta',i:'⚠️'};
-
-  // Cooperadora Al día: último período tiene documentación aprobada
-  if(last.docestado && last.docestado!=='') return {l:'Cooperadora Al día',c:'tg',i:'🟢'};
-
-  // Cooperadora Vigente: debe menos de 3 períodos
+  // Vigente: período actual pero asamblea pendiente
   return {l:'Cooperadora Vigente',c:'tb',i:'🔵'};
 }
 function toast(msg){var t=el('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2800)}
@@ -1669,14 +1661,8 @@ function renderDetail(id,tab){
   var s=gS(id);if(!s){backToList();return}
   // If tab is null, keep the currently active tab
   if(tab===null||tab===undefined){
-    var activeTab=el('detail-view')&&el('detail-view').querySelector('.tab.on');
-    tab=activeTab?activeTab.textContent.trim().replace(/^[^a-z]*/i,'').toLowerCase():'general';
-    // Map label back to key (emojis stripped by replace above)
-    if(tab.indexOf('general')>=0) tab='general';
-    else if(tab.indexOf('cooper')>=0) tab='cooperadora';
-    else if(tab.indexOf('comis')>=0) tab='comision';
-    else if(tab.indexOf('visita')>=0) tab='visitas';
-    else tab='general';
+    var activeTabEl = el('detail-view') && el('detail-view').querySelector('.tab.on');
+    tab = activeTabEl ? (activeTabEl.dataset.tab || 'general') : 'general';
   }
   var e=etiq(s),coord=getCoord(s.LOCALIDAD),cord=getCordLabel(s.LOCALIDAD);
   var ps=pj(s.PERIODOS,[]),vs=pj(s.VISITAS,[]);
@@ -1684,7 +1670,7 @@ function renderDetail(id,tab){
   var recCount = getRec().filter(function(r){return r.schoolId===id;}).length;
   var tabs=['general','cooperadora','comision','visitas'];
   var tabLabels=['📋 General','🤝 Cooperadora','👤 Comisión','📍 Visitas ('+vs.length+')'];
-  var tabHtml=tabs.map(function(t,i){return '<button class="tab'+(tab===t?' on':'')+'" onclick="renderDetail(\''+id+'\',\''+t+'\')">'+tabLabels[i]+'</button>'}).join('');
+  var tabHtml=tabs.map(function(t,i){return '<button class="tab'+(tab===t?' on':'')+'" data-tab="'+t+'" onclick="renderDetail(\''+id+'\',\''+t+'\')">'+tabLabels[i]+'</button>'}).join('');
   var body='';
   if(tab==='general')body=tabGen(s,coord,cord);
   else if(tab==='cooperadora')body=tabCoop(s,ps);
@@ -1884,13 +1870,24 @@ function tabVis(s,vs){
 
 function toggleP(i){var b=el('pb'+i);if(b)b.classList.toggle('open')}
 
-async function setF(id,key,val){var s=gS(id);if(!s)return;s[key]=val;var ok=await saveSchoolR(s);if(ok!==false){toast('💾 Guardado');if(ST.detId===id&&['NOMBRE','LOCALIDAD','NUMERO','TIENE_COOP'].indexOf(key)>=0)renderDetail(id,null);}}
+async function setF(id,key,val){
+  var s=gS(id);if(!s)return;
+  s[key]=val;
+  var ok=await saveSchoolR(s);
+  if(ok!==false){
+    toast('💾 Guardado');
+    var rerender = ['NOMBRE','LOCALIDAD','NUMERO','TIENE_COOP','PERIODO_COOP','ESTADO_ASAMBLEA'];
+    if(ST.detId===id && rerender.indexOf(key)>=0) renderDetail(id,null);
+  }
+}
 async function setFT(id,key,val,elem,cls){
   var s=gS(id);if(!s)return;
   var grp=elem.closest('.tgg');
   if(grp)grp.querySelectorAll('.tg-o').forEach(function(t){t.className='tg-o'});
   elem.className='tg-o on'+(cls?' '+cls:'');
   s[key]=val;await saveSchoolR(s);toast('💾 Guardado');
+  var rerender = ['TIENE_COOP','PERIODO_COOP','ESTADO_ASAMBLEA'];
+  if(ST.detId===id && rerender.indexOf(key)>=0) renderDetail(id,null);
 }
 async function setCode(id,part,val){
   var s=gS(id);if(!s)return;
@@ -1925,12 +1922,16 @@ function openVM(sid,idx){
   else{el('vm-fecha').value=td;el('vm-tipo').value='Presencial';el('vm-resp').value=ST.user?ST.user.name:'';['vm-desc','vm-prox','vm-seg'].forEach(function(i){el(i).value=''})}
   openMov('vm-ov');
 }
+var _savingVM = false;
 async function saveVM(){
-  var s=gS(ST.vCtx.id);if(!s)return;
+  if(_savingVM) return;
+  _savingVM = true;
+  var s=gS(ST.vCtx.id);if(!s){_savingVM=false;return;}
   var vs=pj(s.VISITAS,[]);
   var v={fecha:el('vm-fecha').value,tipo:el('vm-tipo').value,responsable:el('vm-resp').value,descripcion:el('vm-desc').value,proxAccion:el('vm-prox').value,fechaSeguimiento:el('vm-seg').value};
   if(ST.vCtx.idx!==null)vs[ST.vCtx.idx]=v;else vs.push(v);
   s.VISITAS=JSON.stringify(vs);await saveSchoolR(s);closeMov('vm-ov');renderDetail(ST.vCtx.id,'visitas');toast('✅ Visita guardada');
+  _savingVM = false;
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1945,13 +1946,17 @@ function openPM(sid){
   el('pm-est').value='Vigente';
   openMov('pm-ov');
 }
+var _savingPM = false;
 async function savePM(){
+  if(_savingPM) return;
   var s=gS(ST.pCtx.id);if(!s)return;
   var per=el('pm-per').value;
   var ps=pj(s.PERIODOS,[]);
   if(per && ps.some(function(p){return p.periodo===per})){toast('⚠ Ese período ya está cargado');return;}
+  _savingPM = true;
   ps.push({periodo:per,estado:el('pm-est').value,fechaAsamblea:el('pm-asam').value,docestado:el('pm-doc').value,notas:el('pm-notas').value});
   s.PERIODOS=JSON.stringify(ps);await saveSchoolR(s);closeMov('pm-ov');renderDetail(ST.pCtx.id,'cooperadora');toast('✅ Período agregado');
+  _savingPM = false;
 }
 
 // ════════════════════════════════════════════════════════════
@@ -2627,7 +2632,17 @@ function deleteUser(idx){
 // MODALS
 // ════════════════════════════════════════════════════════════
 function openMov(id){var e=el(id);if(e)e.classList.add('open')}
-function closeMov(id,ev){if(ev&&ev.target!==el(id))return;var e=el(id);if(e)e.classList.remove('open')}
+function closeMov(id,ev){
+  if(ev&&ev.target!==el(id))return;
+  var e=el(id);if(e)e.classList.remove('open');
+  if(id==='rm-ov'){
+    _savingRec=false;
+    var btn=el('rm-save-btn');
+    if(btn){btn.disabled=false;}
+  }
+  if(id==='vm-ov') _savingVM=false;
+  if(id==='pm-ov') _savingPM=false;
+}
 
 // ════════════════════════════════════════════════════════════
 // SAMPLE DATA
@@ -2821,6 +2836,9 @@ function onRecPeriodoChange(){
 
 function openRecModal(){
   acClear();
+  el('rm-edit-id').value = '';
+  el('rm-title').textContent = '📥 Registrar recepción';
+  el('rm-save-btn').textContent = '💾 Guardar recepción';
   var hoy = new Date(); var m=hoy.getMonth()+1, d=hoy.getDate();
   el('rm-fecha').value = hoy.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(d<10?'0':'')+d;
   var perSel = el('rm-periodo');
@@ -2833,6 +2851,45 @@ function openRecModal(){
   el('rm-alerta-desc-row').style.display = 'none';
   openMov('rm-ov');
   setTimeout(function(){ var inp=el('rm-ac-inp'); if(inp) inp.focus(); }, 120);
+}
+
+function openRecEdit(id){
+  var rec = getRec();
+  var r = rec.find(function(x){ return x.id === id; });
+  if(!r){ toast('⚠ No se encontró el registro'); return; }
+  var s = gS(r.schoolId);
+
+  acClear();
+  el('rm-edit-id').value = id;
+  el('rm-title').textContent = '✏️ Editar recepción';
+  el('rm-save-btn').textContent = '💾 Guardar cambios';
+
+  // Fill school autocomplete
+  AC.selectedId = r.schoolId;
+  el('rm-school').value = r.schoolId;
+  el('rm-ac-inp').value = (r.schoolNumero||'') + ' – ' + (r.schoolNombre||'');
+  var clr = el('rm-ac-clear'); if(clr) clr.classList.add('show');
+
+  // Fill fields
+  el('rm-fecha').value = r.fecha || '';
+  var perSel = el('rm-periodo');
+  perSel.innerHTML = buildPeriodOpts(r.periodo || periodoActual(), true);
+  perSel.value = r.periodo || periodoActual();
+  el('rm-obs').value = r.obs || '';
+  var motivoSel = el('rm-motivo');
+  // Set motivo — add option if not in list
+  var found = false;
+  for(var i=0;i<motivoSel.options.length;i++){ if(motivoSel.options[i].value===r.motivo){ found=true; break; } }
+  if(!found && r.motivo){ var opt=document.createElement('option'); opt.value=r.motivo; opt.textContent=r.motivo; motivoSel.appendChild(opt); }
+  motivoSel.value = r.motivo || 'Presentación documentación';
+  el('rm-alerta').checked = !!r.alerta;
+  el('rm-alerta-desc').value = r.alertaDesc || '';
+  el('rm-alerta-desc-row').style.display = r.alerta ? '' : 'none';
+
+  // Show school info
+  if(s) onRmSchoolChange();
+
+  openMov('rm-ov');
 }
 
 function toggleAlertaDesc(){
@@ -2860,54 +2917,70 @@ function onRmSchoolChange(){
     md.style.display='';
     md.innerHTML='<div class="ib ib-a"><strong>⚠️ Datos incompletos:</strong><div class="rec-missing" style="margin-top:.5rem">'+
       missing.map(function(m){return '<span class="miss-pill">'+esc(m)+'</span>';}).join('')+
-      '</div><button class="btn btn-s btn-sm" style="margin-top:.625rem" onclick="closeMov(\'rm-ov\');openDetail(\''+esc(s.ID)+'\')">✏️ Completar ahora</button></div>';
+      '</div><button class="btn btn-s btn-sm" style="margin-top:.625rem" onclick="closeMov(\'rm-ov\');goTo(\'escuelas\');openDetail(\''+esc(s.ID)+'\')">✏️ Completar ahora</button></div>';
   } else { md.style.display='none'; }
 }
 
+var _savingRec = false;
 async function saveRecepcion(){
+  if(_savingRec) return; // prevent double-click
   var sid = el('rm-school').value;
   if(!sid){ toast('⚠ Seleccioná una escuela'); return; }
   var s = gS(sid); if(!s) return;
+  _savingRec = true;
+  var btn = el('rm-save-btn'); if(btn){ btn.disabled=true; btn.textContent='Guardando...'; }
+
+  var editId = el('rm-edit-id').value;
   var rec = getRec();
+  var isEdit = !!editId;
+
   var entry = {
-    id: gid(), schoolId: sid, schoolNombre: s.NOMBRE, schoolNumero: s.NUMERO,
-    schoolLocalidad: s.LOCALIDAD, fecha: el('rm-fecha').value||new Date().toISOString().slice(0,10),
+    id: isEdit ? editId : gid(),
+    schoolId: sid, schoolNombre: s.NOMBRE, schoolNumero: s.NUMERO,
+    schoolLocalidad: s.LOCALIDAD,
+    fecha: el('rm-fecha').value||new Date().toISOString().slice(0,10),
     periodo: el('rm-periodo').value, motivo: el('rm-motivo').value,
     obs: el('rm-obs').value.trim(), alerta: el('rm-alerta').checked,
     alertaDesc: el('rm-alerta-desc').value.trim(), etiq: etiq(s).l
   };
-  rec.unshift(entry);
+
+  if(isEdit){
+    // Replace existing entry
+    var idx = rec.findIndex(function(r){ return r.id === editId; });
+    if(idx>=0) rec[idx] = entry; else rec.unshift(entry);
+  } else {
+    rec.unshift(entry);
+  }
   saveRec(rec);
+
   if(ST.gasUrl){ try{ await gasReq({action:'saveRecepcion',data:entry}); }catch(e){ console.warn('GAS rec:',e); } }
 
-  // Guardar también como visita en la escuela (tipo Presencial Consejo Escolar)
-  var vs = pj(s.VISITAS, []);
-  var motivoTexto = entry.motivo + (entry.obs ? ' – ' + entry.obs : '');
-  var visitaRec = {
-    fecha: entry.fecha,
-    tipo: 'Presencial Consejo Escolar',
-    responsable: ST.user ? ST.user.name : '',
-    descripcion: '📥 [Recepción] ' + motivoTexto + (entry.alerta ? ' ⚠️ ' + (entry.alertaDesc||'Requiere seguimiento') : ''),
-    proxAccion: '',
-    fechaSeguimiento: '',
-    fromRecepcion: true
-  };
-  vs.push(visitaRec);
-  s.VISITAS = JSON.stringify(vs);
-  try { await saveSchoolR(s); } catch(e) { console.warn('Visita desde recepción:', e); }
+  // Save as visit in school (only for new, not edits — to avoid duplicates)
+  if(!isEdit){
+    var vs = pj(s.VISITAS, []);
+    var motivoTexto = entry.motivo + (entry.obs ? ' – ' + entry.obs : '');
+    vs.push({
+      fecha: entry.fecha, tipo: 'Presencial Consejo Escolar',
+      responsable: ST.user ? ST.user.name : '',
+      descripcion: '📥 [Recepción] ' + motivoTexto + (entry.alerta ? ' ⚠️ ' + (entry.alertaDesc||'Requiere seguimiento') : ''),
+      proxAccion: '', fechaSeguimiento: '', fromRecepcion: true
+    });
+    s.VISITAS = JSON.stringify(vs);
+    try { await saveSchoolR(s); } catch(e) { console.warn('Visita desde recepción:', e); }
+  }
 
-  // Sync shared period
   if(entry.periodo) ST.sharedPeriodo = entry.periodo;
 
   closeMov('rm-ov');
   renderRecepcion(); renderRecStats(); fillRecPerFilter();
-  // Re-apply period filter so the new entry is visible
   var recFil = el('rec-filter-per');
-  if(recFil && entry.periodo) {
+  if(recFil && entry.periodo){
     var opt = recFil.querySelector('option[value="'+entry.periodo+'"]');
     if(opt){ recFil.value = entry.periodo; renderRecepcion(); }
   }
-  toast('✅ Recepción registrada y visita guardada – '+esc(s.NOMBRE));
+  toast(isEdit ? '✅ Recepción actualizada – '+esc(s.NOMBRE) : '✅ Recepción registrada – '+esc(s.NOMBRE));
+  _savingRec = false;
+  if(btn){ btn.disabled=false; btn.textContent = isEdit ? '💾 Guardar cambios' : '💾 Guardar recepción'; }
 }
 
 function formatFecha(ds){
@@ -2971,6 +3044,7 @@ function renderRecepcion(){
       '<div class="rec-actions">'+
         '<span class="rec-date">'+esc(r.fecha||'')+'</span>'+
         '<button class="btn btn-s btn-xs" onclick="goToRecSchool(\''+esc(r.schoolId)+'\');">Ver escuela</button>'+
+        '<button class="btn btn-s btn-xs" onclick="openRecEdit(\''+esc(r.id)+'\');">✏️ Editar</button>'+
         '<button class="btn btn-d btn-xs" onclick="deleteRecepcion(\''+esc(r.id)+'\');">🗑</button>'+
       '</div>'+
     '</div>';
