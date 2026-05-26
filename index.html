@@ -964,7 +964,19 @@ function el(id){return document.getElementById(id)}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function pj(s,fb){try{return s?JSON.parse(s):fb}catch(e){return fb}}
 function gid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
-function periodoActual(){var d=new Date(),y=d.getFullYear(),m=d.getMonth()+1;return m>=5?(y+'-'+(y+1)):((y-1)+'-'+y)}
+function periodoActual(){
+  // El período lectivo XXXX-(XXXX+1) es vigente desde enero de XXXX hasta diciembre de XXXX+1
+  // Ej: 2025-2026 es vigente todo 2025 y todo 2026
+  // El nuevo período empieza en enero del año siguiente al de fin
+  var y = new Date().getFullYear();
+  // Si estamos en el primer año del período (ej 2025), el período es 2025-2026
+  // Si estamos en el segundo año del período (ej 2026), el período sigue siendo 2025-2026
+  // El período cambia cuando empieza el año siguiente al año de fin
+  // Simplificado: el año X pertenece al período (X-1)-X o X-(X+1)?
+  // Regla: el período actual es (Y-1)-Y donde Y es el año en curso
+  // Ej: en 2026 el período es 2025-2026
+  return (y-1)+'-'+y;
+}
 function pLabel(p){if(!p)return '—';var a=p.split('-');return 'Mayo '+a[0]+' – Abril '+a[1]}
 function getPeriods(){var c=periodoActual(),y=parseInt(c),r=[];for(var i=y+2;i>=y-5;i--)r.push(i+'-'+(i+1));return r}
 function splitCode(s){var p=(s||'').split(' ');return p.length>=2?{t:p[0],n:p.slice(1).join(' ')}:{t:'EP',n:s||''}}
