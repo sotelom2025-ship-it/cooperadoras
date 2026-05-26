@@ -1356,6 +1356,48 @@ async function loadData(){
       });
     }
 
+    // ── Recepciones ──
+    if(r.recepciones && r.recepciones.length){
+      // Normalize column names from Sheets to our format
+      var fromSheets = r.recepciones.map(function(row){
+        return {
+          id:           row.ID             || row.id             || '',
+          schoolId:     row.ID_ESCUELA     || row.schoolId       || '',
+          schoolNombre: row.SCHOOL_NOMBRE  || row.schoolNombre   || '',
+          schoolNumero: row.SCHOOL_NUMERO  || row.schoolNumero   || '',
+          schoolLocalidad: row.SCHOOL_LOCALIDAD || row.schoolLocalidad || '',
+          fecha:        row.FECHA          || row.fecha          || '',
+          periodo:      row.PERIODO        || row.periodo        || '',
+          motivo:       row.MOTIVO         || row.motivo         || '',
+          obs:          row.OBSERVACIONES  || row.obs            || '',
+          alerta:       (row.ALERTA||row.alerta||'') === 'SI' || row.alerta === true,
+          alertaDesc:   row.ALERTA_DESC    || row.alertaDesc     || '',
+          etiq:         row.ETIQ           || row.etiq           || ''
+        };
+      }).filter(function(r){ return r.id; });
+
+      // Merge: Sheets is the source of truth — add anything not in localStorage
+      var local = getRec();
+      var localIds = new Set(local.map(function(r){ return r.id; }));
+      var sheetsIds = new Set(fromSheets.map(function(r){ return r.id; }));
+
+      // Add sheet entries missing from local
+      fromSheets.forEach(function(r){
+        if(!localIds.has(r.id)) local.push(r);
+      });
+      // Update local entries that exist in sheets (sheets wins)
+      local = local.map(function(r){
+        if(sheetsIds.has(r.id)){
+          var s = fromSheets.find(function(x){ return x.id === r.id; });
+          return s || r;
+        }
+        return r;
+      });
+      // Sort by date descending
+      local.sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
+      saveRec(local);
+    }
+
   }catch(e){
     console.error('GAS:',e);
     if(bn){el('conn-msg').textContent='Error al conectar: '+e.message;bn.style.display='flex';}
@@ -2992,6 +3034,10 @@ function formatFecha(ds){
 async function deleteRecepcion(id){
   if(!confirm('¿Eliminar este registro?')) return;
   saveRec(getRec().filter(function(r){ return r.id!==id; }));
+  if(ST.gasUrl){
+    try{ await gasReq({action:'deleteRecepcion', id:id}); }
+    catch(e){ console.warn('GAS deleteRec:', e); }
+  }
   renderRecepcion(); renderRecStats(); fillRecPerFilter();
   toast('🗑 Recepción eliminada');
 }
