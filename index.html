@@ -729,15 +729,14 @@ body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
       <div class="stats" id="rec-stats"></div>
       <div class="search-row" style="margin-bottom:.75rem">
         <div class="search-w"><span class="s-ico">🔍</span><input class="s-inp" id="rec-search" placeholder="Buscar escuela..." oninput="renderRecepcion()"></div>
-        <select class="fsel" id="rec-filter-per" onchange="ST.sharedPeriodo=this.value||periodoActual();renderRecepcion()" style="min-width:150px;flex:0 0 auto">
-          <option value="">Todos los períodos</option>
-        </select>
         <select class="fsel" id="rec-filter-alert" onchange="renderRecepcion()" style="min-width:130px;flex:0 0 auto">
           <option value="">Todas</option>
           <option value="alerta">⚠️ Solo alertas</option>
           <option value="ok">✅ Sin alertas</option>
         </select>
       </div>
+      <!-- Hidden element kept for JS compatibility -->
+      <select id="rec-filter-per" style="display:none"><option value="">Todos los períodos</option></select>
       <div id="rec-list"></div>
     </div>
 
@@ -1003,7 +1002,12 @@ function periodoDebt(s){
   if(isNaN(coopY)) return 99;
   return curY - coopY; // 0=actual, 1=un período atrás, etc.
 }
-function pLabel(p){if(!p)return '—';var a=p.split('-');return 'Mayo '+a[0]+' – Abril '+a[1]}
+function pLabel(p){
+  if(!p) return '—';
+  var a = p.split('-');
+  if(a.length < 2 || !a[0] || !a[1] || isNaN(parseInt(a[0])) || isNaN(parseInt(a[1]))) return p;
+  return 'Mayo '+a[0]+' – Abril '+a[1];
+}
 function getPeriods(){var c=periodoActual(),y=parseInt(c),r=[];for(var i=y+2;i>=y-5;i--)r.push(i+'-'+(i+1));return r}
 function splitCode(s){var p=(s||'').split(' ');return p.length>=2?{t:p[0],n:p.slice(1).join(' ')}:{t:'EP',n:s||''}}
 function getCoord(loc){var c=ST.coords.find(function(c){return c.localidades.some(function(l){return l.trim().toLowerCase()===(loc||'').trim().toLowerCase()})});return c?c.nombre:'—'}
@@ -1383,9 +1387,8 @@ async function loadData(){
           schoolNombre: row.SCHOOL_NOMBRE  || row.schoolNombre   || '',
           schoolNumero: row.SCHOOL_NUMERO  || row.schoolNumero   || '',
           schoolLocalidad: row.SCHOOL_LOCALIDAD || row.schoolLocalidad || '',
-          fecha:        row.FECHA          || row.fecha          || '',
-          periodo:      row.PERIODO        || row.periodo        || '',
-          motivo:       row.MOTIVO         || row.motivo         || '',
+          fecha:        normalizeDate(row.FECHA || row.fecha || ''),
+          periodo:      row.PERIODO        || row.periodo        || '',          motivo:       row.MOTIVO         || row.motivo         || '',
           obs:          row.OBSERVACIONES  || row.obs            || '',
           alerta:       (row.ALERTA||row.alerta||'') === 'SI' || row.alerta === true,
           alertaDesc:   row.ALERTA_DESC    || row.alertaDesc     || '',
@@ -3054,9 +3057,32 @@ async function saveRecepcion(){
   if(btn){ btn.disabled=false; btn.textContent = isEdit ? '💾 Guardar cambios' : '💾 Guardar recepción'; }
 }
 
+function normalizeDate(ds){
+  // Returns 'YYYY-MM-DD' from any date string
+  if(!ds) return '';
+  ds = String(ds).trim();
+  // Already ISO format
+  if(/^\d{4}-\d{2}-\d{2}/.test(ds)) return ds.slice(0,10);
+  // Sheets full timestamp: "Wed May 27 2026 00:00:00 GMT-0300..."
+  // or JS Date toString: "Wed May 28 2026 00:00:00 GMT-0300 (hora estándar de Argentina)"
+  var mn={'jan':'01','feb':'02','mar':'03','apr':'04','may':'05','jun':'06',
+          'jul':'07','aug':'08','sep':'09','oct':'10','nov':'11','dec':'12'};
+  var m = ds.match(/(\w{3})\s+(\d{1,2})\s+(\d{4})/i);
+  if(m){
+    var mo = mn[(m[1]||'').toLowerCase().slice(0,3)] || '01';
+    var d = ('0'+m[2]).slice(-2);
+    return m[3]+'-'+mo+'-'+d;
+  }
+  // DD/MM/YYYY
+  m = ds.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m) return m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2);
+  return ds.slice(0,10);
+}
+
 function formatFecha(ds){
-  if(!ds) return '—';
-  var p=ds.split('-'); if(p.length<3) return ds;
+  var iso = normalizeDate(ds);
+  if(!iso || iso.length < 10) return ds || '—';
+  var p = iso.split('-');
   var meses=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   return parseInt(p[2])+' de '+meses[parseInt(p[1])-1]+' de '+p[0];
 }
@@ -3075,17 +3101,15 @@ async function deleteRecepcion(id){
 function renderRecepcion(){
   var e = el('rec-list'); if(!e) return;
   var q = ((el('rec-search')||{}).value||'').toLowerCase();
-  var fp = (el('rec-filter-per')||{}).value||'';
   var fa = (el('rec-filter-alert')||{}).value||'';
   var rec = getRec().filter(function(r){
     if(q && !(r.schoolNombre||'').toLowerCase().includes(q) && !(r.schoolNumero||'').toLowerCase().includes(q)) return false;
-    if(fp && r.periodo!==fp) return false;
     if(fa==='alerta' && !r.alerta) return false;
     if(fa==='ok' && r.alerta) return false;
     return true;
   });
   if(!rec.length){
-    e.innerHTML='<div class="es"><div class="ei">📥</div><div class="et">No hay recepciones registradas'+(q||fp||fa?' con esos filtros':'')+'.</div></div>';
+    e.innerHTML='<div class="es"><div class="ei">📥</div><div class="et">No hay recepciones registradas'+(q||fa?' con esos filtros':'')+'.</div></div>';
     return;
   }
   var MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
@@ -3104,11 +3128,11 @@ function renderRecepcion(){
     }
 
     // Format date nicely
-    var fechaStr = r.fecha || '';
+    var fechaStr = normalizeDate(r.fecha || '');
     var fechaDia = '—', fechaMesAnio = '';
     if(fechaStr && fechaStr.length >= 10){
       var fp = fechaStr.slice(0,10).split('-');
-      fechaDia = fp[2];
+      fechaDia = parseInt(fp[2],10);
       fechaMesAnio = MESES[parseInt(fp[1],10)-1] + ' ' + fp[0];
     }
 
