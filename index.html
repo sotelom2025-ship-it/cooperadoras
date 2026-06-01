@@ -381,22 +381,33 @@ body.dark .ac-item:hover,body.dark .ac-item.active{background:var(--navy3)}
 body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
 
 /* ── RECEPCIÓN ── */
-.rec-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1rem 1.125rem;margin-bottom:.5rem;display:flex;align-items:flex-start;gap:1rem;transition:box-shadow .15s}
+.rec-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:.625rem;overflow:hidden;transition:box-shadow .15s}
 .rec-item:hover{box-shadow:var(--shadow)}
-.rec-item.alerta{border-left:3px solid var(--red);background:var(--red2)}
-.rec-av{width:42px;height:42px;border-radius:8px;background:var(--navy3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.65rem;color:var(--navy);flex-shrink:0;text-align:center;line-height:1.2}
-.rec-body{flex:1;min-width:0}
-.rec-name{font-weight:700;font-size:.88rem;margin-bottom:.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rec-meta{font-size:.73rem;color:var(--muted);margin-bottom:.35rem}
-.rec-obs{font-size:.8rem;color:var(--text2);line-height:1.4;margin-top:.3rem;font-style:italic}
-.rec-tags{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.4rem}
-.rec-missing{display:flex;gap:.3rem;flex-wrap:wrap;margin-top:.35rem}
-.rec-missing-row{display:flex;align-items:center;flex-wrap:wrap;gap:.3rem;margin-top:.4rem;padding:.35rem .5rem;background:var(--amber2);border-radius:var(--rs);font-size:.72rem}
+.rec-item.alerta{border-left:4px solid var(--red)}
+.rec-item.reorg{border-left:4px solid var(--navy)}
+.rec-head{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border-bottom:1px solid var(--border)}
+.rec-num{min-width:52px;height:52px;border-radius:8px;background:var(--navy3);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.65rem;color:var(--navy);flex-shrink:0;text-align:center;line-height:1.2;padding:.2rem}
+.rec-school{flex:1;min-width:0}
+.rec-school-name{font-weight:800;font-size:.92rem;color:var(--text);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rec-school-loc{font-size:.72rem;color:var(--muted);margin-top:.1rem}
+.rec-fecha-badge{flex-shrink:0;text-align:right}
+.rec-fecha-d{font-size:1.3rem;font-weight:800;color:var(--navy);line-height:1}
+.rec-fecha-my{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.rec-body2{padding:.6rem 1rem;display:flex;flex-direction:column;gap:.35rem}
+.rec-motivo-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
+.rec-motivo-pill{font-size:.72rem;font-weight:700;padding:.2rem .65rem;border-radius:99px;background:var(--navy3);color:var(--navy)}
+.rec-motivo-pill.reorg-pill{background:#e8f0fe;color:#1a56db}
+.rec-periodo-lbl{font-size:.7rem;color:var(--muted)}
+.rec-obs-txt{font-size:.82rem;color:var(--text2);line-height:1.5;padding:.4rem .7rem;background:var(--bg2);border-radius:var(--rs);border-left:2px solid var(--navy3)}
+.rec-reorg-row{display:flex;align-items:center;gap:.5rem;font-size:.78rem;padding:.35rem .7rem;background:#e8f0fe;border-radius:var(--rs);color:#1a56db;font-weight:600}
+.rec-foot{display:flex;align-items:center;gap:.5rem;padding:.5rem .75rem;border-top:1px solid var(--border);background:var(--bg2);flex-wrap:wrap}
+.rec-foot-left{flex:1;display:flex;gap:.4rem;flex-wrap:wrap;align-items:center}
+.rec-missing{display:flex;gap:.3rem;flex-wrap:wrap}
+.rec-missing-row{display:flex;align-items:center;flex-wrap:wrap;gap:.3rem;padding:.3rem .5rem;background:var(--amber2);border-radius:var(--rs);font-size:.72rem;width:100%}
 .rec-miss-label{font-weight:700;color:var(--amber);font-size:.68rem;white-space:nowrap}
-.miss-pill{font-size:.67rem;padding:.15rem .5rem;border-radius:99px;background:var(--amber2);color:var(--amber);font-weight:600}
+.miss-pill{font-size:.67rem;padding:.12rem .45rem;border-radius:99px;background:var(--amber2);color:var(--amber);font-weight:600;border:1px solid #e8c97a}
 .alerta-pill{font-size:.67rem;padding:.15rem .5rem;border-radius:99px;background:var(--red2);color:var(--red);font-weight:600;border:1px solid #e0b0b0}
-.rec-actions{display:flex;flex-direction:column;gap:.35rem;flex-shrink:0}
-.rec-date{font-size:.68rem;color:var(--muted);white-space:nowrap}
+.rec-actions2{display:flex;gap:.35rem;flex-shrink:0}
 /* dark-mode dark toggle button */
 .dark-toggle{width:34px;height:34px;border-radius:8px;background:rgba(255,255,255,.1);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1rem;transition:background .15s;flex-shrink:0}
 .dark-toggle:hover{background:rgba(255,255,255,.2)}
@@ -815,15 +826,21 @@ body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
       </div>
       <div class="ff c2">
         <label class="fl">Motivo / Trámite</label>
-        <select class="fs" id="rm-motivo">
+        <select class="fs" id="rm-motivo" onchange="toggleReorgRow()">
           <option value="Presentación documentación">Presentación documentación</option>
           <option value="Consulta">Consulta</option>
           <option value="Rendición de cuentas">Rendición de cuentas</option>
           <option value="Renovación de autoridades">Renovación de autoridades</option>
           <option value="Solicitud de reorganización">Solicitud de reorganización</option>
+          <option value="Inicio de reorganización">Inicio de reorganización</option>
           <option value="Retiro de comprobantes">Retiro de comprobantes</option>
           <option value="Otro">Otro</option>
         </select>
+      </div>
+      <div class="ff c2" id="rm-reorg-row" style="display:none">
+        <label class="fl" style="color:var(--navy);font-weight:700">🔄 Comienzo de reorganización</label>
+        <input class="fi" type="date" id="rm-reorg-fecha" placeholder="Fecha de inicio de reorganización">
+        <div style="font-size:.73rem;color:var(--muted);margin-top:.25rem">Registrá la fecha en que se inicia formalmente el proceso de reorganización.</div>
       </div>
       <div class="ff c2">
         <label class="fl">Observaciones</label>
@@ -1372,6 +1389,7 @@ async function loadData(){
           obs:          row.OBSERVACIONES  || row.obs            || '',
           alerta:       (row.ALERTA||row.alerta||'') === 'SI' || row.alerta === true,
           alertaDesc:   row.ALERTA_DESC    || row.alertaDesc     || '',
+          reorgFecha:   row.REORG_FECHA    || row.reorgFecha     || '',
           etiq:         row.ETIQ           || row.etiq           || ''
         };
       }).filter(function(r){ return r.id; });
@@ -2890,6 +2908,8 @@ function openRecModal(){
   el('rm-alerta').checked = false;
   el('rm-alerta-desc').value = '';
   el('rm-alerta-desc-row').style.display = 'none';
+  el('rm-reorg-fecha').value = '';
+  el('rm-reorg-row').style.display = 'none';
   openMov('rm-ov');
   setTimeout(function(){ var inp=el('rm-ac-inp'); if(inp) inp.focus(); }, 120);
 }
@@ -2926,6 +2946,8 @@ function openRecEdit(id){
   el('rm-alerta').checked = !!r.alerta;
   el('rm-alerta-desc').value = r.alertaDesc || '';
   el('rm-alerta-desc-row').style.display = r.alerta ? '' : 'none';
+  el('rm-reorg-fecha').value = r.reorgFecha || '';
+  toggleReorgRow();
 
   // Show school info
   if(s) onRmSchoolChange();
@@ -2935,6 +2957,12 @@ function openRecEdit(id){
 
 function toggleAlertaDesc(){
   el('rm-alerta-desc-row').style.display = el('rm-alerta').checked ? '' : 'none';
+}
+function toggleReorgRow(){
+  var m = el('rm-motivo').value;
+  var isReorg = m === 'Solicitud de reorganización' || m === 'Inicio de reorganización';
+  el('rm-reorg-row').style.display = isReorg ? '' : 'none';
+  if(!isReorg) el('rm-reorg-fecha').value = '';
 }
 
 function onRmSchoolChange(){
@@ -2982,7 +3010,9 @@ async function saveRecepcion(){
     fecha: el('rm-fecha').value||new Date().toISOString().slice(0,10),
     periodo: el('rm-periodo').value, motivo: el('rm-motivo').value,
     obs: el('rm-obs').value.trim(), alerta: el('rm-alerta').checked,
-    alertaDesc: el('rm-alerta-desc').value.trim(), etiq: etiq(s).l
+    alertaDesc: el('rm-alerta-desc').value.trim(),
+    reorgFecha: el('rm-reorg-fecha').value || '',
+    etiq: etiq(s).l
   };
 
   if(isEdit){
@@ -3058,9 +3088,11 @@ function renderRecepcion(){
     e.innerHTML='<div class="es"><div class="ei">📥</div><div class="et">No hay recepciones registradas'+(q||fp||fa?' con esos filtros':'')+'.</div></div>';
     return;
   }
+  var MESES = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
   e.innerHTML = rec.map(function(r){
-    // Check if school has missing data
     var s = gS(r.schoolId);
+
+    // Missing data check
     var missing = [];
     if(s){
       if(!s.ASESORA_NOMBRE) missing.push('Asesor/a');
@@ -3070,27 +3102,59 @@ function renderRecepcion(){
       if(!s.DIRECCION) missing.push('Dirección');
       if(!s.CUIT) missing.push('CUIT');
     }
+
+    // Format date nicely
+    var fechaStr = r.fecha || '';
+    var fechaDia = '—', fechaMesAnio = '';
+    if(fechaStr && fechaStr.length >= 10){
+      var fp = fechaStr.slice(0,10).split('-');
+      fechaDia = fp[2];
+      fechaMesAnio = MESES[parseInt(fp[1],10)-1] + ' ' + fp[0];
+    }
+
+    var isReorg = (r.motivo||'').toLowerCase().includes('reorganiz');
+    var itemClass = 'rec-item' + (r.alerta?' alerta':'') + (isReorg?' reorg':'');
+    var motivoPillClass = 'rec-motivo-pill' + (isReorg?' reorg-pill':'');
+
     var missingHtml = missing.length
       ? '<div class="rec-missing-row">'+
           '<span class="rec-miss-label">⚠️ Incompleto:</span> '+
           missing.map(function(m){return '<span class="miss-pill">'+esc(m)+'</span>';}).join(' ')+
-          ' <button class="btn btn-p btn-xs" onclick="goToRecSchool(\''+esc(r.schoolId)+'\');" title="Abrir ficha para completar datos" style="margin-left:.35rem;background:var(--amber);border:none">✏️ Completar</button>'+
+          ' <button class="btn btn-xs" onclick="goToRecSchool(\''+esc(r.schoolId)+'\');" style="margin-left:.35rem;background:var(--amber);color:#fff;border:none;border-radius:5px;padding:.15rem .55rem;font-size:.68rem;cursor:pointer">✏️ Completar</button>'+
         '</div>'
       : '';
-    return '<div class="rec-item'+(r.alerta?' alerta':'')+'">'+
-      '<div class="rec-av">'+esc((r.schoolNumero||'').split(' ').slice(0,2).join(' '))+'</div>'+
-      '<div class="rec-body">'+
-        '<div class="rec-name">'+esc(r.schoolNombre||'—')+'</div>'+
-        '<div class="rec-meta">📅 '+esc(formatFecha(r.fecha))+' · '+esc(r.motivo||'—')+(r.periodo?' · <em>'+esc(pLabel(r.periodo))+'</em>':'')+'</div>'+
-        (r.obs?'<div class="rec-obs">"'+esc(r.obs)+'"</div>':'')+
-        (r.alerta?'<div class="rec-tags"><span class="alerta-pill">⚠️ '+esc(r.alertaDesc||'Requiere seguimiento')+'</span></div>':'')+
+
+    return '<div class="'+itemClass+'">'+
+      // HEAD: número + nombre escuela + fecha
+      '<div class="rec-head">'+
+        '<div class="rec-num">'+esc((r.schoolNumero||'').split(' ').slice(0,2).join('\n'))+'</div>'+
+        '<div class="rec-school">'+
+          '<div class="rec-school-name">'+esc(r.schoolNombre||'—')+'</div>'+
+          '<div class="rec-school-loc">'+esc(r.schoolLocalidad||'')+(r.periodo?' · <em>'+esc(pLabel(r.periodo))+'</em>':'')+'</div>'+
+        '</div>'+
+        '<div class="rec-fecha-badge">'+
+          '<div class="rec-fecha-d">'+esc(fechaDia)+'</div>'+
+          '<div class="rec-fecha-my">'+esc(fechaMesAnio)+'</div>'+
+        '</div>'+
+      '</div>'+
+      // BODY: motivo + obs + reorg + alerta
+      '<div class="rec-body2">'+
+        '<div class="rec-motivo-row">'+
+          '<span class="'+motivoPillClass+'">'+esc(r.motivo||'—')+'</span>'+
+          (r.alerta?'<span class="alerta-pill">⚠️ '+esc(r.alertaDesc||'Requiere seguimiento')+'</span>':'')+
+        '</div>'+
+        (r.obs?'<div class="rec-obs-txt">'+esc(r.obs)+'</div>':'')+
+        (r.reorgFecha?'<div class="rec-reorg-row">🔄 Inicio de reorganización: <strong>'+esc(r.reorgFecha.split('-').reverse().join('/'))+'</strong></div>':'')+
         missingHtml+
       '</div>'+
-      '<div class="rec-actions">'+
-        '<span class="rec-date">'+esc(r.fecha||'')+'</span>'+
-        '<button class="btn btn-s btn-xs" onclick="goToRecSchool(\''+esc(r.schoolId)+'\');">Ver escuela</button>'+
-        '<button class="btn btn-s btn-xs" onclick="openRecEdit(\''+esc(r.id)+'\');">✏️ Editar</button>'+
-        '<button class="btn btn-d btn-xs" onclick="deleteRecepcion(\''+esc(r.id)+'\');">🗑</button>'+
+      // FOOTER: acciones
+      '<div class="rec-foot">'+
+        '<div class="rec-foot-left"></div>'+
+        '<div class="rec-actions2">'+
+          '<button class="btn btn-s btn-xs" onclick="goToRecSchool(\''+esc(r.schoolId)+'\');">🏫 Ver escuela</button>'+
+          '<button class="btn btn-s btn-xs" onclick="openRecEdit(\''+esc(r.id)+'\');">✏️ Editar</button>'+
+          '<button class="btn btn-d btn-xs" onclick="deleteRecepcion(\''+esc(r.id)+'\');">🗑</button>'+
+        '</div>'+
       '</div>'+
     '</div>';
   }).join('');
