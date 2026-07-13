@@ -333,6 +333,11 @@ body.dark #toast{background:#E8EEFF;color:#0C1220}
 .et{font-size:.875rem;color:var(--muted)}
 .code-w{display:flex;gap:.5rem}
 .code-t{width:110px;flex-shrink:0}
+.subc-row{display:flex;gap:.5rem;flex-wrap:wrap}
+.subc-row .btn{flex-shrink:0}
+.cuota-row{display:flex;gap:.5rem;flex-wrap:wrap}
+.cuota-row .fi{flex:1 1 100px;min-width:0}
+.cuota-row .fs{flex:0 1 130px;min-width:100px}
 
 /* ── AUTOCOMPLETE ESCUELA ── */
 .ac-wrap{position:relative;width:100%}
@@ -561,6 +566,7 @@ body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
   gap:.4rem;
 }
 .fab-back.show{display:flex}
+body:has(.moverlay.open) .fab-back{display:none!important}
 @media(min-width:1024px){.fab-back{display:none!important}}
 @keyframes fi{from{opacity:0}to{opacity:1}}
 @keyframes su{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -791,8 +797,8 @@ body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
         </div></div>
         <div class="ib ib-b" id="pdf-prev">Aplicá filtros para ver el resumen.</div>
         <div style="display:flex;gap:.625rem;flex-wrap:wrap">
-          <button class="btn btn-p" onclick="genPDF()">📄 Descargar PDF</button>
           <button class="btn btn-s" onclick="updPdfPrev()">Actualizar resumen</button>
+          <button class="btn btn-p" onclick="genPDF()">📄 Descargar PDF</button>
         </div>
       </div>
     </div>
@@ -1001,6 +1007,23 @@ body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
   <div class="mfoot"><button class="btn btn-s" onclick="closeMov('cm-ov')">Cancelar</button><button class="btn btn-p" onclick="saveCM()">Guardar</button></div>
 </div></div>
 
+<!-- MODAL SUBCOMANDOS (solo admins) -->
+<div class="moverlay" id="subm-ov" onclick="closeMov('subm-ov',event)">
+<div class="modal" onclick="void(0)" style="max-width:420px">
+  <div class="mhd"><span class="mttl">Gestionar Subcomandos</span><button class="mcl" onclick="closeMov('subm-ov')">✕</button></div>
+  <div class="mbody">
+    <div class="ff" style="margin-bottom:1.125rem">
+      <label class="fl">Nuevo subcomando</label>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <input class="fi" id="subm-new" placeholder="Ej: Subcomando Norte" style="flex:1;min-width:140px">
+        <button class="btn btn-p btn-sm" onclick="addSubcomando()">+ Agregar</button>
+      </div>
+    </div>
+    <div id="subm-list"></div>
+  </div>
+  <div class="mfoot"><button class="btn btn-s" onclick="closeMov('subm-ov')">Cerrar</button></div>
+</div></div>
+
 
 <!-- MODAL USUARIO -->
 <div class="moverlay" id="um-ov" onclick="closeMov('um-ov',event)">
@@ -1050,6 +1073,7 @@ var GAS_KEY = 'coop_gas_url';
 var ST = {
   gasUrl:'', user:null,
   schools:[], users:[], coords:JSON.parse(JSON.stringify(DEF_COORDS)),
+  subcomandos:loadSubcomandos(),
   sf:'all', editSId:null,
   vCtx:{id:null,idx:null}, pCtx:{id:null},
   cIdx:-1, detId:null,
@@ -1135,6 +1159,12 @@ function etiq(s){
   // Sin actividad: debe 3 o más períodos
   return {l:'Sin cooperadora activa',c:'ta',i:'⚠️'};
 }
+// Etiqueta especial: casos de reorganización o creación de la cooperadora
+function estadoEspecialBadge(s){
+  if(s.ESTADO_ESPECIAL==='reorganizacion') return '<span class="tag ta" title="Cooperadora en proceso de reorganización">🔄 Reorganización</span>';
+  if(s.ESTADO_ESPECIAL==='creacion') return '<span class="tag tg" title="Cooperadora de reciente creación">🆕 Creación</span>';
+  return '';
+}
 function toast(msg){var t=el('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2800)}
 function gS(id){return ST.schools.find(function(s){return s.ID===id})}
 
@@ -1155,16 +1185,41 @@ function showScreen(name){
 // ════════════════════════════════════════════════════════════
 function loadUrl(){try{return localStorage.getItem(GAS_KEY)||''}catch(e){return ''}}
 function saveUrl(u){try{localStorage.setItem(GAS_KEY,u)}catch(e){}}
+function loadSubcomandos(){try{var raw=localStorage.getItem('coop_subcomandos');return raw?JSON.parse(raw):[]}catch(e){return []}}
+function saveSubcomandosLocal(list){try{localStorage.setItem('coop_subcomandos',JSON.stringify(list))}catch(e){}}
+async function saveSubcomandosR(){
+  if(!ST.gasUrl)return;
+  try{await gasReq({action:'saveSubcomandos',subcomandos:ST.subcomandos})}catch(e){}
+}
 
+// Mensajes amistosos cuando el pedido tarda o falla, para no dejar a la usuaria mirando la pantalla en silencio
+var SLOW_MSG='⏳ Esto está tardando más de lo normal… un momentito, ya casi está.';
+var SLOW_MS=7000;
+function friendlyErr(base,msg){var e=(base instanceof Error)?base:new Error(String(base));e.friendly=msg;return e}
 async function gasReq(payload){
-  var res=await fetch(ST.gasUrl,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
-  var text=await res.text();
-  var data=JSON.parse(text);
-  if(data && !data.ok && data.error){
-    console.warn('GAS error ['+payload.action+']:', data.error);
-    throw new Error(data.error);
+  var slowTimer=setTimeout(function(){toast(SLOW_MSG)},SLOW_MS);
+  try{
+    var res;
+    try{
+      res=await fetch(ST.gasUrl,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+    }catch(netErr){
+      throw friendlyErr(netErr,'📡 No pudimos conectar. Revisá tu conexión a internet e intentá de nuevo en un momento.');
+    }
+    var text=await res.text();
+    var data;
+    try{
+      data=JSON.parse(text);
+    }catch(parseErr){
+      throw friendlyErr(parseErr,'😅 Uy, algo salió mal del otro lado. Probá de nuevo en un ratito.');
+    }
+    if(data && !data.ok && data.error){
+      console.warn('GAS error ['+payload.action+']:', data.error);
+      throw friendlyErr(data.error,'No pudimos completar la acción. Probá de nuevo, y si sigue pasando avisale al equipo técnico.');
+    }
+    return data;
+  }finally{
+    clearTimeout(slowTimer);
   }
-  return data;
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1186,7 +1241,7 @@ async function connectGAS(){
     showScreen('login');
   }catch(e){
     btn.textContent='Conectar';btn.disabled=false;
-    el('ob-err').textContent='No se pudo conectar. Verificá la URL.';
+    el('ob-err').textContent=(e&&e.friendly?e.friendly+' ':'')+'No se pudo conectar. Verificá la URL.';
     el('ob-err').style.display='block';
     ST.gasUrl='';
   }
@@ -1215,14 +1270,15 @@ function finishLogin(found){
 
 async function doLogin(){
   var u=el('lg-user').value.trim(), p=el('lg-pass').value;
-  if(!u||!p){el('lg-err').style.display='block';return;}
+  var errEl=el('lg-err');
+  if(!u||!p){errEl.textContent='Usuario o contraseña incorrectos.';errEl.style.display='block';return;}
 
   // 1. Check local/cached users
   var found=getUsers().find(function(x){return x.u.toLowerCase()===u.toLowerCase()&&x.p===p;});
   if(found){finishLogin(found);return;}
 
   // 2. Reload from Sheets and retry
-  el('lg-err').style.display='none';
+  errEl.style.display='none';
   try{
     await loadUsersFromSheets();
     found=getUsers().find(function(x){return x.u.toLowerCase()===u.toLowerCase()&&x.p===p;});
@@ -1238,9 +1294,15 @@ async function doLogin(){
         if(found){finishLogin(found);return;}
       }
     }
-  }catch(e){console.error('Login error:',e);}
+  }catch(e){
+    console.error('Login error:',e);
+    errEl.textContent=e.friendly||'No pudimos verificar tus datos. Probá de nuevo en un momento.';
+    errEl.style.display='block';
+    return;
+  }
 
-  el('lg-err').style.display='block';
+  errEl.textContent='Usuario o contraseña incorrectos.';
+  errEl.style.display='block';
 }
 
 function doLogout(){
@@ -1321,7 +1383,7 @@ async function loadData(){
         if(!s)return;
         var campos=['TIENE_COOP','TIPO_COOP','ULTIMA_COOP','PERIODO_COOP','ESTADO_PERIODO_COOP',
           'DOC_ESTADO','FECHA_ASAMBLEA','ESTADO_ASAMBLEA','PRES_NOMBRE','PRES_CONTACTO',
-          'CUOTA_SOCIETARIA','KIOSCO','KIOSCO_CAT','KIOSCO_VENC'];
+          'CUOTA_SOCIETARIA','CUOTA_PERIODICIDAD','KIOSCO','KIOSCO_CAT','KIOSCO_VENC','ESTADO_ESPECIAL'];
         campos.forEach(function(k){if(co[k]!==undefined)s[k]=co[k];});
       });
     }
@@ -1464,6 +1526,12 @@ async function loadData(){
       });
     }
 
+    // ── Subcomandos ──
+    if(r.subcomandos&&r.subcomandos.length){
+      ST.subcomandos=r.subcomandos;
+      saveSubcomandosLocal(ST.subcomandos);
+    }
+
     // ── Recepciones ──
     if(r.recepciones && r.recepciones.length){
       // Normalize column names from Sheets to our format
@@ -1509,7 +1577,7 @@ async function loadData(){
 
   }catch(e){
     console.error('GAS:',e);
-    if(bn){el('conn-msg').textContent='Error al conectar: '+e.message;bn.style.display='flex';}
+    if(bn){el('conn-msg').textContent=e.friendly||('Uy, no pudimos cargar los datos. Probá de nuevo en un momento.');bn.style.display='flex';}
     loadSample();
   }
 }
@@ -1525,7 +1593,7 @@ async function saveSchoolR(s){
       CUIT:s.CUIT||'',SITUACION_CUIT:s.SITUACION_CUIT||'',
       BANCO:s.BANCO||'',CUENTA:s.CUENTA||'',SUCURSAL:s.SUCURSAL||'',
       CODIGO_OTRO:s.CODIGO_OTRO||'',
-      ESPECIALIDADES:s.ESPECIALIDADES||'[]'
+      SUBCOMANDO:s.SUBCOMANDO||''
     };
     // Save cooperadora data
     var coopData={
@@ -1535,8 +1603,9 @@ async function saveSchoolR(s){
       ESTADO_PERIODO_COOP:s.ESTADO_PERIODO_COOP||'',DOC_ESTADO:s.DOC_ESTADO||'',
       FECHA_ASAMBLEA:s.FECHA_ASAMBLEA||'',ESTADO_ASAMBLEA:s.ESTADO_ASAMBLEA||'',
       PRES_NOMBRE:s.PRES_NOMBRE||'',PRES_CONTACTO:s.PRES_CONTACTO||'',
-      CUOTA_SOCIETARIA:s.CUOTA_SOCIETARIA||'',
-      KIOSCO:s.KIOSCO||'',KIOSCO_CAT:s.KIOSCO_CAT||'',KIOSCO_VENC:s.KIOSCO_VENC||''
+      CUOTA_SOCIETARIA:s.CUOTA_SOCIETARIA||'',CUOTA_PERIODICIDAD:s.CUOTA_PERIODICIDAD||'Mensual',
+      KIOSCO:s.KIOSCO||'',KIOSCO_CAT:s.KIOSCO_CAT||'',KIOSCO_VENC:s.KIOSCO_VENC||'',
+      ESTADO_ESPECIAL:s.ESTADO_ESPECIAL||''
     };
     // Visitas, periodos, comisiones as arrays
     var visitas=pj(s.VISITAS,[]);
@@ -1568,7 +1637,7 @@ async function saveSchoolR(s){
     }
   }catch(e){
     console.error('Save error:',e);
-    toast('⚠ Error al guardar en Sheets: ' + (e.message||e));
+    toast('⚠ '+(e.friendly||'No pudimos guardar los cambios. Probá de nuevo en un momento.'));
     return false;
   }
   return true;
@@ -1576,6 +1645,47 @@ async function saveSchoolR(s){
 async function saveCoordR(c,idx){
   if(!ST.gasUrl)return;
   try{await gasReq({action:'saveCoord',data:c,idx:idx})}catch(e){}
+}
+
+// ════════════════════════════════════════════════════════════
+// SUBCOMANDOS — solo admins pueden agregar/eliminar
+// ════════════════════════════════════════════════════════════
+function openSubMgmt(){
+  if(!ST.user||ST.user.role!=='admin'){toast('⚠ Solo administradores pueden gestionar subcomandos');return}
+  renderSubMgmtList();
+  var inp=el('subm-new');if(inp)inp.value='';
+  openMov('subm-ov');
+}
+function renderSubMgmtList(){
+  var e=el('subm-list');if(!e)return;
+  if(!ST.subcomandos.length){e.innerHTML='<div class="es"><div class="ei">🗂️</div><div class="et">Sin subcomandos cargados</div></div>';return}
+  e.innerHTML=ST.subcomandos.map(function(sc,i){
+    return '<div class="urow"><div style="flex:1;font-weight:600;font-size:.875rem">'+esc(sc)+'</div><button class="btn btn-d btn-xs" onclick="deleteSubcomando('+i+')">🗑</button></div>';
+  }).join('');
+}
+async function addSubcomando(){
+  if(!ST.user||ST.user.role!=='admin'){toast('⚠ Solo administradores pueden agregar subcomandos');return}
+  var inp=el('subm-new');var val=(inp.value||'').trim();
+  if(!val){toast('⚠ Ingresá un nombre');return}
+  if(ST.subcomandos.some(function(sc){return sc.toLowerCase()===val.toLowerCase()})){toast('⚠ Ese subcomando ya existe');return}
+  ST.subcomandos.push(val);
+  saveSubcomandosLocal(ST.subcomandos);
+  await saveSubcomandosR();
+  inp.value='';
+  renderSubMgmtList();
+  if(ST.detId)renderDetail(ST.detId,null);
+  toast('✅ Subcomando agregado');
+}
+async function deleteSubcomando(i){
+  if(!ST.user||ST.user.role!=='admin'){toast('⚠ Solo administradores pueden eliminar subcomandos');return}
+  var sc=ST.subcomandos[i];if(!sc)return;
+  if(!confirm('¿Eliminar el subcomando "'+sc+'"?'))return;
+  ST.subcomandos.splice(i,1);
+  saveSubcomandosLocal(ST.subcomandos);
+  await saveSubcomandosR();
+  renderSubMgmtList();
+  if(ST.detId)renderDetail(ST.detId,null);
+  toast('🗑 Subcomando eliminado');
 }
 
 async function initApp(){
@@ -1719,7 +1829,7 @@ function renderSchools(){
       '<div class="sc-info">'+
         '<div class="sc-name">'+esc(s.NOMBRE||'Sin nombre')+'</div>'+
         '<div class="sc-meta">'+esc(s.LOCALIDAD||'—')+' · '+esc(coord)+' · '+esc(cord)+'</div>'+
-        '<div class="sc-tags"><span class="tag '+e.c+'">'+e.i+' '+e.l+'</span>'+(hk?'<span class="tag ta">🏪 Kiosco</span>':'')+(s.BANCO==='con'?'<span class="tag tm">🏦 Banco</span>':'')+'</div>'+
+        '<div class="sc-tags"><span class="tag '+e.c+'">'+e.i+' '+e.l+'</span>'+estadoEspecialBadge(s)+(hk?'<span class="tag ta">🏪 Kiosco</span>':'')+(s.BANCO==='con'?'<span class="tag tm">🏦 Banco</span>':'')+'</div>'+
       '</div>'+
     '</div>'
   }).join('');
@@ -1816,7 +1926,7 @@ async function refreshApp(){
     renderStats();
     toast('✅ Datos actualizados');
   }catch(e){
-    toast('⚠ Error al actualizar');
+    toast('⚠ '+(e.friendly||'No pudimos actualizar los datos. Probá de nuevo en un momento.'));
   }
   if(btn){ btn.textContent='🔄'; btn.disabled=false; }
 }
@@ -1855,6 +1965,7 @@ function renderDetail(id,tab){
         '<div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;margin-bottom:.25rem">'+
           '<span style="font-size:1.15rem;font-weight:800">'+esc(s.NOMBRE||'Sin nombre')+'</span>'+
           '<span class="tag '+e.c+'">'+e.i+' '+e.l+'</span>'+
+          estadoEspecialBadge(s)+
           (recCount?'<span class="tag tb" title="Recepciones registradas">📥 '+recCount+' recepción'+(recCount!==1?'es':'')+'</span>':'')+
         '</div>'+
         '<div style="font-size:.75rem;color:var(--muted)">'+esc(s.NUMERO||'—')+' · '+esc(s.LOCALIDAD||'—')+' · '+esc(coord)+' · '+esc(cord)+'</div>'+
@@ -1876,6 +1987,17 @@ function fsel2(lbl,key,s,opts,span){return '<div class="ff'+(span?' '+span:'')+'
 function togRow(lbl,key,s,opts){
   return '<div class="ff" style="margin-bottom:.875rem"><label class="fl">'+lbl+'</label><div class="tgg">'+
     opts.map(function(o){var v=o[0],l=o[1],cls=o[2]||'';return '<div class="tg-o'+(s[key]===v?' on'+(cls?' '+cls:''):'')+'" onclick="setFT(\''+s.ID+'\',\''+key+'\',\''+v+'\',this,\''+cls+'\')">'+l+'</div>'}).join('')+
+  '</div></div>'
+}
+
+function renderSubcomandoField(s){
+  var opts=ST.subcomandos.map(function(sc){return '<option value="'+esc(sc)+'"'+(s.SUBCOMANDO===sc?' selected':'')+'>'+esc(sc)+'</option>'}).join('');
+  var isAdmin=ST.user&&ST.user.role==='admin';
+  return '<div class="ff"><label class="fl">Subcomando</label><div class="subc-row">'+
+    '<select class="fs" style="flex:1;min-width:0" onchange="setF(\''+s.ID+'\',\'SUBCOMANDO\',this.value)">'+
+      '<option value="">— Sin subcomando —</option>'+opts+
+    '</select>'+
+    (isAdmin?'<button type="button" class="btn btn-s btn-sm" onclick="openSubMgmt()" title="Gestionar subcomandos">⚙️</button>':'')+
   '</div></div>'
 }
 
@@ -1924,32 +2046,6 @@ function buildPeriodOpts(cur, extended) {
   return opts;
 }
 
-function renderEspecialidades(s) {
-  var esp = pj(s.ESPECIALIDADES || '[]', []);
-  var html = '<div class="fg" style="max-width:680px;margin-top:.25rem">';
-  for(var i = 0; i < 5; i++) {
-    var val = esc(esp[i] || '');
-    html += '<div class="ff" style="margin-bottom:.25rem">'
-      + '<label class="fl">Especialidad ' + (i+1) + '</label>'
-      + '<input class="fi" value="' + val + '"'
-      + ' placeholder="' + (i===0 ? 'Ej: Computacion, Ingles...' : '') + '"'
-      + ' onchange="setEspecialidad(\'' + s.ID + '\',' + i + ',this.value)">'
-      + '</div>';
-  }
-  html += '</div>';
-  return html;
-}
-
-async function setEspecialidad(id, idx, val) {
-  var s = gS(id); if(!s) return;
-  var esp = pj(s.ESPECIALIDADES || '[]', []);
-  while(esp.length < 5) esp.push('');
-  esp[idx] = val.trim();
-  s.ESPECIALIDADES = JSON.stringify(esp);
-  await saveSchoolR(s);
-  toast('💾 Guardado');
-}
-
 function tabGen(s,coord,cord){
   var cp=splitCode(s.NUMERO);
   return '<div class="fg" style="max-width:680px">'+
@@ -1958,9 +2054,11 @@ function tabGen(s,coord,cord){
     '<div class="ff"><label class="fl">Código</label>'+renderCodeField(s)+''+
     fsel2('Localidad','LOCALIDAD',s,LOCS)+
     ff2('Dirección','DIRECCION',s,'c2')+'<div class="ff"><label class="fl">Distrital</label><select class="fs" onchange="setF(\''+s.ID+'\',\'DISTRITAL\',this.value)"><option value="">— Sin distrital —</option><option value="Distrital 1"'+(s.DISTRITAL==="Distrital 1"?' selected':'')+'>Distrital 1</option><option value="Distrital 2"'+(s.DISTRITAL==="Distrital 2"?' selected':'')+'>Distrital 2</option><option value="Distrital 3"'+(s.DISTRITAL==="Distrital 3"?' selected':'')+'>Distrital 3</option></select></div>'+
+    renderSubcomandoField(s)+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Cooperadora</div>'+
     togRow('Estado cooperadora','TIENE_COOP',s,[['si','Con cooperadora',''],['tuvo','Sin cooperadora activa','oa'],['no','Nunca tuvo cooperadora','or']])+
     '<div class="ff c2"><label class="fl">Período activo</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+buildPeriodOpts(s.PERIODO_COOP||'',true)+'</select></div>'+
+    togRow('Caso especial','ESTADO_ESPECIAL',s,[['','Ninguno',''],['reorganizacion','🔄 Reorganización','oa'],['creacion','🆕 Creación','og']])+
 
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Asesora / Asesor</div>'+
     ff2('Nombre','ASESORA_NOMBRE',s)+
@@ -1971,8 +2069,6 @@ function tabGen(s,coord,cord){
     ff2('N° cuenta','CUENTA',s)+ff2('N° sucursal','SUCURSAL',s)+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Estatuto</div>'+
     '<div class="ff"><label class="fl">Estado del estatuto</label><select class="fs" onchange="setF(\''+s.ID+'\',\'ESTATUTO\',this.value)"><option value="">— Sin información —</option><option value="Estatuto actualizado"'+(s.ESTATUTO==='Estatuto actualizado'?' selected':'')+'>Estatuto actualizado</option><option value="Estatuto viejo"'+(s.ESTATUTO==='Estatuto viejo'?' selected':'')+'>Estatuto viejo</option><option value="Sin estatuto"'+(s.ESTATUTO==='Sin estatuto'?' selected':'')+'>Sin estatuto</option></select></div>'+
-  '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Especialidades</div>'+
-    renderEspecialidades(s)+
   '</div>'
 }
 
@@ -2009,7 +2105,13 @@ function tabCoop(s,ps){
     '<div class="fg" style="margin-bottom:.875rem">'+
       '<div class="ff"><label class="fl">Nombre presidenta</label><input class="fi" value="'+esc(s.PRES_NOMBRE||'')+'" onchange="setF(\''+s.ID+'\',\'PRES_NOMBRE\',this.value)"></div>'+
       '<div class="ff"><label class="fl">Contacto</label><input class="fi" value="'+esc(s.PRES_CONTACTO||'')+'" onchange="setF(\''+s.ID+'\',\'PRES_CONTACTO\',this.value)"></div>'+
-      '<div class="ff"><label class="fl">Cuota societaria</label><input class="fi" value="'+esc(s.CUOTA_SOCIETARIA||'')+'" placeholder="$0" onchange="setF(\''+s.ID+'\',\'CUOTA_SOCIETARIA\',this.value)"></div>'+
+      '<div class="ff"><label class="fl">Cuota societaria</label><div class="cuota-row">'+
+        '<input class="fi" value="'+esc(s.CUOTA_SOCIETARIA||'')+'" placeholder="$0" onchange="setF(\''+s.ID+'\',\'CUOTA_SOCIETARIA\',this.value)">'+
+        '<select class="fs" onchange="setF(\''+s.ID+'\',\'CUOTA_PERIODICIDAD\',this.value)">'+
+          '<option value="Mensual"'+(s.CUOTA_PERIODICIDAD!=='Anual'?' selected':'')+'>Mensual</option>'+
+          '<option value="Anual"'+(s.CUOTA_PERIODICIDAD==='Anual'?' selected':'')+'>Anual</option>'+
+        '</select>'+
+      '</div></div>'+
     '</div>'+
     '<div style="display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .875rem">'+
       '<span>Historial de períodos</span><button class="btn btn-p btn-sm" onclick="openPM(\''+s.ID+'\')">+ Período</button>'+
@@ -2061,7 +2163,7 @@ async function setFT(id,key,val,elem,cls){
   if(grp)grp.querySelectorAll('.tg-o').forEach(function(t){t.className='tg-o'});
   elem.className='tg-o on'+(cls?' '+cls:'');
   s[key]=val;await saveSchoolR(s);toast('💾 Guardado');
-  var rerender = ['TIENE_COOP','PERIODO_COOP','ESTADO_ASAMBLEA'];
+  var rerender = ['TIENE_COOP','PERIODO_COOP','ESTADO_ASAMBLEA','ESTADO_ESPECIAL'];
   if(ST.detId===id && rerender.indexOf(key)>=0) renderDetail(id,null);
 }
 async function setCode(id,part,val){
