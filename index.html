@@ -2043,7 +2043,13 @@ function togRow(lbl,key,s,opts){
 }
 
 function renderSubcomandoField(s){
-  var opts=ST.subcomandos.map(function(sc){return '<option value="'+esc(sc)+'"'+(s.SUBCOMANDO===sc?' selected':'')+'>'+esc(sc)+'</option>'}).join('');
+  var lista=ST.subcomandos.slice();
+  // Si la escuela tiene un subcomando guardado que no está en el catálogo
+  // (ej: se escribió directo en la planilla, o se borró del catálogo después),
+  // lo agregamos igual para que el desplegable muestre el valor real en vez
+  // de caer en "Sin subcomando" por no encontrar ninguna opción que coincida.
+  if(s.SUBCOMANDO && lista.indexOf(s.SUBCOMANDO)<0) lista.push(s.SUBCOMANDO);
+  var opts=lista.map(function(sc){return '<option value="'+esc(sc)+'"'+(s.SUBCOMANDO===sc?' selected':'')+'>'+esc(sc)+'</option>'}).join('');
   var isAdmin=ST.user&&ST.user.role==='admin';
   return '<div class="ff"><label class="fl">Subcomando</label><div class="subc-row">'+
     '<select class="fs" style="flex:1;min-width:0" onchange="setF(\''+s.ID+'\',\'SUBCOMANDO\',this.value)">'+
