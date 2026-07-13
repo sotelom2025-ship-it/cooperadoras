@@ -791,6 +791,13 @@ body:has(.moverlay.open) .fab-back{display:none!important}
             <button class="btn btn-s btn-sm" onclick="locsClear()">Ninguna</button>
           </div>
         </div>
+        <div class="card card-p"><div class="fs-ttl">Subcomando</div>
+          <div class="ptgg" id="pdf-subs" style="flex-wrap:wrap;gap:.35rem"></div>
+          <div style="display:flex;gap:.5rem;margin-top:.625rem">
+            <button class="btn btn-s btn-sm" onclick="subsAll()">Todos</button>
+            <button class="btn btn-s btn-sm" onclick="subsClear()">Ninguno</button>
+          </div>
+        </div>
         <div class="card card-p"><div class="fs-ttl">Incluir en el informe</div><div class="ptgg">
           <button class="tg-o" data-g="inc" data-v="visitas" onclick="tpdf(this)">Visitas</button>
           <button class="tg-o" data-g="inc" data-v="tipo" onclick="tpdf(this)">Tipo cooperadora</button>
@@ -1079,7 +1086,7 @@ var ST = {
   vCtx:{id:null,idx:null}, pCtx:{id:null},
   cIdx:-1, detId:null,
   sharedPeriodo: periodoActual(), // período vinculado entre secciones
-  pdf:{est:['aldia','vigente','sinactiva','nuncatuvo'],k:['con','sin'],banco:['con','sin'],inc:[],locs:[]}
+  pdf:{est:['aldia','vigente','sinactiva','nuncatuvo'],k:['con','sin'],banco:['con','sin'],inc:[],locs:[],subs:[]}
 };
 
 // ════════════════════════════════════════════════════════════
@@ -1186,11 +1193,12 @@ function showScreen(name){
 // ════════════════════════════════════════════════════════════
 function loadUrl(){try{return localStorage.getItem(GAS_KEY)||''}catch(e){return ''}}
 function saveUrl(u){try{localStorage.setItem(GAS_KEY,u)}catch(e){}}
-function loadSubcomandos(){try{var raw=localStorage.getItem('coop_subcomandos');return raw?JSON.parse(raw):[]}catch(e){return []}}
+function loadSubcomandos(){try{var raw=localStorage.getItem('coop_subcomandos');var v=raw?JSON.parse(raw):[];return Array.isArray(v)?v:[]}catch(e){return []}}
 function saveSubcomandosLocal(list){try{localStorage.setItem('coop_subcomandos',JSON.stringify(list))}catch(e){}}
 async function saveSubcomandosR(){
-  if(!ST.gasUrl)return;
-  try{await gasReq({action:'saveSubcomandos',subcomandos:ST.subcomandos})}catch(e){}
+  if(!ST.gasUrl)return true;
+  try{await gasReq({action:'saveSubcomandos',subcomandos:ST.subcomandos});return true}
+  catch(e){console.warn('saveSubcomandos falló, quedó guardado solo en este dispositivo:',e);return false}
 }
 
 // Mensajes amistosos cuando el pedido tarda o falla, para no dejar a la usuaria mirando la pantalla en silencio
@@ -1215,7 +1223,9 @@ async function gasReq(payload){
     }
     if(data && !data.ok && data.error){
       console.warn('GAS error ['+payload.action+']:', data.error);
-      throw friendlyErr(data.error,'No pudimos completar la acción. Probá de nuevo, y si sigue pasando avisale al equipo técnico.');
+      // El backend ya devuelve un texto pensado para mostrarse (ej: "Ya existe esa escuela"),
+      // así que se usa tal cual en vez de un mensaje genérico que ocultaría la causa real.
+      throw friendlyErr(data.error, data.error);
     }
     return data;
   }finally{
@@ -1344,7 +1354,11 @@ function goTo(name){
     if(!ST.pdf.locs.length && !ST.pdf.locsCleared && ST.schools.length){
       locsAll();
     }
-    renderPdfLocs();updPdfPrev();
+    // Init subs if empty and not manually cleared
+    if(!ST.pdf.subs.length && !ST.pdf.subsCleared && ST.schools.length){
+      subsAll();
+    }
+    renderPdfLocs();renderPdfSubs();updPdfPrev();
   }
   if(name==='users')renderUsers();
 }
@@ -1528,7 +1542,9 @@ async function loadData(){
     }
 
     // ── Subcomandos ──
-    if(r.subcomandos&&r.subcomandos.length){
+    // Array.isArray (no solo length): un catálogo vaciado del todo en el
+    // backend debe reflejarse acá también, no solo cuando trae elementos.
+    if(Array.isArray(r.subcomandos)){
       ST.subcomandos=r.subcomandos;
       saveSubcomandosLocal(ST.subcomandos);
     }
@@ -1664,29 +1680,46 @@ function renderSubMgmtList(){
     return '<div class="urow"><div style="flex:1;font-weight:600;font-size:.875rem">'+esc(sc)+'</div><button class="btn btn-d btn-xs" onclick="deleteSubcomando('+i+')">🗑</button></div>';
   }).join('');
 }
+function refreshSubcomandoUI(){
+  renderSubMgmtList();
+  fillSelects();
+  renderPdfSubs();
+  if(ST.detId)renderDetail(ST.detId,null);
+}
 async function addSubcomando(){
   if(!ST.user||ST.user.role!=='admin'){toast('⚠ Solo administradores pueden agregar subcomandos');return}
   var inp=el('subm-new');var val=(inp.value||'').trim();
   if(!val){toast('⚠ Ingresá un nombre');return}
+  if(val===PDF_SIN_SUB||val.toLowerCase()==='sin subcomando'){toast('⚠ Ese nombre está reservado, elegí otro');return}
   if(ST.subcomandos.some(function(sc){return sc.toLowerCase()===val.toLowerCase()})){toast('⚠ Ese subcomando ya existe');return}
   ST.subcomandos.push(val);
   saveSubcomandosLocal(ST.subcomandos);
-  await saveSubcomandosR();
   inp.value='';
-  renderSubMgmtList();
-  if(ST.detId)renderDetail(ST.detId,null);
-  toast('✅ Subcomando agregado');
+  refreshSubcomandoUI();
+  var ok=await saveSubcomandosR();
+  toast(ok?'✅ Subcomando agregado':'⚠ Se agregó en este dispositivo, pero no se pudo sincronizar con Sheets');
 }
 async function deleteSubcomando(i){
   if(!ST.user||ST.user.role!=='admin'){toast('⚠ Solo administradores pueden eliminar subcomandos');return}
   var sc=ST.subcomandos[i];if(!sc)return;
-  if(!confirm('¿Eliminar el subcomando "'+sc+'"?'))return;
+  var afectadas=ST.schools.filter(function(s){return s.SUBCOMANDO===sc});
+  var msg='¿Eliminar el subcomando "'+sc+'"?';
+  if(afectadas.length) msg+='\n\n'+afectadas.length+' escuela'+(afectadas.length!==1?'s':'')+' tiene'+(afectadas.length!==1?'n':'')+' este subcomando asignado y va'+(afectadas.length!==1?'n':'')+' a quedar sin subcomando.';
+  if(!confirm(msg))return;
   ST.subcomandos.splice(i,1);
   saveSubcomandosLocal(ST.subcomandos);
-  await saveSubcomandosR();
-  renderSubMgmtList();
+  refreshSubcomandoUI();
+  var ok=await saveSubcomandosR();
+  var errores=0;
+  for(var k=0;k<afectadas.length;k++){
+    afectadas[k].SUBCOMANDO='';
+    try{ await saveSchoolR(afectadas[k]); }catch(e){ errores++; }
+  }
   if(ST.detId)renderDetail(ST.detId,null);
-  toast('🗑 Subcomando eliminado');
+  renderSchools();
+  if(!ok) toast('⚠ Se eliminó en este dispositivo, pero no se pudo sincronizar con Sheets');
+  else if(errores) toast('⚠ Subcomando eliminado, pero '+errores+' escuela(s) no se pudieron actualizar');
+  else toast('🗑 Subcomando eliminado');
 }
 
 async function initApp(){
@@ -1809,7 +1842,7 @@ function renderSchools(){
   // Filter summary bar
   var fsDiv=el('filter-summary');
   if(fsDiv){
-    var hasFilter=(q||fl||fc||fco||ft||fk);
+    var hasFilter=(q||fl||fc||fco||ft||fk||fsub);
     if(hasFilter && list.length>0){
       var fAldia=list.filter(function(s){return etiq(s).l==='Cooperadora Al día';}).length;
       var fVigente=list.filter(function(s){return etiq(s).l==='Cooperadora Vigente';}).length;
@@ -1854,13 +1887,13 @@ function renderStats(){
   var conCoop=alDia+vigente;
   var sinActiva=ST.schools.filter(function(s){return etiq(s).l==='Sin cooperadora activa';}).length;
   var nuncaTuvo=ST.schools.filter(function(s){return etiq(s).l==='Nunca tuvo cooperadora';}).length;
-  var sinTotal=sinActiva+nuncaTuvo;
   e.innerHTML=
     '<div class="stat"><div class="stat-v">'+tot+'</div><div class="stat-l">Total escuelas</div></div>'+
     '<div class="stat"><div class="stat-v" style="color:var(--green)">'+conCoop+'</div><div class="stat-l">Con cooperadora (total)</div></div>'+
     '<div class="stat"><div class="stat-v" style="color:var(--green)">'+alDia+'</div><div class="stat-l">Al día</div></div>'+
     '<div class="stat"><div class="stat-v" style="color:var(--navy2)">'+vigente+'</div><div class="stat-l">Vigente</div></div>'+
-    '<div class="stat"><div class="stat-v" style="color:var(--red)">'+sinTotal+'</div><div class="stat-l">Sin cooperadora activa</div></div>';
+    '<div class="stat"><div class="stat-v" style="color:var(--amber)">'+sinActiva+'</div><div class="stat-l">Sin actividad</div></div>'+
+    '<div class="stat"><div class="stat-v" style="color:var(--red)">'+nuncaTuvo+'</div><div class="stat-l">Nunca tuvo</div></div>';
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1997,7 +2030,7 @@ function fsel2(lbl,key,s,opts,span){return '<div class="ff'+(span?' '+span:'')+'
 
 function togRow(lbl,key,s,opts){
   return '<div class="ff" style="margin-bottom:.875rem"><label class="fl">'+lbl+'</label><div class="tgg">'+
-    opts.map(function(o){var v=o[0],l=o[1],cls=o[2]||'';return '<div class="tg-o'+(s[key]===v?' on'+(cls?' '+cls:''):'')+'" onclick="setFT(\''+s.ID+'\',\''+key+'\',\''+v+'\',this,\''+cls+'\')">'+l+'</div>'}).join('')+
+    opts.map(function(o){var v=o[0],l=o[1],cls=o[2]||'';return '<div class="tg-o'+((s[key]||'')===v?' on'+(cls?' '+cls:''):'')+'" onclick="setFT(\''+s.ID+'\',\''+key+'\',\''+v+'\',this,\''+cls+'\')">'+l+'</div>'}).join('')+
   '</div></div>'
 }
 
@@ -2509,11 +2542,51 @@ function locsAll(){
   renderPdfLocs();updPdfPrev();
 }
 function locsClear(){ST.pdf.locs=[];ST.pdf.locsCleared=true;renderPdfLocs();updPdfPrev();}
+
+var PDF_SIN_SUB='__none__';
+function renderPdfSubs(){
+  var e=el('pdf-subs');if(!e)return;
+  var opts=ST.subcomandos.slice().sort(function(a,b){return a.localeCompare(b,'es');});
+  opts.push(PDF_SIN_SUB);
+  e.innerHTML=opts.map(function(sc){
+    var label=sc===PDF_SIN_SUB?'Sin subcomando':sc;
+    var isOn=ST.pdf.subs.indexOf(sc)>=0;
+    return '<div class="lpill'+(isOn?' on':'')+'" data-sub="'+esc(sc)+'" onclick="togSub(this)">'+esc(label)+'</div>';
+  }).join('');
+}
+function togSub(el2){
+  var v=el2.dataset.sub;if(!v)return;
+  var i=ST.pdf.subs.indexOf(v);
+  if(i>=0){
+    ST.pdf.subs.splice(i,1);
+    ST.pdf.subsCleared = ST.pdf.subs.length===0;
+  } else {
+    ST.pdf.subs.push(v);
+    ST.pdf.subsCleared = false;
+  }
+  el2.classList.toggle('on', ST.pdf.subs.indexOf(v)>=0);
+  updPdfPrev();
+}
+function subsAll(){
+  ST.pdf.subs=ST.subcomandos.slice();
+  ST.pdf.subs.push(PDF_SIN_SUB);
+  ST.pdf.subsCleared=false;
+  renderPdfSubs();updPdfPrev();
+}
+function subsClear(){ST.pdf.subs=[];ST.pdf.subsCleared=true;renderPdfSubs();updPdfPrev();}
+
 function getPdfList(){
   return ST.schools.filter(function(s){
     // If locs empty and not manually cleared -> include all; if cleared -> exclude all
     if(ST.pdf.locs.length&&!ST.pdf.locs.some(function(l){return l.toLowerCase().trim()===(s.LOCALIDAD||'').toLowerCase().trim();}))return false;
     if(!ST.pdf.locs.length && ST.pdf.locsCleared) return false;
+    // Subcomando: mismo criterio que Localidades, con PDF_SIN_SUB representando "sin asignar"
+    if(ST.pdf.subs.length){
+      var sSub=s.SUBCOMANDO||'';
+      var subMatches=ST.pdf.subs.some(function(x){return x===PDF_SIN_SUB?!sSub:x.toLowerCase().trim()===sSub.toLowerCase().trim();});
+      if(!subMatches)return false;
+    }
+    if(!ST.pdf.subs.length && ST.pdf.subsCleared) return false;
     var lbl=etiq(s).l;
     var lCat = lbl==='Cooperadora Al día'?'aldia':lbl==='Cooperadora Vigente'?'vigente':lbl==='Sin cooperadora activa'?'sinactiva':'nuncatuvo';
     if(ST.pdf.est.indexOf(lCat)<0)return false;
@@ -2546,6 +2619,22 @@ function updPdfPrev(){
     else locSummary='<div style="margin-top:.375rem;font-size:.73rem;opacity:.8">'+locParts.slice(0,6).join(' &nbsp;·&nbsp; ')+' y '+(locParts.length-6)+' más...</div>';
   }
 
+  // Build subcomando summary
+  var subSummary='';
+  var totalSubs=ST.subcomandos.length+1; // + "Sin subcomando"
+  if(ST.pdf.subs.length>0 && ST.pdf.subs.length<totalSubs){
+    var subCounts={};
+    list.forEach(function(s){
+      var sc=s.SUBCOMANDO||'Sin subcomando';
+      subCounts[sc]=(subCounts[sc]||0)+1;
+    });
+    var subParts=Object.keys(subCounts).sort(function(a,b){return a.localeCompare(b,'es');}).map(function(sc){
+      return sc+': '+subCounts[sc];
+    });
+    if(subParts.length<=6) subSummary='<div style="margin-top:.375rem;font-size:.73rem;opacity:.8">'+subParts.join(' &nbsp;·&nbsp; ')+'</div>';
+    else subSummary='<div style="margin-top:.375rem;font-size:.73rem;opacity:.8">'+subParts.slice(0,6).join(' &nbsp;·&nbsp; ')+' y '+(subParts.length-6)+' más...</div>';
+  }
+
   var estLabels={aldia:'Al día',vigente:'Vigente',sinactiva:'Sin activa',nuncatuvo:'Nunca tuvo'};
   // Build a readable summary of selected states
   var conCoopSels = PDF_GROUPS.concoop.filter(function(v){return ST.pdf.est.indexOf(v)>=0;});
@@ -2556,11 +2645,12 @@ function updPdfPrev(){
   if(sinCoopSels.length===2) estDesc.push('Sin cooperadora');
   else if(sinCoopSels.length===1) estDesc.push(estLabels[sinCoopSels[0]]);
   e.innerHTML='<strong>📋 '+list.length+' de '+total+' establecimiento'+(total!==1?'s':'')+' seleccionados</strong>'+
-    '<br><span style="font-size:.78rem;opacity:.85">Estado: '+(estDesc.join(', ')||'Ninguno')+ 
+    '<br><span style="font-size:.78rem;opacity:.85">Estado: '+(estDesc.join(', ')||'Ninguno')+
     ' · Kiosco: '+(ST.pdf.k.join(', ')||'—')+
     ' · Banco: '+(ST.pdf.banco.join(', ')||'—')+
-    ' · Localidades: '+(ST.pdf.locs.length===0?'Todas':ST.pdf.locs.length+' sel.')+'</span>'+
-    locSummary;
+    ' · Localidades: '+(ST.pdf.locs.length===0?'Todas':ST.pdf.locs.length+' sel.')+
+    ' · Subcomando: '+(ST.pdf.subs.length===0?'Ninguno':ST.pdf.subs.length>=totalSubs?'Todos':ST.pdf.subs.length+' sel.')+'</span>'+
+    locSummary+subSummary;
 }
 function genPDF(){
   var jsPDFClass = (window.jspdf && window.jspdf.jsPDF) || (window.jsPDF);
@@ -2643,10 +2733,12 @@ function genPDF(){
   else if(_conSel.length===1) _estDesc.push(estLabels[_conSel[0]]);
   if(_sinSel.length===2) _estDesc.push('Sin cooperadora');
   else if(_sinSel.length===1) _estDesc.push(estLabels[_sinSel[0]]);
-  var filterText='Estado: '+(_estDesc.join(', ')||'Ninguno')+ 
+  var _totalSubs=ST.subcomandos.length+1; // + "Sin subcomando"
+  var filterText='Estado: '+(_estDesc.join(', ')||'Ninguno')+
     ' | Kiosco: '+(ST.pdf.k.join(', ')||'—')+
     ' | Banco: '+(ST.pdf.banco.join(', ')||'—')+
-    ' | Localidades: '+(ST.pdf.locs.length===LOCS.length?'Todas':ST.pdf.locs.length+' sel.');
+    ' | Localidades: '+(ST.pdf.locs.length===LOCS.length?'Todas':ST.pdf.locs.length+' sel.')+
+    ' | Subcomando: '+(ST.pdf.subs.length===0?'Ninguno':ST.pdf.subs.length>=_totalSubs?'Todos':ST.pdf.subs.length+' sel.');
   var fLines=doc.splitTextToSize(filterText,PW-ML-MR-6);
   var fH=fLines.length*4.5+6;
   doc.setFillColor(238,242,251);
@@ -2659,6 +2751,12 @@ function genPDF(){
   doc.setTextColor(60,60,60);
   doc.text(fLines,ML+22,y+5);
   y+=fH+4;
+
+  // Totales generales de `list`, usados en la fila TOTAL de ambas tablas de resumen
+  var tAlDia=list.filter(function(s){return etiq(s).l==='Cooperadora Al día';}).length;
+  var tVigente=list.filter(function(s){return etiq(s).l==='Cooperadora Vigente';}).length;
+  var tSinAct=list.filter(function(s){var l=etiq(s).l;return l==='Sin cooperadora activa'||l==='Nunca tuvo cooperadora';}).length;
+  var tKio=list.filter(function(s){return s.KIOSCO&&s.KIOSCO.toLowerCase().indexOf('kiosco')>=0;}).length;
 
   // ── RESUMEN POR LOCALIDAD ──────────────────────────────────
   var locMap={};
@@ -2704,14 +2802,58 @@ function genPDF(){
       y+=6;
     });
     // Fila TOTAL
-    var tAlDia=list.filter(function(s){return etiq(s).l==='Cooperadora Al día';}).length;
-    var tVigente=list.filter(function(s){return etiq(s).l==='Cooperadora Vigente';}).length;
-    var tSinAct=list.filter(function(s){var l=etiq(s).l;return l==='Sin cooperadora activa'||l==='Nunca tuvo cooperadora';}).length;
-    var tKio=list.filter(function(s){return s.KIOSCO&&s.KIOSCO.toLowerCase().indexOf('kiosco')>=0;}).length;
     doc.setFillColor(13,47,110);
     doc.rect(ML,y,PW-ML-MR,6,'F');
     doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.setFontSize(7);
     [' TOTAL',String(list.length),String(tAlDia),tVigente>0?String(tVigente):'—',tSinAct>0?String(tSinAct):'—',tKio>0?String(tKio):'—'].forEach(function(v,i){doc.text(v,cX[i]+1.5,y+4.3);});
+    y+=12;
+  }
+
+  // ── RESUMEN POR SUBCOMANDO ─────────────────────────────────
+  var subMap={};
+  list.forEach(function(s){
+    var sc=s.SUBCOMANDO||'Sin subcomando';
+    if(!subMap[sc]) subMap[sc]={total:0,con:0,vigente:0,sin:0,kiosco:0};
+    subMap[sc].total++;
+    var lbl2=etiq(s).l;
+    if(lbl2==='Cooperadora Al día') subMap[sc].con++;
+    else if(lbl2==='Cooperadora Vigente') subMap[sc].vigente++;
+    else subMap[sc].sin++;
+    if(s.KIOSCO&&s.KIOSCO.toLowerCase().indexOf('kiosco')>=0) subMap[sc].kiosco++;
+  });
+  var subKeys=Object.keys(subMap).sort(function(a,b){return a.localeCompare(b,'es');});
+  if(subKeys.length>0){
+    if(y+20>PH-20) aP();
+    doc.setFillColor(13,47,110);
+    doc.rect(ML,y,PW-ML-MR,7,'F');
+    doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(8);
+    doc.text('RESUMEN POR SUBCOMANDO',ML+3,y+5);
+    y+=9;
+    var cW2=[74,16,22,22,18,16];
+    var cX2=[ML];
+    for(var ci2=0;ci2<cW2.length-1;ci2++) cX2.push(cX2[ci2]+cW2[ci2]);
+    doc.setFillColor(238,242,251);
+    doc.rect(ML,y,PW-ML-MR,6,'F');
+    doc.setTextColor(13,47,110);doc.setFont('helvetica','bold');doc.setFontSize(7);
+    ['Subcomando','Total','Al día','Vigente','Sin activa/nunca','Kiosco'].forEach(function(h,i){
+      doc.text(h,cX2[i]+1.5,y+4.3);
+    });
+    y+=6;
+    doc.setFont('helvetica','normal');
+    subKeys.forEach(function(sc,i){
+      if(y+6>PH-20){aP();}
+      doc.setFillColor(i%2===0?249:255,i%2===0?250:255,i%2===0?251:255);
+      doc.rect(ML,y,PW-ML-MR,6,'F');
+      doc.setTextColor(30,30,50);doc.setFontSize(7);
+      var r2=subMap[sc];
+      var vals2=[sc.length>40?sc.slice(0,40)+'...':sc,String(r2.total),String(r2.con),(r2.vigente||0)>0?String(r2.vigente):'—',r2.sin>0?String(r2.sin):'—',r2.kiosco>0?String(r2.kiosco):'—'];
+      vals2.forEach(function(v,i){doc.text(v,cX2[i]+1.5,y+4.3);});
+      y+=6;
+    });
+    doc.setFillColor(13,47,110);
+    doc.rect(ML,y,PW-ML-MR,6,'F');
+    doc.setFont('helvetica','bold');doc.setTextColor(255,255,255);doc.setFontSize(7);
+    [' TOTAL',String(list.length),String(tAlDia),tVigente>0?String(tVigente):'—',tSinAct>0?String(tSinAct):'—',tKio>0?String(tKio):'—'].forEach(function(v,i){doc.text(v,cX2[i]+1.5,y+4.3);});
     y+=12;
   }
 
