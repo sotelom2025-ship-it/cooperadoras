@@ -1377,10 +1377,18 @@ async function loadData(){
     // ── Escuelas base ──
     var schoolsMap={}, schoolsByNum={};
     if(r.schools&&r.schools.length){
-      r.schools.forEach(function(s){
+      r.schools.forEach(function(s,idx){
         s.VISITAS='[]';s.PERIODOS='[]';s.COM_DIRECTIVA='{}';s.COM_REVISORA='{}';
         var id=(s.ID||'').trim();
         var num=(s.NUMERO||'').trim();
+        // Fila cargada directo en la planilla sin completar la columna ID (o con un ID
+        // repetido de otra escuela): usar la clave tal cual haría que se pisen entre sí y
+        // solo sobreviva la última. Generamos una clave única para no perder ninguna.
+        if(!id || schoolsMap[id]){
+          id = 'auto_'+(num?num.replace(/\s+/g,'').toUpperCase():('row'+idx));
+          while(schoolsMap[id]) id+='_'+idx;
+          s.ID=id;
+        }
         schoolsMap[id]=s;
         if(num) schoolsByNum[num.toUpperCase()]=s;
         // Also index without spaces: 'JI 930' -> 'JI930'
@@ -1887,13 +1895,13 @@ function renderStats(){
   var conCoop=alDia+vigente;
   var sinActiva=ST.schools.filter(function(s){return etiq(s).l==='Sin cooperadora activa';}).length;
   var nuncaTuvo=ST.schools.filter(function(s){return etiq(s).l==='Nunca tuvo cooperadora';}).length;
+  var sinTotal=sinActiva+nuncaTuvo;
   e.innerHTML=
     '<div class="stat"><div class="stat-v">'+tot+'</div><div class="stat-l">Total escuelas</div></div>'+
     '<div class="stat"><div class="stat-v" style="color:var(--green)">'+conCoop+'</div><div class="stat-l">Con cooperadora (total)</div></div>'+
     '<div class="stat"><div class="stat-v" style="color:var(--green)">'+alDia+'</div><div class="stat-l">Al día</div></div>'+
     '<div class="stat"><div class="stat-v" style="color:var(--navy2)">'+vigente+'</div><div class="stat-l">Vigente</div></div>'+
-    '<div class="stat"><div class="stat-v" style="color:var(--amber)">'+sinActiva+'</div><div class="stat-l">Sin actividad</div></div>'+
-    '<div class="stat"><div class="stat-v" style="color:var(--red)">'+nuncaTuvo+'</div><div class="stat-l">Nunca tuvo</div></div>';
+    '<div class="stat"><div class="stat-v" style="color:var(--red)">'+sinTotal+'</div><div class="stat-l">Sin cooperadora activa</div></div>';
 }
 
 // ════════════════════════════════════════════════════════════
