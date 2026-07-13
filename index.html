@@ -905,7 +905,7 @@ body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
       </div>
       <div class="ff c2">
         <label class="fl">Motivo / Trámite</label>
-        <select class="fs" id="rm-motivo" onchange="toggleReorgRow()">
+        <select class="fs" id="rm-motivo" onchange="toggleReorgRow();toggleOtroDesc()">
           <option value="Presentación documentación">Presentación documentación</option>
           <option value="Consulta">Consulta</option>
           <option value="Rendición de cuentas">Rendición de cuentas</option>
@@ -915,6 +915,10 @@ body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
           <option value="Retiro de comprobantes">Retiro de comprobantes</option>
           <option value="Otro">Otro</option>
         </select>
+      </div>
+      <div class="ff c2" id="rm-otro-row" style="display:none">
+        <label class="fl">Aclaración del motivo</label>
+        <input class="fi" id="rm-otro-desc" placeholder="Describí el motivo...">
       </div>
       <div class="ff c2" id="rm-reorg-row" style="display:none">
         <label class="fl" style="color:var(--navy);font-weight:700">🔄 Comienzo de reorganización</label>
@@ -1472,6 +1476,7 @@ async function loadData(){
           schoolLocalidad: row.SCHOOL_LOCALIDAD || row.schoolLocalidad || '',
           fecha:        normalizeDate(row.FECHA || row.fecha || ''),
           periodo:      row.PERIODO        || row.periodo        || '',          motivo:       row.MOTIVO         || row.motivo         || '',
+          otroDesc:     row.OTRO_DESC      || row.otroDesc      || '',
           obs:          row.OBSERVACIONES  || row.obs            || '',
           alerta:       (row.ALERTA||row.alerta||'') === 'SI' || row.alerta === true,
           alertaDesc:   row.ALERTA_DESC    || row.alertaDesc     || '',
@@ -2994,6 +2999,8 @@ function openRecModal(){
   perSel.value = ST.sharedPeriodo || periodoActual();
   el('rm-obs').value = '';
   el('rm-motivo').value = 'Presentación documentación';
+  el('rm-otro-desc').value = '';
+  el('rm-otro-row').style.display = 'none';
   el('rm-alerta').checked = false;
   el('rm-alerta-desc').value = '';
   el('rm-alerta-desc-row').style.display = 'none';
@@ -3032,6 +3039,8 @@ function openRecEdit(id){
   for(var i=0;i<motivoSel.options.length;i++){ if(motivoSel.options[i].value===r.motivo){ found=true; break; } }
   if(!found && r.motivo){ var opt=document.createElement('option'); opt.value=r.motivo; opt.textContent=r.motivo; motivoSel.appendChild(opt); }
   motivoSel.value = r.motivo || 'Presentación documentación';
+  el('rm-otro-desc').value = r.otroDesc || '';
+  toggleOtroDesc();
   el('rm-alerta').checked = !!r.alerta;
   el('rm-alerta-desc').value = r.alertaDesc || '';
   el('rm-alerta-desc-row').style.display = r.alerta ? '' : 'none';
@@ -3046,6 +3055,11 @@ function openRecEdit(id){
 
 function toggleAlertaDesc(){
   el('rm-alerta-desc-row').style.display = el('rm-alerta').checked ? '' : 'none';
+}
+function toggleOtroDesc(){
+  var isOtro = el('rm-motivo').value === 'Otro';
+  el('rm-otro-row').style.display = isOtro ? '' : 'none';
+  if(!isOtro) el('rm-otro-desc').value = '';
 }
 function toggleReorgRow(){
   var m = el('rm-motivo').value;
@@ -3097,7 +3111,9 @@ async function saveRecepcion(){
     schoolId: sid, schoolNombre: s.NOMBRE, schoolNumero: s.NUMERO,
     schoolLocalidad: s.LOCALIDAD,
     fecha: el('rm-fecha').value||new Date().toISOString().slice(0,10),
-    periodo: el('rm-periodo').value, motivo: el('rm-motivo').value,
+    periodo: el('rm-periodo').value,
+    motivo: el('rm-motivo').value,
+    otroDesc: el('rm-motivo').value==='Otro' ? (el('rm-otro-desc').value||'').trim() : '',
     obs: el('rm-obs').value.trim(), alerta: el('rm-alerta').checked,
     alertaDesc: el('rm-alerta-desc').value.trim(),
     reorgFecha: el('rm-reorg-fecha').value || '',
@@ -3234,13 +3250,17 @@ function renderRecepcion(){
         '</div>'
       : '';
 
+    var motivoDisplay = r.motivo === 'Otro' && r.otroDesc
+      ? 'Otro: ' + r.otroDesc
+      : (r.motivo || '—');
+
     return '<div class="'+itemClass+'">'+
       // HEAD: número + nombre escuela + fecha
       '<div class="rec-head">'+
         '<div class="rec-num">'+esc((r.schoolNumero||'').split(' ').slice(0,2).join('\n'))+'</div>'+
         '<div class="rec-school">'+
           '<div class="rec-school-name">'+esc(r.schoolNombre||'—')+'</div>'+
-          '<div class="rec-school-loc">'+esc(r.schoolLocalidad||'')+(r.periodo?' · <em>'+esc(pLabel(r.periodo))+'</em>':'')+'</div>'+
+          '<div class="rec-school-loc">'+esc(r.schoolLocalidad||'')+'</div>'+
         '</div>'+
         '<div class="rec-fecha-badge">'+
           '<div class="rec-fecha-d">'+esc(fechaDia)+'</div>'+
@@ -3250,7 +3270,7 @@ function renderRecepcion(){
       // BODY: motivo + obs + reorg + alerta
       '<div class="rec-body2">'+
         '<div class="rec-motivo-row">'+
-          '<span class="'+motivoPillClass+'">'+esc(r.motivo||'—')+'</span>'+
+          '<span class="'+motivoPillClass+'">'+esc(motivoDisplay)+'</span>'+
           (r.alerta?'<span class="alerta-pill">⚠️ '+esc(r.alertaDesc||'Requiere seguimiento')+'</span>':'')+
         '</div>'+
         (r.obs?'<div class="rec-obs-txt">'+esc(r.obs)+'</div>':'')+
