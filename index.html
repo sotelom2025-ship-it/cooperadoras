@@ -704,6 +704,7 @@ body:has(.moverlay.open) .fab-back{display:none!important}
           <select class="fsel" id="fl-cord" onchange="renderSchools()"><option value="">Cordón</option><option value="1">1er Cordón</option><option value="2">2do Cordón</option><option value="3">3er Cordón</option></select>
           <select class="fsel" id="fl-tipo" onchange="renderSchools()"><option value="">Tipo cooperadora</option><option>Activa</option><option>Administrativa</option><option>✌️</option></select>
           <select class="fsel" id="fl-k" onchange="renderSchools()"><option value="">Kiosco</option><option value="con">Con kiosco</option><option value="sin">Sin kiosco</option></select>
+          <select class="fsel" id="fl-sub" onchange="renderSchools()"><option value="">Subcomando</option><option value="__none__">Sin subcomando</option></select>
           <button class="btn btn-s btn-sm" onclick="clrF()">✕ Limpiar</button>
         </div>
         <div id="sf-bar" class="fbar" style="margin-bottom:.625rem">
@@ -1728,6 +1729,14 @@ function fillSelects(){
     s.innerHTML='<option value="">'+first+'</option>';
     ST.coords.forEach(function(c){var o=document.createElement('option');o.value=o.textContent=c.nombre;if(c.nombre===v)o.selected=true;s.appendChild(o)});
   });
+  // fl-sub: Subcomando, con opción fija "Sin subcomando"
+  var flSub=el('fl-sub');
+  if(flSub){
+    var vSub=flSub.value;
+    flSub.innerHTML='<option value="">Subcomando</option><option value="__none__">Sin subcomando</option>';
+    ST.subcomandos.forEach(function(sc){var o=document.createElement('option');o.value=o.textContent=sc;if(sc===vSub)o.selected=true;flSub.appendChild(o)});
+    if(vSub==='__none__')flSub.value='__none__';
+  }
   var cur=periodoActual();
   ['sm-per','pm-per'].forEach(function(id){
     var s=el(id);if(!s)return;
@@ -1758,7 +1767,7 @@ function setSF(f){
   document.querySelectorAll('#sf-bar .fp').forEach(function(b){b.classList.toggle('on',b.dataset.f===f)});
   renderSchools();
 }
-function clrF(){['fl-loc','fl-coord','fl-cord','fl-tipo','fl-k'].forEach(function(id){var e=el(id);if(e)e.value=''});renderSchools()}
+function clrF(){['fl-loc','fl-coord','fl-cord','fl-tipo','fl-k','fl-sub'].forEach(function(id){var e=el(id);if(e)e.value=''});renderSchools()}
 
 function renderSchools(){
   if(el('list-view')&&el('list-view').style.display==='none')return;
@@ -1768,6 +1777,7 @@ function renderSchools(){
   var fco=((el('fl-cord')||{}).value)||'';
   var ft=((el('fl-tipo')||{}).value)||'';
   var fk=((el('fl-k')||{}).value)||'';
+  var fsub=((el('fl-sub')||{}).value)||'';
   var list=ST.schools.filter(function(s){
     if(q&&!(s.NOMBRE||'').toLowerCase().includes(q)&&!(s.NUMERO||'').toLowerCase().includes(q))return false;
     if(fl&&(s.LOCALIDAD||'').toLowerCase().trim()!==fl.toLowerCase().trim())return false;
@@ -1775,6 +1785,7 @@ function renderSchools(){
     if(fco&&getCordNum(s.LOCALIDAD)!==fco)return false;
     if(ft&&s.TIPO_COOP!==ft)return false;
     if(fk){var h=s.KIOSCO&&(s.KIOSCO.toLowerCase().indexOf('kiosco')>=0);if(fk==='con'&&!h)return false;if(fk==='sin'&&h)return false;}
+    if(fsub){if(fsub==='__none__'){if(s.SUBCOMANDO)return false;}else if((s.SUBCOMANDO||'')!==fsub)return false;}
     return true;
   });
   if(ST.sf!=='all'){list=list.filter(function(s){var lbl=etiq(s).l;if(ST.sf==='aldia')return lbl==='Cooperadora Al día';if(ST.sf==='vigente')return lbl==='Cooperadora Vigente';if(ST.sf==='sinactiva')return lbl==='Sin cooperadora activa';if(ST.sf==='nuncatuvo')return lbl==='Nunca tuvo cooperadora';if(ST.sf==='sincoop')return lbl==='Sin cooperadora activa'||lbl==='Nunca tuvo cooperadora';return true})}
@@ -2121,13 +2132,26 @@ function tabCoop(s,ps){
   '</div>'
 }
 
+// El mandato es texto libre (ej: "2024-2026"), pero si en la planilla la celda
+// quedó cargada como fecha, Sheets la devuelve como "Sat May 01 2027 00:00:00 GMT-0300 (...)".
+// Acá lo detectamos y mostramos solo el año.
+function mandatoLabel(v){
+  if(!v) return '';
+  v=String(v).trim();
+  var m=v.match(/^\w{3}\s+\w{3}\s+\d{1,2}\s+(\d{4})\s+\d{2}:\d{2}:\d{2}/);
+  if(m) return m[1];
+  m=v.match(/^(\d{4})-\d{2}-\d{2}/);
+  if(m) return m[1];
+  return v;
+}
+
 function tabCom(s){
   var cd=pj(s.COM_DIRECTIVA,{}),cr=pj(s.COM_REVISORA,{});
   var rolesD=[['presidenta','Presidenta'],['tesorera','Tesorera'],['secretaria','Secretaria'],['vocal1','Vocal Titular 1'],['vocal2','Vocal Titular 2'],['vocal3','Vocal Titular 3'],['suplente1','Vocal Suplente 1'],['suplente2','Vocal Suplente 2']];
   var rolesR=[['docente','Revisora Docente'],['titular','Titular'],['suplente','Suplente']];
   return '<div style="max-width:680px">'+
     '<div style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin-bottom:.875rem">Comisión Directiva</div>'+
-    rolesD.map(function(r){return '<div style="margin-bottom:.875rem"><div class="fl" style="margin-bottom:.375rem">'+r[1]+'</div><div class="fg"><div class="ff"><input class="fi" placeholder="Nombre" value="'+esc((cd[r[0]]||{}).nombre||'')+'" onchange="setCD(\''+s.ID+'\',\''+r[0]+'\',\'nombre\',this.value)"></div><div class="ff"><input class="fi" placeholder="Mandato (ej: 2024-2026)" value="'+esc((cd[r[0]]||{}).mandato||'')+'" onchange="setCD(\''+s.ID+'\',\''+r[0]+'\',\'mandato\',this.value)"></div></div></div>'}).join('')+
+    rolesD.map(function(r){return '<div style="margin-bottom:.875rem"><div class="fl" style="margin-bottom:.375rem">'+r[1]+'</div><div class="fg"><div class="ff"><input class="fi" placeholder="Nombre" value="'+esc((cd[r[0]]||{}).nombre||'')+'" onchange="setCD(\''+s.ID+'\',\''+r[0]+'\',\'nombre\',this.value)"></div><div class="ff"><input class="fi" placeholder="Mandato (ej: 2024-2026)" value="'+esc(mandatoLabel((cd[r[0]]||{}).mandato))+'" onchange="setCD(\''+s.ID+'\',\''+r[0]+'\',\'mandato\',this.value)"></div></div></div>'}).join('')+
     '<div style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .875rem">Comisión Revisora de Cuentas</div>'+
     rolesR.map(function(r){return '<div style="margin-bottom:.875rem"><div class="fl" style="margin-bottom:.375rem">'+r[1]+'</div><div class="ff"><input class="fi" placeholder="Nombre" value="'+esc((cr[r[0]]||{}).nombre||'')+'" onchange="setCR(\''+s.ID+'\',\''+r[0]+'\',\'nombre\',this.value)"></div></div>'}).join('')+
     '<button class="btn btn-p" onclick="saveCom(\''+s.ID+'\')">💾 Guardar comisión</button>'+
