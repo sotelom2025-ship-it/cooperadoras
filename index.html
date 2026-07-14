@@ -761,29 +761,30 @@ body:has(.moverlay.open) .fab-back{display:none!important}
             <div>
               <div style="font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.375rem">Con cooperadora</div>
               <div class="ptgg">
-                <button class="tg-o tpdf-group on" id="pest-concoop" onclick="tpdfGroup('concoop')" style="font-weight:700">Todas con cooperadora</button>
-                <button class="tg-o on" data-g="est" data-v="aldia" id="pest-aldia" onclick="tpdfSub(this,'concoop')">🟢 Al día</button>
-                <button class="tg-o on" data-g="est" data-v="vigente" id="pest-vigente" onclick="tpdfSub(this,'concoop')">🔵 Vigente</button>
+                <button class="tg-o tpdf-group" id="pest-concoop" onclick="tpdfGroup('concoop')" style="font-weight:700">Todas con cooperadora</button>
+                <button class="tg-o" data-g="est" data-v="aldia" id="pest-aldia" onclick="tpdfSub(this,'concoop')">🟢 Al día</button>
+                <button class="tg-o" data-g="est" data-v="vigente" id="pest-vigente" onclick="tpdfSub(this,'concoop')">🔵 Vigente</button>
               </div>
             </div>
             <div>
               <div style="font-size:.7rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:.375rem">Sin cooperadora</div>
               <div class="ptgg">
-                <button class="tg-o tpdf-group on" id="pest-sincoop" onclick="tpdfGroup('sincoop')" style="font-weight:700">Todas sin cooperadora</button>
-                <button class="tg-o on" data-g="est" data-v="sinactiva" id="pest-sinactiva" onclick="tpdfSub(this,'sincoop')">⚠️ Sin activa</button>
-                <button class="tg-o on" data-g="est" data-v="nuncatuvo" id="pest-nuncatuvo" onclick="tpdfSub(this,'sincoop')">🔴 Nunca tuvo</button>
+                <button class="tg-o tpdf-group" id="pest-sincoop" onclick="tpdfGroup('sincoop')" style="font-weight:700">Todas sin cooperadora</button>
+                <button class="tg-o" data-g="est" data-v="sinactiva" id="pest-sinactiva" onclick="tpdfSub(this,'sincoop')">⚠️ Sin activa</button>
+                <button class="tg-o" data-g="est" data-v="nuncatuvo" id="pest-nuncatuvo" onclick="tpdfSub(this,'sincoop')">🔴 Nunca tuvo</button>
               </div>
             </div>
           </div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:.5rem">Si no elegís ninguno, el informe incluye escuelas de cualquier estado.</div>
         </div>
         <div class="card card-p"><div class="fs-ttl">Kiosco</div><div class="ptgg">
-          <button class="tg-o on" data-g="k" data-v="con" onclick="tpdf(this)">Con kiosco</button>
-          <button class="tg-o on" data-g="k" data-v="sin" onclick="tpdf(this)">Sin kiosco</button>
-        </div></div>
+          <button class="tg-o" data-g="k" data-v="con" onclick="tpdf(this)">Con kiosco</button>
+          <button class="tg-o" data-g="k" data-v="sin" onclick="tpdf(this)">Sin kiosco</button>
+        </div><div style="font-size:.72rem;color:var(--muted);margin-top:.5rem">Si no elegís ninguno, no filtra por kiosco.</div></div>
         <div class="card card-p"><div class="fs-ttl">Banco</div><div class="ptgg">
-          <button class="tg-o on" data-g="banco" data-v="con" onclick="tpdf(this)">Con cuenta bancaria</button>
-          <button class="tg-o on" data-g="banco" data-v="sin" onclick="tpdf(this)">Sin cuenta bancaria</button>
-        </div></div>
+          <button class="tg-o" data-g="banco" data-v="con" onclick="tpdf(this)">Con cuenta bancaria</button>
+          <button class="tg-o" data-g="banco" data-v="sin" onclick="tpdf(this)">Sin cuenta bancaria</button>
+        </div><div style="font-size:.72rem;color:var(--muted);margin-top:.5rem">Si no elegís ninguno, no filtra por banco.</div></div>
         <div class="card card-p"><div class="fs-ttl">Localidades</div>
           <div class="ptgg" id="pdf-locs" style="flex-wrap:wrap;gap:.35rem"></div>
           <div style="display:flex;gap:.5rem;margin-top:.625rem">
@@ -1087,7 +1088,7 @@ var ST = {
   vCtx:{id:null,idx:null}, pCtx:{id:null},
   cIdx:-1, detId:null,
   sharedPeriodo: periodoActual(), // período vinculado entre secciones
-  pdf:{est:['aldia','vigente','sinactiva','nuncatuvo'],k:['con','sin'],banco:['con','sin'],inc:[],locs:[],subs:[]}
+  pdf:{est:[],k:[],banco:[],inc:[],locs:[],subs:[]}
 };
 
 // ════════════════════════════════════════════════════════════
@@ -1351,14 +1352,9 @@ function goTo(name){
   if(name==='coords')renderCoords();
   if(name==='asam'){renderAsam();checkNuevoPeriodo();}
   if(name==='informes'){
-    // Init locs if empty and not manually cleared
-    if(!ST.pdf.locs.length && !ST.pdf.locsCleared && ST.schools.length){
-      locsAll();
-    }
-    // Init subs if empty and not manually cleared
-    if(!ST.pdf.subs.length && !ST.pdf.subsCleared && ST.schools.length){
-      subsAll();
-    }
+    // Cada filtro arranca vacío (= sin filtrar esa sección, incluye a todas
+    // las escuelas). Elegir algo en una sección la activa; "Todas"/"Todos"
+    // sigue disponible para marcarlas todas y después ir descartando.
     renderPdfLocs();renderPdfSubs();updPdfPrev();
   }
   if(name==='users')renderUsers();
@@ -2489,13 +2485,8 @@ function togLoc(el2,l){
   if(!l) return;
   var lKey=l.toLowerCase().trim();
   var i=ST.pdf.locs.findIndex(function(x){return x.toLowerCase().trim()===lKey;});
-  if(i>=0){
-    ST.pdf.locs.splice(i,1);
-    ST.pdf.locsCleared = ST.pdf.locs.length===0;
-  } else {
-    ST.pdf.locs.push(l);
-    ST.pdf.locsCleared = false;
-  }
+  if(i>=0) ST.pdf.locs.splice(i,1);
+  else ST.pdf.locs.push(l);
   if(el2) el2.classList.toggle('on', ST.pdf.locs.some(function(x){return x.toLowerCase().trim()===lKey;}));
   updPdfPrev();
 }
@@ -2553,10 +2544,9 @@ function locsAll(){
     if(!seen[key]){seen[key]=true;allLocs.push(s.LOCALIDAD);}
   });
   ST.pdf.locs=allLocs.length?allLocs:LOCS.slice();
-  ST.pdf.locsCleared=false;
   renderPdfLocs();updPdfPrev();
 }
-function locsClear(){ST.pdf.locs=[];ST.pdf.locsCleared=true;renderPdfLocs();updPdfPrev();}
+function locsClear(){ST.pdf.locs=[];renderPdfLocs();updPdfPrev();}
 
 var PDF_SIN_SUB='__none__';
 function renderPdfSubs(){
@@ -2572,45 +2562,45 @@ function renderPdfSubs(){
 function togSub(el2){
   var v=el2.dataset.sub;if(!v)return;
   var i=ST.pdf.subs.indexOf(v);
-  if(i>=0){
-    ST.pdf.subs.splice(i,1);
-    ST.pdf.subsCleared = ST.pdf.subs.length===0;
-  } else {
-    ST.pdf.subs.push(v);
-    ST.pdf.subsCleared = false;
-  }
+  if(i>=0) ST.pdf.subs.splice(i,1);
+  else ST.pdf.subs.push(v);
   el2.classList.toggle('on', ST.pdf.subs.indexOf(v)>=0);
   updPdfPrev();
 }
 function subsAll(){
   ST.pdf.subs=ST.subcomandos.slice();
   ST.pdf.subs.push(PDF_SIN_SUB);
-  ST.pdf.subsCleared=false;
   renderPdfSubs();updPdfPrev();
 }
-function subsClear(){ST.pdf.subs=[];ST.pdf.subsCleared=true;renderPdfSubs();updPdfPrev();}
+function subsClear(){ST.pdf.subs=[];renderPdfSubs();updPdfPrev();}
 
 function getPdfList(){
+  // Cada sección de filtro es independiente: si no se eligió nada ahí, esa
+  // sección no filtra (pasan todas las escuelas); si se eligió algo, solo
+  // pasan las que coinciden con lo elegido. Así, no tocar un filtro nunca
+  // deja el informe en 0 resultados.
   return ST.schools.filter(function(s){
-    // If locs empty and not manually cleared -> include all; if cleared -> exclude all
     if(ST.pdf.locs.length&&!ST.pdf.locs.some(function(l){return l.toLowerCase().trim()===(s.LOCALIDAD||'').toLowerCase().trim();}))return false;
-    if(!ST.pdf.locs.length && ST.pdf.locsCleared) return false;
-    // Subcomando: mismo criterio que Localidades, con PDF_SIN_SUB representando "sin asignar"
     if(ST.pdf.subs.length){
       var sSub=s.SUBCOMANDO||'';
       var subMatches=ST.pdf.subs.some(function(x){return x===PDF_SIN_SUB?!sSub:x.toLowerCase().trim()===sSub.toLowerCase().trim();});
       if(!subMatches)return false;
     }
-    if(!ST.pdf.subs.length && ST.pdf.subsCleared) return false;
-    var lbl=etiq(s).l;
-    var lCat = lbl==='Cooperadora Al día'?'aldia':lbl==='Cooperadora Vigente'?'vigente':lbl==='Sin cooperadora activa'?'sinactiva':'nuncatuvo';
-    if(ST.pdf.est.indexOf(lCat)<0)return false;
-    var hk=s.KIOSCO&&(s.KIOSCO.toLowerCase().indexOf('kiosco')>=0);
-    if(ST.pdf.k.indexOf('con')<0&&hk)return false;
-    if(ST.pdf.k.indexOf('sin')<0&&!hk)return false;
-    var hb=s.BANCO==='con';
-    if(ST.pdf.banco.indexOf('con')<0&&hb)return false;
-    if(ST.pdf.banco.indexOf('sin')<0&&!hb)return false;
+    if(ST.pdf.est.length){
+      var lbl=etiq(s).l;
+      var lCat = lbl==='Cooperadora Al día'?'aldia':lbl==='Cooperadora Vigente'?'vigente':lbl==='Sin cooperadora activa'?'sinactiva':'nuncatuvo';
+      if(ST.pdf.est.indexOf(lCat)<0)return false;
+    }
+    if(ST.pdf.k.length){
+      var hk=s.KIOSCO&&(s.KIOSCO.toLowerCase().indexOf('kiosco')>=0);
+      var kMatches=(ST.pdf.k.indexOf('con')>=0&&hk)||(ST.pdf.k.indexOf('sin')>=0&&!hk);
+      if(!kMatches)return false;
+    }
+    if(ST.pdf.banco.length){
+      var hb=s.BANCO==='con';
+      var bMatches=(ST.pdf.banco.indexOf('con')>=0&&hb)||(ST.pdf.banco.indexOf('sin')>=0&&!hb);
+      if(!bMatches)return false;
+    }
     return true;
   });
 }
@@ -2660,11 +2650,11 @@ function updPdfPrev(){
   if(sinCoopSels.length===2) estDesc.push('Sin cooperadora');
   else if(sinCoopSels.length===1) estDesc.push(estLabels[sinCoopSels[0]]);
   e.innerHTML='<strong>📋 '+list.length+' de '+total+' establecimiento'+(total!==1?'s':'')+' seleccionados</strong>'+
-    '<br><span style="font-size:.78rem;opacity:.85">Estado: '+(estDesc.join(', ')||'Ninguno')+
-    ' · Kiosco: '+(ST.pdf.k.join(', ')||'—')+
-    ' · Banco: '+(ST.pdf.banco.join(', ')||'—')+
+    '<br><span style="font-size:.78rem;opacity:.85">Estado: '+(estDesc.join(', ')||'Todos (sin filtrar)')+
+    ' · Kiosco: '+(ST.pdf.k.join(', ')||'Sin filtrar')+
+    ' · Banco: '+(ST.pdf.banco.join(', ')||'Sin filtrar')+
     ' · Localidades: '+(ST.pdf.locs.length===0?'Todas':ST.pdf.locs.length+' sel.')+
-    ' · Subcomando: '+(ST.pdf.subs.length===0?'Ninguno':ST.pdf.subs.length>=totalSubs?'Todos':ST.pdf.subs.length+' sel.')+'</span>'+
+    ' · Subcomando: '+(ST.pdf.subs.length===0?'Todos':ST.pdf.subs.length>=totalSubs?'Todos':ST.pdf.subs.length+' sel.')+'</span>'+
     locSummary+subSummary;
 }
 function genPDF(){
@@ -2680,6 +2670,15 @@ function genPDF(){
   var PW=210,PH=297,ML=15,MR=15,y=0;
   function aP(){doc.addPage();y=20;}
   function chk(n){if(y+n>PH-20)aP();}
+  // Recorta el texto midiendo el ancho real con la fuente/tamaño ya seteados
+  // en `doc` (no por cantidad de caracteres), para que nunca se pise con el
+  // texto de al lado sin importar cuán largo sea.
+  function fitText(t,maxW){
+    t=String(t||'—');
+    if(doc.getTextWidth(t)<=maxW) return t;
+    while(t.length>1 && doc.getTextWidth(t+'…')>maxW) t=t.slice(0,-1);
+    return t+'…';
+  }
 
   // ── ENCABEZADO: barra azul + logo MTZ dibujado vectorialmente ──
   var HH = 22; // altura del header
@@ -2749,11 +2748,11 @@ function genPDF(){
   if(_sinSel.length===2) _estDesc.push('Sin cooperadora');
   else if(_sinSel.length===1) _estDesc.push(estLabels[_sinSel[0]]);
   var _totalSubs=ST.subcomandos.length+1; // + "Sin subcomando"
-  var filterText='Estado: '+(_estDesc.join(', ')||'Ninguno')+
-    ' | Kiosco: '+(ST.pdf.k.join(', ')||'—')+
-    ' | Banco: '+(ST.pdf.banco.join(', ')||'—')+
-    ' | Localidades: '+(ST.pdf.locs.length===LOCS.length?'Todas':ST.pdf.locs.length+' sel.')+
-    ' | Subcomando: '+(ST.pdf.subs.length===0?'Ninguno':ST.pdf.subs.length>=_totalSubs?'Todos':ST.pdf.subs.length+' sel.');
+  var filterText='Estado: '+(_estDesc.join(', ')||'Todos (sin filtrar)')+
+    ' | Kiosco: '+(ST.pdf.k.join(', ')||'Sin filtrar')+
+    ' | Banco: '+(ST.pdf.banco.join(', ')||'Sin filtrar')+
+    ' | Localidades: '+(ST.pdf.locs.length===0?'Todas':ST.pdf.locs.length+' sel.')+
+    ' | Subcomando: '+(ST.pdf.subs.length===0?'Todos':ST.pdf.subs.length>=_totalSubs?'Todos':ST.pdf.subs.length+' sel.');
   var fLines=doc.splitTextToSize(filterText,PW-ML-MR-6);
   var fH=fLines.length*4.5+6;
   doc.setFillColor(238,242,251);
@@ -2812,7 +2811,7 @@ function genPDF(){
       doc.rect(ML,y,PW-ML-MR,6,'F');
       doc.setTextColor(30,30,50);doc.setFontSize(7);
       var r=locMap[l];
-      var vals=[l.length>40?l.slice(0,40)+'...':l,String(r.total),String(r.con),(r.vigente||0)>0?String(r.vigente):'—',r.sin>0?String(r.sin):'—',r.kiosco>0?String(r.kiosco):'—'];
+      var vals=[fitText(l,cW[0]-3),String(r.total),String(r.con),(r.vigente||0)>0?String(r.vigente):'—',r.sin>0?String(r.sin):'—',r.kiosco>0?String(r.kiosco):'—'];
       vals.forEach(function(v,i){doc.text(v,cX[i]+1.5,y+4.3);});
       y+=6;
     });
@@ -2861,7 +2860,7 @@ function genPDF(){
       doc.rect(ML,y,PW-ML-MR,6,'F');
       doc.setTextColor(30,30,50);doc.setFontSize(7);
       var r2=subMap[sc];
-      var vals2=[sc.length>40?sc.slice(0,40)+'...':sc,String(r2.total),String(r2.con),(r2.vigente||0)>0?String(r2.vigente):'—',r2.sin>0?String(r2.sin):'—',r2.kiosco>0?String(r2.kiosco):'—'];
+      var vals2=[fitText(sc,cW2[0]-3),String(r2.total),String(r2.con),(r2.vigente||0)>0?String(r2.vigente):'—',r2.sin>0?String(r2.sin):'—',r2.kiosco>0?String(r2.kiosco):'—'];
       vals2.forEach(function(v,i){doc.text(v,cX2[i]+1.5,y+4.3);});
       y+=6;
     });
@@ -2893,23 +2892,23 @@ function genPDF(){
     doc.setFont('helvetica','bold');
     doc.setFontSize(9.5);
     var nom=s.NOMBRE||'Sin nombre';
-    doc.text(nom.length>68?nom.slice(0,68)+'...':nom,ML+3,y+6);
+    doc.text(fitText(nom,PW-MR-25-(ML+3)-3),ML+3,y+6);
     doc.setFontSize(7);
     doc.setTextColor(80,80,80);
     doc.text(e2.l,PW-MR-25,y+6);
     doc.setFont('helvetica','normal');
     doc.setFontSize(7.5);
     doc.setTextColor(100,100,100);
-    doc.text((s.NUMERO||'—')+' | '+(s.LOCALIDAD||'—')+(s.DIRECCION?' | '+s.DIRECCION:'')+(s.DISTRITAL?' | '+s.DISTRITAL:''),ML+3,y+11);
-    doc.text('Presidenta: '+(s.PRES_NOMBRE||'—')+(s.PRES_CONTACTO?' ('+s.PRES_CONTACTO+')':''),ML+3,y+16);
+    doc.text(fitText((s.NUMERO||'—')+' | '+(s.LOCALIDAD||'—')+(s.DIRECCION?' | '+s.DIRECCION:'')+(s.DISTRITAL?' | '+s.DISTRITAL:''),PW-MR-(ML+3)-2),ML+3,y+11);
+    doc.text(fitText('Presidenta: '+(s.PRES_NOMBRE||'—')+(s.PRES_CONTACTO?' ('+s.PRES_CONTACTO+')':''),PW-MR-(ML+3)-2),ML+3,y+16);
     var ry=y+20;
     if(s.ASESORA_NOMBRE||s.ASESORA_CONTACTO){
-      doc.text('Asesora/or: '+s.ASESORA_NOMBRE+(s.ASESORA_CONTACTO?' ('+s.ASESORA_CONTACTO+')':''),ML+3,ry);
+      doc.text(fitText('Asesora/or: '+s.ASESORA_NOMBRE+(s.ASESORA_CONTACTO?' ('+s.ASESORA_CONTACTO+')':''),PW-MR-(ML+3)-2),ML+3,ry);
       ry+=4.5;
     }
-    if(iT){doc.setTextColor(70,70,120);doc.setFontSize(7);doc.text('Tipo: '+(s.TIPO_COOP||'—')+' | Doc: '+(s.DOC_ESTADO||'—'),ML+4,ry);ry+=4.5;}
-    if(iP)ps.forEach(function(p){doc.setTextColor(60,80,140);doc.setFontSize(7);doc.text('  '+pLabel(p.periodo)+' — '+(p.estado||'—')+' — '+(p.docestado||'sin doc'),ML+4,ry);ry+=4.5;});
-    if(iV)vs.slice(-3).forEach(function(v){doc.setTextColor(80,80,80);doc.setFontSize(6.5);doc.text('  '+(v.fecha||'—')+' ['+(v.tipo||'—')+'] '+(v.descripcion||'').slice(0,65),ML+4,ry);ry+=5;});
+    if(iT){doc.setTextColor(70,70,120);doc.setFontSize(7);doc.text(fitText('Tipo: '+(s.TIPO_COOP||'—')+' | Doc: '+(s.DOC_ESTADO||'—'),PW-MR-(ML+4)-2),ML+4,ry);ry+=4.5;}
+    if(iP)ps.forEach(function(p){doc.setTextColor(60,80,140);doc.setFontSize(7);doc.text(fitText('  '+pLabel(p.periodo)+' — '+(p.estado||'—')+' — '+(p.docestado||'sin doc'),PW-MR-(ML+4)-2),ML+4,ry);ry+=4.5;});
+    if(iV)vs.slice(-3).forEach(function(v){doc.setTextColor(80,80,80);doc.setFontSize(6.5);doc.text(fitText('  '+(v.fecha||'—')+' ['+(v.tipo||'—')+'] '+(v.descripcion||''),PW-MR-(ML+4)-2),ML+4,ry);ry+=5;});
     y+=rh;
   });
 
@@ -2926,8 +2925,7 @@ function genPDF(){
 
 // ── INFORME POR SUBCOMANDO ─────────────────────────────────────
 // Una tabla por cada subcomando (como las hojas "SUBCOMANDO X" que
-// se armaban a mano): título, 3 totales y el detalle de escuelas con
-// las mismas columnas que se usaban en la planilla.
+// se armaban a mano): título, 3 totales y el detalle de escuelas.
 function genPDFPorSubcomando(){
   var jsPDFClass = (window.jspdf && window.jspdf.jsPDF) || (window.jsPDF);
   if(!jsPDFClass){toast('⚠ jsPDF no cargó. Revisá la conexión a internet.');return;}
@@ -2949,16 +2947,26 @@ function genPDFPorSubcomando(){
   var doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
   var PW=297,PH=210,ML=12,MR=12,y=0;
   function aP(){doc.addPage();y=16;}
-  function chk(n){if(y+n>PH-14)aP();}
 
-  // Columnas: Establecimiento | Localidad | Dirección | Tiene coop.? |
-  // Cuota social | Asesora | Contacto | Presidente de coope | Contacto
-  var cW=[58,26,34,20,24,28,24,32,26];
+  // Columnas: Establecimiento | Localidad | Dirección | ¿Tiene coop.? |
+  // Cuota social | ¿Tiene kiosco? | ¿Tiene banco?
+  var cW=[76,30,48,26,32,30,28];
   var cX=[ML];
   for(var ci=0;ci<cW.length-1;ci++) cX.push(cX[ci]+cW[ci]);
-  var headers=['Establecimiento','Localidad','Dirección','¿Tiene coop.?','Cuota social','Asesora','Contacto','Presidente de coope','Contacto'];
-  function trunc(t,w){ t=String(t||'—'); var max=Math.floor(w*2.1); return t.length>max?t.slice(0,max-1)+'…':t; }
+  var headers=['Establecimiento','Localidad','Dirección','¿Tiene coop.?','Cuota social','¿Tiene kiosco?','¿Tiene banco?'];
+
+  // Recorta el texto midiendo el ancho real con la fuente/tamaño ya seteados
+  // en `doc` (no por cantidad de caracteres), para que no se pise con la
+  // columna de al lado sin importar cuán largo sea el nombre real.
+  function fitText(t,maxW){
+    t=String(t||'—');
+    var pad=maxW-3;
+    if(doc.getTextWidth(t)<=pad) return t;
+    while(t.length>1 && doc.getTextWidth(t+'…')>pad) t=t.slice(0,-1);
+    return t+'…';
+  }
   function conCoop(s){ var l=etiq(s).l; return l==='Cooperadora Al día'||l==='Cooperadora Vigente'; }
+  function tieneKiosco(s){ return s.KIOSCO&&s.KIOSCO.toLowerCase().indexOf('kiosco')>=0; }
 
   nombres.forEach(function(nombre,gi){
     if(gi>0) aP(); else y=16;
@@ -2967,11 +2975,14 @@ function genPDFPorSubcomando(){
     var con=escuelas.filter(conCoop).length;
     var sin=tot-con;
 
-    // Título
+    // Título — si el nombre ya arranca con "Subcomando" (como se cargó en
+    // el catálogo) no lo repetimos.
+    var nombreU=nombre.trim().toUpperCase();
+    var titulo=/^SUBCOMANDO\b/.test(nombreU)?nombreU:('SUBCOMANDO '+nombreU);
     doc.setFillColor(13,47,110);
     doc.rect(ML,y,PW-ML-MR,9,'F');
     doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(11);
-    doc.text('SUBCOMANDO '+nombre.toUpperCase(),ML+3,y+6.3);
+    doc.text(titulo,ML+3,y+6.3);
     y+=13;
 
     // Totales
@@ -2985,22 +2996,20 @@ function genPDFPorSubcomando(){
     doc.setFillColor(238,242,251);
     doc.rect(ML,y,PW-ML-MR,7,'F');
     doc.setTextColor(13,47,110);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
-    headers.forEach(function(h,i){ doc.text(h,cX[i]+1.5,y+4.8); });
+    headers.forEach(function(h,i){ doc.text(fitText(h,cW[i]),cX[i]+1.5,y+4.8); });
     y+=7;
 
     // Filas
-    doc.setFont('helvetica','normal');
     escuelas.forEach(function(s,i){
       if(y+7>PH-14) aP();
       doc.setFillColor(i%2===0?249:255,i%2===0?250:255,i%2===0?251:255);
       doc.rect(ML,y,PW-ML-MR,7,'F');
-      doc.setTextColor(30,30,50);doc.setFontSize(7);
+      doc.setTextColor(30,30,50);doc.setFont('helvetica','normal');doc.setFontSize(7);
       var cuota=(s.CUOTA_SOCIETARIA?('$'+s.CUOTA_SOCIETARIA):'—')+(s.CUOTA_SOCIETARIA?' ('+(s.CUOTA_PERIODICIDAD||'Mensual')+')':'');
       var vals=[
-        trunc(s.NOMBRE,cW[0]), trunc(s.LOCALIDAD,cW[1]), trunc(s.DIRECCION,cW[2]),
-        conCoop(s)?'Sí':'No', trunc(cuota,cW[4]),
-        trunc(s.ASESORA_NOMBRE,cW[5]), trunc(s.ASESORA_CONTACTO,cW[6]),
-        trunc(s.PRES_NOMBRE,cW[7]), trunc(s.PRES_CONTACTO,cW[8])
+        fitText(s.NOMBRE,cW[0]), fitText(s.LOCALIDAD,cW[1]), fitText(s.DIRECCION,cW[2]),
+        conCoop(s)?'Sí':'No', fitText(cuota,cW[4]),
+        tieneKiosco(s)?'Sí':'No', s.BANCO==='con'?'Sí':'No'
       ];
       vals.forEach(function(v,vi){ doc.text(v,cX[vi]+1.5,y+4.8); });
       y+=7;
