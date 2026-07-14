@@ -793,9 +793,10 @@ body:has(.moverlay.open) .fab-back{display:none!important}
         </div>
         <div class="card card-p"><div class="fs-ttl">Subcomando</div>
           <div class="ptgg" id="pdf-subs" style="flex-wrap:wrap;gap:.35rem"></div>
-          <div style="display:flex;gap:.5rem;margin-top:.625rem">
+          <div style="display:flex;gap:.5rem;margin-top:.625rem;flex-wrap:wrap">
             <button class="btn btn-s btn-sm" onclick="subsAll()">Todos</button>
             <button class="btn btn-s btn-sm" onclick="subsClear()">Ninguno</button>
+            <button class="btn btn-p btn-sm" style="margin-left:auto" onclick="genPDFPorSubcomando()">📄 Informe por subcomando</button>
           </div>
         </div>
         <div class="card card-p"><div class="fs-ttl">Incluir en el informe</div><div class="ptgg">
@@ -2923,6 +2924,100 @@ function genPDF(){
   toast('📄 PDF generado con '+list.length+' establecimiento'+(list.length!==1?'s':''));
 }
 
+// ── INFORME POR SUBCOMANDO ─────────────────────────────────────
+// Una tabla por cada subcomando (como las hojas "SUBCOMANDO X" que
+// se armaban a mano): título, 3 totales y el detalle de escuelas con
+// las mismas columnas que se usaban en la planilla.
+function genPDFPorSubcomando(){
+  var jsPDFClass = (window.jspdf && window.jspdf.jsPDF) || (window.jsPDF);
+  if(!jsPDFClass){toast('⚠ jsPDF no cargó. Revisá la conexión a internet.');return;}
+  var list=getPdfList();
+  if(!list.length){toast('⚠ No hay establecimientos con esos filtros');return;}
+
+  // Agrupar por subcomando; se ignoran las escuelas sin subcomando asignado
+  // (este informe es específicamente "por subcomando", uno por cada grupo real)
+  var grupos={};
+  list.forEach(function(s){
+    if(!s.SUBCOMANDO) return;
+    if(!grupos[s.SUBCOMANDO]) grupos[s.SUBCOMANDO]=[];
+    grupos[s.SUBCOMANDO].push(s);
+  });
+  var nombres=Object.keys(grupos).sort(function(a,b){return a.localeCompare(b,'es');});
+  if(!nombres.length){toast('⚠ Ninguna escuela de los filtros actuales tiene subcomando asignado');return;}
+
+  var jsPDF=jsPDFClass;
+  var doc=new jsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  var PW=297,PH=210,ML=12,MR=12,y=0;
+  function aP(){doc.addPage();y=16;}
+  function chk(n){if(y+n>PH-14)aP();}
+
+  // Columnas: Establecimiento | Localidad | Dirección | Tiene coop.? |
+  // Cuota social | Asesora | Contacto | Presidente de coope | Contacto
+  var cW=[58,26,34,20,24,28,24,32,26];
+  var cX=[ML];
+  for(var ci=0;ci<cW.length-1;ci++) cX.push(cX[ci]+cW[ci]);
+  var headers=['Establecimiento','Localidad','Dirección','¿Tiene coop.?','Cuota social','Asesora','Contacto','Presidente de coope','Contacto'];
+  function trunc(t,w){ t=String(t||'—'); var max=Math.floor(w*2.1); return t.length>max?t.slice(0,max-1)+'…':t; }
+  function conCoop(s){ var l=etiq(s).l; return l==='Cooperadora Al día'||l==='Cooperadora Vigente'; }
+
+  nombres.forEach(function(nombre,gi){
+    if(gi>0) aP(); else y=16;
+    var escuelas=grupos[nombre].slice().sort(function(a,b){return (a.NOMBRE||'').localeCompare(b.NOMBRE||'','es');});
+    var tot=escuelas.length;
+    var con=escuelas.filter(conCoop).length;
+    var sin=tot-con;
+
+    // Título
+    doc.setFillColor(13,47,110);
+    doc.rect(ML,y,PW-ML-MR,9,'F');
+    doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(11);
+    doc.text('SUBCOMANDO '+nombre.toUpperCase(),ML+3,y+6.3);
+    y+=13;
+
+    // Totales
+    doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(30,30,50);
+    doc.text('TOTAL DE ESTABLECIMIENTOS: '+tot,ML,y);
+    doc.text('CON COOPERADORA: '+con,ML+90,y);
+    doc.text('SIN COOPERADORA: '+sin,ML+170,y);
+    y+=8;
+
+    // Cabecera tabla
+    doc.setFillColor(238,242,251);
+    doc.rect(ML,y,PW-ML-MR,7,'F');
+    doc.setTextColor(13,47,110);doc.setFont('helvetica','bold');doc.setFontSize(7.5);
+    headers.forEach(function(h,i){ doc.text(h,cX[i]+1.5,y+4.8); });
+    y+=7;
+
+    // Filas
+    doc.setFont('helvetica','normal');
+    escuelas.forEach(function(s,i){
+      if(y+7>PH-14) aP();
+      doc.setFillColor(i%2===0?249:255,i%2===0?250:255,i%2===0?251:255);
+      doc.rect(ML,y,PW-ML-MR,7,'F');
+      doc.setTextColor(30,30,50);doc.setFontSize(7);
+      var cuota=(s.CUOTA_SOCIETARIA?('$'+s.CUOTA_SOCIETARIA):'—')+(s.CUOTA_SOCIETARIA?' ('+(s.CUOTA_PERIODICIDAD||'Mensual')+')':'');
+      var vals=[
+        trunc(s.NOMBRE,cW[0]), trunc(s.LOCALIDAD,cW[1]), trunc(s.DIRECCION,cW[2]),
+        conCoop(s)?'Sí':'No', trunc(cuota,cW[4]),
+        trunc(s.ASESORA_NOMBRE,cW[5]), trunc(s.ASESORA_CONTACTO,cW[6]),
+        trunc(s.PRES_NOMBRE,cW[7]), trunc(s.PRES_CONTACTO,cW[8])
+      ];
+      vals.forEach(function(v,vi){ doc.text(v,cX[vi]+1.5,y+4.8); });
+      y+=7;
+    });
+    y+=6;
+  });
+
+  var pages=doc.getNumberOfPages();
+  for(var i=1;i<=pages;i++){
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(160,160,160);
+    doc.text('Consejo Escolar La Matanza · Desarrollado por Maggie Sotelo · Pág. '+i+'/'+pages,ML,PH-6);
+  }
+  doc.save('subcomandos_'+new Date().toISOString().slice(0,10)+'.pdf');
+  toast('📄 Informe por subcomando generado ('+nombres.length+' subcomando'+(nombres.length!==1?'s':'')+')');
+}
 
 function getUsers(){
   // Priority: 1) ST.users from Sheets, 2) localStorage, 3) hardcoded defaults
