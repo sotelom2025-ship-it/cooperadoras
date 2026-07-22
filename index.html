@@ -705,6 +705,7 @@ body:has(.moverlay.open) .fab-back{display:none!important}
           <select class="fsel" id="fl-tipo" onchange="renderSchools()"><option value="">Tipo cooperadora</option><option>Activa</option><option>Administrativa</option><option>✌️</option></select>
           <select class="fsel" id="fl-k" onchange="renderSchools()"><option value="">Kiosco</option><option value="con">Con kiosco</option><option value="sin">Sin kiosco</option></select>
           <select class="fsel" id="fl-sub" onchange="renderSchools()"><option value="">Subcomando</option><option value="__none__">Sin subcomando</option></select>
+          <select class="fsel" id="fl-especial" onchange="renderSchools()"><option value="">Casos especiales</option><option value="creacion">🆕 Creación</option><option value="reorganizacion">🔄 Reorganización</option></select>
           <button class="btn btn-s btn-sm" onclick="clrF()">✕ Limpiar</button>
         </div>
         <div id="sf-bar" class="fbar" style="margin-bottom:.625rem">
@@ -1805,7 +1806,7 @@ function setSF(f){
   document.querySelectorAll('#sf-bar .fp').forEach(function(b){b.classList.toggle('on',b.dataset.f===f)});
   renderSchools();
 }
-function clrF(){['fl-loc','fl-coord','fl-cord','fl-tipo','fl-k','fl-sub'].forEach(function(id){var e=el(id);if(e)e.value=''});renderSchools()}
+function clrF(){['fl-loc','fl-coord','fl-cord','fl-tipo','fl-k','fl-sub','fl-especial'].forEach(function(id){var e=el(id);if(e)e.value=''});renderSchools()}
 
 function renderSchools(){
   if(el('list-view')&&el('list-view').style.display==='none')return;
@@ -1816,6 +1817,7 @@ function renderSchools(){
   var ft=((el('fl-tipo')||{}).value)||'';
   var fk=((el('fl-k')||{}).value)||'';
   var fsub=((el('fl-sub')||{}).value)||'';
+  var fespecial=((el('fl-especial')||{}).value)||'';
   var list=ST.schools.filter(function(s){
     if(q&&!(s.NOMBRE||'').toLowerCase().includes(q)&&!(s.NUMERO||'').toLowerCase().includes(q))return false;
     if(fl&&(s.LOCALIDAD||'').toLowerCase().trim()!==fl.toLowerCase().trim())return false;
@@ -1824,6 +1826,7 @@ function renderSchools(){
     if(ft&&s.TIPO_COOP!==ft)return false;
     if(fk){var h=s.KIOSCO&&(s.KIOSCO.toLowerCase().indexOf('kiosco')>=0);if(fk==='con'&&!h)return false;if(fk==='sin'&&h)return false;}
     if(fsub){if(fsub==='__none__'){if(s.SUBCOMANDO)return false;}else if((s.SUBCOMANDO||'')!==fsub)return false;}
+    if(fespecial&&s.ESTADO_ESPECIAL!==fespecial)return false;
     return true;
   });
   if(ST.sf!=='all'){list=list.filter(function(s){var lbl=etiq(s).l;if(ST.sf==='aldia')return lbl==='Cooperadora Al día';if(ST.sf==='vigente')return lbl==='Cooperadora Vigente';if(ST.sf==='sinactiva')return lbl==='Sin cooperadora activa';if(ST.sf==='nuncatuvo')return lbl==='Nunca tuvo cooperadora';if(ST.sf==='sincoop')return lbl==='Sin cooperadora activa'||lbl==='Nunca tuvo cooperadora';return true})}
@@ -1847,7 +1850,7 @@ function renderSchools(){
   // Filter summary bar
   var fsDiv=el('filter-summary');
   if(fsDiv){
-    var hasFilter=(q||fl||fc||fco||ft||fk||fsub);
+    var hasFilter=(q||fl||fc||fco||ft||fk||fsub||fespecial);
     if(hasFilter && list.length>0){
       var fAldia=list.filter(function(s){return etiq(s).l==='Cooperadora Al día';}).length;
       var fVigente=list.filter(function(s){return etiq(s).l==='Cooperadora Vigente';}).length;
@@ -1855,6 +1858,8 @@ function renderSchools(){
       var fNunca=list.filter(function(s){return etiq(s).l==='Nunca tuvo cooperadora';}).length;
       var fKiosk=list.filter(function(s){return s.KIOSCO&&s.KIOSCO.toLowerCase().indexOf('kiosco')>=0}).length;
       var fBanco=list.filter(function(s){return s.BANCO==='con'}).length;
+      var fCreacion=list.filter(function(s){return s.ESTADO_ESPECIAL==='creacion'}).length;
+      var fReorg=list.filter(function(s){return s.ESTADO_ESPECIAL==='reorganizacion'}).length;
       var parts=['<strong>'+list.length+' resultado'+(list.length!==1?'s':'')+'</strong>'];
       if(fAldia) parts.push('🟢 Al día: '+fAldia);
       if(fVigente) parts.push('🔵 Vigente: '+fVigente);
@@ -1862,6 +1867,8 @@ function renderSchools(){
       if(fNunca) parts.push('🔴 Nunca tuvo: '+fNunca);
       if(fKiosk) parts.push('🏪 Con kiosco: '+fKiosk);
       if(fBanco) parts.push('🏦 Con banco: '+fBanco);
+      if(fCreacion) parts.push('🆕 Creación: '+fCreacion);
+      if(fReorg) parts.push('🔄 Reorganización: '+fReorg);
       fsDiv.innerHTML=parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;');
       fsDiv.style.display='block';
     } else {
