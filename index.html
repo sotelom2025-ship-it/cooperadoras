@@ -2492,9 +2492,19 @@ function renderSospechosasBanner(){
   var b=el('asam-sospechosas-banner');if(!b)return;
   var n=ST.fechasSospechosasTotal||0;
   if(!n || !ST.user || ST.user.role!=='admin' || ST._sospechosasDismissed){b.innerHTML='';return;}
-  b.innerHTML='<div style="background:var(--red2);border:1px solid #e0b0b0;border-radius:var(--rs);padding:.65rem 1rem;display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;font-size:.8rem;color:var(--red)">'+
-    '<span style="flex:1">⚠ Hay '+n+' fecha'+(n!==1?'s':'')+' en la planilla que no se pudo'+(n!==1?'ieron':'')+' corregir automáticamente (formato irreconocible). Abrí la consola del navegador (F12) para ver el detalle, o revisalas a mano en la hoja de cálculo.</span>'+
-    '<button class="btn btn-s" style="padding:.25rem .6rem;font-size:.75rem" onclick="ST._sospechosasDismissed=true;renderSospechosasBanner()">Ocultar</button>'+
+  var detalle=(ST.fechasSospechosas||[]);
+  var detalleHtml = ST._sospechosasExpandido
+    ? '<div style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid #e0b0b0;font-family:monospace;font-size:.75rem;white-space:pre-wrap;line-height:1.6">'+
+      detalle.map(function(d){return esc(d)}).join('\n')+
+      (n>detalle.length ? '\n… y '+(n-detalle.length)+' más' : '')+
+      '</div>'
+    : '';
+  b.innerHTML='<div style="background:var(--red2);border:1px solid #e0b0b0;border-radius:var(--rs);padding:.65rem 1rem;margin-bottom:1rem;font-size:.8rem;color:var(--red)">'+
+    '<div style="display:flex;align-items:center;gap:.75rem">'+
+    '<span style="flex:1">⚠ Hay '+n+' fecha'+(n!==1?'s':'')+' en la planilla que no se pudo'+(n!==1?'ieron':'')+' corregir automáticamente (formato irreconocible). Se dejaron tal cual, sin tocarlas — revisalas a mano en la hoja de cálculo.</span>'+
+    '<button class="btn btn-s" style="padding:.25rem .6rem;font-size:.75rem" onclick="ST._sospechosasExpandido=!ST._sospechosasExpandido;renderSospechosasBanner()">'+(ST._sospechosasExpandido?'Ocultar detalle':'Ver detalle')+'</button>'+
+    '<button class="btn btn-s" style="padding:.25rem .6rem;font-size:.75rem" onclick="ST._sospechosasDismissed=true;renderSospechosasBanner()">Ocultar aviso</button>'+
+    '</div>'+detalleHtml+
     '</div>';
 }
 function renderAsam(){
