@@ -705,7 +705,7 @@ body:has(.moverlay.open) .fab-back{display:none!important}
           <select class="fsel" id="fl-tipo" onchange="renderSchools()"><option value="">Tipo cooperadora</option><option>Activa</option><option>Administrativa</option><option>✌️</option></select>
           <select class="fsel" id="fl-k" onchange="renderSchools()"><option value="">Kiosco</option><option value="con">Con kiosco</option><option value="sin">Sin kiosco</option></select>
           <select class="fsel" id="fl-sub" onchange="renderSchools()"><option value="">Subcomando</option><option value="__none__">Sin subcomando</option></select>
-          <select class="fsel" id="fl-especial" onchange="renderSchools()"><option value="">Casos especiales</option><option value="creacion">🆕 Creación</option><option value="reorganizacion">🔄 Reorganización</option></select>
+          <select class="fsel" id="fl-especial" onchange="renderSchools()"><option value="">Casos especiales</option><option value="creacion">🆕 Creación</option><option value="reorganizacion">🔄 Reorganización</option><option value="visitada_fran">🚶 Visitada por Fran</option></select>
           <button class="btn btn-s btn-sm" onclick="clrF()">✕ Limpiar</button>
         </div>
         <div id="sf-bar" class="fbar" style="margin-bottom:.625rem">
@@ -731,10 +731,15 @@ body:has(.moverlay.open) .fab-back{display:none!important}
     <div class="sec" id="sec-asam">
       <div class="ph">
         <div><div class="ph-ttl">Asambleas</div><div class="ph-sub" id="asam-lbl">—</div></div>
-        <div id="nuevo-periodo-wrap" style="display:none">
-          <button class="btn btn-p" onclick="iniciarNuevoPeriodo()" style="background:var(--green);gap:.5rem">
-            🗓 Iniciar nuevo período
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <button class="btn btn-s" onclick="genPDFAsambleas()" style="gap:.5rem">
+            📄 Informe pendientes/sin fecha
           </button>
+          <div id="nuevo-periodo-wrap" style="display:none">
+            <button class="btn btn-p" onclick="iniciarNuevoPeriodo()" style="background:var(--green);gap:.5rem">
+              🗓 Iniciar nuevo período
+            </button>
+          </div>
         </div>
       </div>
       <div class="fbar">
@@ -748,6 +753,13 @@ body:has(.moverlay.open) .fab-back{display:none!important}
           <option value="">Con y sin fecha</option>
           <option value="con">📅 Con fecha cargada</option>
           <option value="sin">❓ Sin fecha cargada</option>
+        </select>
+        <select class="fsel" id="af-distrital" onchange="renderAsam()">
+          <option value="">Todos los distritales</option>
+          <option value="Distrital 1">Distrital 1</option>
+          <option value="Distrital 2">Distrital 2</option>
+          <option value="Distrital 3">Distrital 3</option>
+          <option value="__none__">Sin distrital</option>
         </select>
       </div>
       <div id="asam-cont"></div>
@@ -1174,6 +1186,7 @@ function etiq(s){
 function estadoEspecialBadge(s){
   if(s.ESTADO_ESPECIAL==='reorganizacion') return '<span class="tag ta" title="Cooperadora en proceso de reorganización">🔄 Reorganización</span>';
   if(s.ESTADO_ESPECIAL==='creacion') return '<span class="tag tg" title="Cooperadora de reciente creación">🆕 Creación</span>';
+  if(s.ESTADO_ESPECIAL==='visitada_fran') return '<span class="tag tb" title="Visitada por Fran">🚶 Visitada por Fran</span>';
   return '';
 }
 function toast(msg){var t=el('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show')},2800)}
@@ -1860,6 +1873,7 @@ function renderSchools(){
       var fBanco=list.filter(function(s){return s.BANCO==='con'}).length;
       var fCreacion=list.filter(function(s){return s.ESTADO_ESPECIAL==='creacion'}).length;
       var fReorg=list.filter(function(s){return s.ESTADO_ESPECIAL==='reorganizacion'}).length;
+      var fVisFran=list.filter(function(s){return s.ESTADO_ESPECIAL==='visitada_fran'}).length;
       var parts=['<strong>'+list.length+' resultado'+(list.length!==1?'s':'')+'</strong>'];
       if(fAldia) parts.push('🟢 Al día: '+fAldia);
       if(fVigente) parts.push('🔵 Vigente: '+fVigente);
@@ -1869,6 +1883,7 @@ function renderSchools(){
       if(fBanco) parts.push('🏦 Con banco: '+fBanco);
       if(fCreacion) parts.push('🆕 Creación: '+fCreacion);
       if(fReorg) parts.push('🔄 Reorganización: '+fReorg);
+      if(fVisFran) parts.push('🚶 Visitada por Fran: '+fVisFran);
       fsDiv.innerHTML=parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;');
       fsDiv.style.display='block';
     } else {
@@ -2120,7 +2135,7 @@ function tabGen(s,coord,cord){
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Cooperadora</div>'+
     togRow('Estado cooperadora','TIENE_COOP',s,[['si','Con cooperadora',''],['tuvo','Sin cooperadora activa','oa'],['no','Nunca tuvo cooperadora','or']])+
     '<div class="ff c2"><label class="fl">Período activo</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+buildPeriodOpts(s.PERIODO_COOP||'',true)+'</select></div>'+
-    togRow('Caso especial','ESTADO_ESPECIAL',s,[['','Ninguno',''],['reorganizacion','🔄 Reorganización','oa'],['creacion','🆕 Creación','og']])+
+    togRow('Caso especial','ESTADO_ESPECIAL',s,[['','Ninguno',''],['reorganizacion','🔄 Reorganización','oa'],['creacion','🆕 Creación','og'],['visitada_fran','🚶 Visitada por Fran','']])+
 
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Asesora / Asesor</div>'+
     ff2('Nombre','ASESORA_NOMBRE',s)+
@@ -2430,6 +2445,7 @@ function renderAsam(){
   var fc=((el('af-coord')||{}).value)||'';
   var fe=((el('af-est')||{}).value)||'';
   var ff=((el('af-fecha')||{}).value)||'';
+  var fd=((el('af-distrital')||{}).value)||'';
   var list=ST.schools.filter(function(s){
     var tc = (s.TIENE_COOP||'').toLowerCase().trim();
     if(tc==='' || tc==='no') return false;
@@ -2439,6 +2455,8 @@ function renderAsam(){
     if(fe&&(s.ESTADO_ASAMBLEA||'pendiente')!==fe)return false;
     if(ff==='con'&&!s.FECHA_ASAMBLEA)return false;
     if(ff==='sin'&&s.FECHA_ASAMBLEA)return false;
+    if(fd==='__none__'&&s.DISTRITAL)return false;
+    if(fd&&fd!=='__none__'&&s.DISTRITAL!==fd)return false;
     return true;
   });
   // Normalize estado
@@ -2464,6 +2482,106 @@ function renderAsam(){
   e.innerHTML=h||'<div class="es"><div class="ei">📅</div><div class="et">Sin asambleas</div></div>';
 }
 function goToAsam(id){goTo('escuelas');openDetail(id);setTimeout(function(){renderDetail(id,'cooperadora')},50)}
+
+function genPDFAsambleas(){
+  var jsPDFClass = (window.jspdf && window.jspdf.jsPDF) || (window.jsPDF);
+  if(!jsPDFClass){toast('⚠ jsPDF no cargó. Revisá la conexión a internet.');return;}
+  if(!ST.schools.length){toast('⚠ Los datos todavía se están cargando, esperá un momento');return;}
+  var fc=((el('af-coord')||{}).value)||'';
+  var fd=((el('af-distrital')||{}).value)||'';
+  var list=ST.schools.filter(function(s){
+    var tc=(s.TIENE_COOP||'').toLowerCase().trim();
+    if(tc===''||tc==='no')return false;
+    var estado=(s.ESTADO_ASAMBLEA||'').toLowerCase().trim();
+    if(estado==='realizada')return false;
+    if(fc&&getCoord(s.LOCALIDAD)!==fc)return false;
+    if(fd==='__none__'&&s.DISTRITAL)return false;
+    if(fd&&fd!=='__none__'&&s.DISTRITAL!==fd)return false;
+    return true;
+  });
+  if(!list.length){toast('⚠ No hay asambleas pendientes o sin fecha con esos filtros');return;}
+
+  var conFecha=list.filter(function(s){return s.FECHA_ASAMBLEA;}).sort(function(a,b){return new Date(a.FECHA_ASAMBLEA)-new Date(b.FECHA_ASAMBLEA)});
+  var sinFecha=list.filter(function(s){return !s.FECHA_ASAMBLEA;}).sort(function(a,b){return (a.NOMBRE||'').localeCompare(b.NOMBRE||'','es')});
+
+  var jsPDF=jsPDFClass;
+  var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  var PW=210,PH=297,ML=15,MR=15,y=0;
+  function aP(){doc.addPage();y=20;}
+  function fitText(t,maxW){
+    t=String(t||'—');
+    var pad=maxW-3;
+    if(doc.getTextWidth(t)<=pad) return t;
+    while(t.length>1 && doc.getTextWidth(t+'…')>pad) t=t.slice(0,-1);
+    return t+'…';
+  }
+  function fmtDate(d){
+    if(!d) return '—';
+    var p=normalizeDate(d).split('-');
+    if(p.length!==3) return String(d);
+    return p[2]+'/'+p[1]+'/'+p[0];
+  }
+
+  y=20;
+  doc.setTextColor(13,47,110);doc.setFont('helvetica','bold');doc.setFontSize(14);
+  doc.text('Asambleas Pendientes o Sin Fecha',ML,y);
+  y+=7;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(90,90,110);
+  var filtroTxt='Distrital: '+(fd==='__none__'?'Sin distrital':(fd||'Todos'))+(fc?' · Coordinador/a: '+fc:'');
+  doc.text(filtroTxt,ML,y);
+  y+=5;
+  doc.text('Generado el '+new Date().toLocaleDateString('es-AR')+' · Total: '+list.length,ML,y);
+  y+=8;
+
+  var cW=[95,25,60];
+  var cX=[ML];
+  for(var ci=0;ci<cW.length-1;ci++) cX.push(cX[ci]+cW[ci]);
+  var headers=['Nombre','Número','Fecha de asamblea'];
+
+  function tabla(ttl,items){
+    if(!items.length)return;
+    if(y+16>PH-20)aP();
+    doc.setFont('helvetica','bold');doc.setFontSize(10.5);doc.setTextColor(13,47,110);
+    doc.text(ttl+' ('+items.length+')',ML,y);
+    y+=6;
+    doc.setFillColor(238,242,251);
+    doc.rect(ML,y,PW-ML-MR,7,'F');
+    doc.setTextColor(13,47,110);doc.setFont('helvetica','bold');doc.setFontSize(8);
+    headers.forEach(function(h,i){ doc.text(fitText(h,cW[i]),cX[i]+1.5,y+4.8); });
+    y+=7;
+    items.forEach(function(s,i){
+      if(y+7>PH-20){
+        aP();
+        doc.setFillColor(238,242,251);
+        doc.rect(ML,y,PW-ML-MR,7,'F');
+        doc.setTextColor(13,47,110);doc.setFont('helvetica','bold');doc.setFontSize(8);
+        headers.forEach(function(h,hi){ doc.text(fitText(h,cW[hi]),cX[hi]+1.5,y+4.8); });
+        y+=7;
+      }
+      doc.setFillColor(i%2===0?249:255,i%2===0?250:255,i%2===0?251:255);
+      doc.rect(ML,y,PW-ML-MR,7,'F');
+      doc.setTextColor(30,30,50);doc.setFont('helvetica','normal');doc.setFontSize(8);
+      var fechaTxt=s.FECHA_ASAMBLEA?fmtDate(s.FECHA_ASAMBLEA):'Sin fecha';
+      var vals=[fitText(s.NOMBRE,cW[0]),fitText(s.NUMERO,cW[1]),fitText(fechaTxt,cW[2])];
+      vals.forEach(function(v,vi){ doc.text(v,cX[vi]+1.5,y+4.8); });
+      y+=7;
+    });
+    y+=6;
+  }
+
+  tabla('CON FECHA (PENDIENTES)',conFecha);
+  tabla('SIN FECHA CARGADA',sinFecha);
+
+  var pages=doc.getNumberOfPages();
+  for(var i=1;i<=pages;i++){
+    doc.setPage(i);
+    doc.setFontSize(7);
+    doc.setTextColor(160,160,160);
+    doc.text('Consejo Escolar La Matanza · Desarrollado por Maggie Sotelo · Pág. '+i+'/'+pages,ML,PH-10);
+  }
+  doc.save('asambleas_pendientes_'+new Date().toISOString().slice(0,10)+'.pdf');
+  toast('📄 Informe de asambleas pendientes generado ('+list.length+')');
+}
 
 // ════════════════════════════════════════════════════════════
 // INFORMES PDF
@@ -2956,11 +3074,11 @@ function genPDFPorSubcomando(){
   function aP(){doc.addPage();y=16;}
 
   // Columnas: Establecimiento | Localidad | Dirección | ¿Tiene coop.? |
-  // Cuota social | ¿Tiene kiosco? | ¿Tiene banco?
-  var cW=[76,30,48,26,32,30,28];
+  // ¿Tiene kiosco? | ¿Tiene banco?
+  var cW=[90,32,55,30,34,32];
   var cX=[ML];
   for(var ci=0;ci<cW.length-1;ci++) cX.push(cX[ci]+cW[ci]);
-  var headers=['Establecimiento','Localidad','Dirección','¿Tiene coop.?','Cuota social','¿Tiene kiosco?','¿Tiene banco?'];
+  var headers=['Establecimiento','Localidad','Dirección','¿Tiene coop.?','¿Tiene kiosco?','¿Tiene banco?'];
 
   // Recorta el texto midiendo el ancho real con la fuente/tamaño ya seteados
   // en `doc` (no por cantidad de caracteres), para que no se pise con la
@@ -3012,10 +3130,9 @@ function genPDFPorSubcomando(){
       doc.setFillColor(i%2===0?249:255,i%2===0?250:255,i%2===0?251:255);
       doc.rect(ML,y,PW-ML-MR,7,'F');
       doc.setTextColor(30,30,50);doc.setFont('helvetica','normal');doc.setFontSize(7);
-      var cuota=(s.CUOTA_SOCIETARIA?('$'+s.CUOTA_SOCIETARIA):'—')+(s.CUOTA_SOCIETARIA?' ('+(s.CUOTA_PERIODICIDAD||'Mensual')+')':'');
       var vals=[
         fitText(s.NOMBRE,cW[0]), fitText(s.LOCALIDAD,cW[1]), fitText(s.DIRECCION,cW[2]),
-        conCoop(s)?'Sí':'No', fitText(cuota,cW[4]),
+        conCoop(s)?'Sí':'No',
         tieneKiosco(s)?'Sí':'No', s.BANCO==='con'?'Sí':'No'
       ];
       vals.forEach(function(v,vi){ doc.text(v,cX[vi]+1.5,y+4.8); });
