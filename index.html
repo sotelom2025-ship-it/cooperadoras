@@ -742,6 +742,7 @@ body:has(.moverlay.open) .fab-back{display:none!important}
           </div>
         </div>
       </div>
+      <div id="asam-sospechosas-banner"></div>
       <div class="fbar">
         <select class="fsel" id="af-coord" onchange="renderAsam()"><option value="">Todos los coordinadores</option></select>
         <select class="fsel" id="af-est" onchange="renderAsam()">
@@ -1153,7 +1154,20 @@ function parseDate(ds){
   if(m2) return new Date(m2[1]);
   return new Date(ds);
 }
-function ddiff(ds){if(!ds)return null;var d=parseDate(ds),n=new Date();if(!d||isNaN(d))return null;d.setHours(0,0,0,0);n.setHours(0,0,0,0);return Math.round((d-n)/86400000)}
+function ddiff(ds){
+  if(!ds)return null;
+  var d=parseDate(ds),n=new Date();
+  if(!d||isNaN(d))return null;
+  d.setHours(0,0,0,0);n.setHours(0,0,0,0);
+  var diff=Math.round((d-n)/86400000);
+  // Un dato guardado mal en la planilla (fecha corrupta, texto que se
+  // parseó como un año como "202" en vez de "2026", etc.) puede dar una
+  // diferencia de miles o millones de días. Eso no es una fecha real:
+  // se trata como "sin fecha" en vez de mostrar un numero sin sentido
+  // como "hace 666223 días".
+  if(Math.abs(diff)>5479) return null; // ~15 años para cada lado
+  return diff;
+}
 // ── ETIQUETAS ─────────────────────────────────────────────
 // Etiqueta 1: Cooperadora Al día      → tiene coop (si) Y último período tiene doc aprobada
 // Etiqueta 2: Cooperadora Vigente     → tiene coop (si) Y debe menos de 3 períodos sin doc
@@ -1567,6 +1581,11 @@ async function loadData(){
       ST.subcomandos=r.subcomandos;
       saveSubcomandosLocal(ST.subcomandos);
     }
+
+    // ── Fechas que el backend no pudo corregir solo (ver .gs v12) ──
+    ST.fechasSospechosas = Array.isArray(r.fechasSospechosas) ? r.fechasSospechosas : [];
+    ST.fechasSospechosasTotal = r.fechasSospechosasTotal || 0;
+    if(ST.fechasSospechosasTotal) console.warn('Fechas que no se pudieron corregir automáticamente:', ST.fechasSospechosas);
 
     // ── Recepciones ──
     if(r.recepciones && r.recepciones.length){
@@ -2435,8 +2454,18 @@ async function iniciarNuevoPeriodo() {
   renderAsam();
 }
 
+function renderSospechosasBanner(){
+  var b=el('asam-sospechosas-banner');if(!b)return;
+  var n=ST.fechasSospechosasTotal||0;
+  if(!n || !ST.user || ST.user.role!=='admin' || ST._sospechosasDismissed){b.innerHTML='';return;}
+  b.innerHTML='<div style="background:var(--red2);border:1px solid #e0b0b0;border-radius:var(--rs);padding:.65rem 1rem;display:flex;align-items:center;gap:.75rem;margin-bottom:1rem;font-size:.8rem;color:var(--red)">'+
+    '<span style="flex:1">⚠ Hay '+n+' fecha'+(n!==1?'s':'')+' en la planilla que no se pudo'+(n!==1?'ieron':'')+' corregir automáticamente (formato irreconocible). Abrí la consola del navegador (F12) para ver el detalle, o revisalas a mano en la hoja de cálculo.</span>'+
+    '<button class="btn btn-s" style="padding:.25rem .6rem;font-size:.75rem" onclick="ST._sospechosasDismissed=true;renderSospechosasBanner()">Ocultar</button>'+
+    '</div>';
+}
 function renderAsam(){
   var e=el('asam-cont');if(!e)return;
+  renderSospechosasBanner();
   var lbl=el('asam-lbl');if(lbl)lbl.textContent='Período '+pLabel(periodoActual());
   if(!ST.schools.length){
     e.innerHTML='<div class="es"><div class="ei">⏳</div><div class="et">Cargando datos...</div></div>';
@@ -2467,7 +2496,11 @@ function renderAsam(){
   var real=list.filter(function(s){return s.ESTADO_ASAMBLEA==='realizada';}).sort(function(a,b){return new Date(b.FECHA_ASAMBLEA)-new Date(a.FECHA_ASAMBLEA)});
   var prox=notReal.filter(function(s){var d=ddiff(s.FECHA_ASAMBLEA);return s.FECHA_ASAMBLEA&&d!==null&&d>=0;}).sort(function(a,b){return new Date(a.FECHA_ASAMBLEA)-new Date(b.FECHA_ASAMBLEA)});
   var venc=notReal.filter(function(s){var d=ddiff(s.FECHA_ASAMBLEA);return s.FECHA_ASAMBLEA&&d!==null&&d<0;}).sort(function(a,b){return new Date(b.FECHA_ASAMBLEA)-new Date(a.FECHA_ASAMBLEA)});
-  var sf=notReal.filter(function(s){return !s.FECHA_ASAMBLEA;});
+  // "Sin fecha" incluye tanto a las que no tienen nada cargado como a
+  // las que tienen un valor guardado pero no es una fecha utilizable
+  // (ver ddiff) — asi nunca desaparecen de la lista, quedan visibles
+  // para poder revisarlas y volver a cargar la fecha bien.
+  var sf=notReal.filter(function(s){return !s.FECHA_ASAMBLEA||ddiff(s.FECHA_ASAMBLEA)===null;});
   function grp(ttl,items,ico){
     if(!items.length)return '';
     return '<div class="agrp-ttl">'+ico+' '+ttl+' <span class="acnt">'+items.length+'</span></div>'+
@@ -2501,8 +2534,11 @@ function genPDFAsambleas(){
   });
   if(!list.length){toast('⚠ No hay asambleas pendientes o sin fecha con esos filtros');return;}
 
-  var conFecha=list.filter(function(s){return s.FECHA_ASAMBLEA;}).sort(function(a,b){return new Date(a.FECHA_ASAMBLEA)-new Date(b.FECHA_ASAMBLEA)});
-  var sinFecha=list.filter(function(s){return !s.FECHA_ASAMBLEA;}).sort(function(a,b){return (a.NOMBRE||'').localeCompare(b.NOMBRE||'','es')});
+  // Una fecha guardada pero corrupta (no da un valor real via ddiff) se
+  // trata como "sin fecha", igual que en la pantalla de Asambleas — asi
+  // no aparece un "01/01/0202" ni ningun otro valor sin sentido en el PDF.
+  var conFecha=list.filter(function(s){return s.FECHA_ASAMBLEA&&ddiff(s.FECHA_ASAMBLEA)!==null;}).sort(function(a,b){return new Date(a.FECHA_ASAMBLEA)-new Date(b.FECHA_ASAMBLEA)});
+  var sinFecha=list.filter(function(s){return !s.FECHA_ASAMBLEA||ddiff(s.FECHA_ASAMBLEA)===null;}).sort(function(a,b){return (a.NOMBRE||'').localeCompare(b.NOMBRE||'','es')});
 
   var jsPDF=jsPDFClass;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
@@ -2561,7 +2597,7 @@ function genPDFAsambleas(){
       doc.setFillColor(i%2===0?249:255,i%2===0?250:255,i%2===0?251:255);
       doc.rect(ML,y,PW-ML-MR,7,'F');
       doc.setTextColor(30,30,50);doc.setFont('helvetica','normal');doc.setFontSize(8);
-      var fechaTxt=s.FECHA_ASAMBLEA?fmtDate(s.FECHA_ASAMBLEA):'Sin fecha';
+      var fechaTxt=(s.FECHA_ASAMBLEA&&ddiff(s.FECHA_ASAMBLEA)!==null)?fmtDate(s.FECHA_ASAMBLEA):'Sin fecha';
       var vals=[fitText(s.NOMBRE,cW[0]),fitText(s.NUMERO,cW[1]),fitText(fechaTxt,cW[2])];
       vals.forEach(function(v,vi){ doc.text(v,cX[vi]+1.5,y+4.8); });
       y+=7;
