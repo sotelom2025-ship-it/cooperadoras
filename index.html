@@ -1106,7 +1106,7 @@ var ST = {
   // periodoActual() usa el calculo por calendario como respaldo.
   periodoActual: null,
   periodoActualDisponible: null,
-  sharedPeriodo: periodoActual(), // período vinculado entre secciones
+  sharedPeriodo: periodoCalendario(), // período vinculado entre secciones (valor inicial; se ajusta solo si hace falta más abajo)
   pdf:{est:[],k:[],banco:[],inc:[],locs:[],subs:[]}
 };
 
@@ -1423,7 +1423,13 @@ async function loadData(){
     // ── Período actual (ver CAMBIOS v14 del backend) ──
     // Se toma el valor "declarado" que devuelve el backend, no un
     // calculo local — asi coincide para todos los que usan la app.
-    if(r.periodoActual) ST.periodoActual = r.periodoActual;
+    if(r.periodoActual){
+      // Si sharedPeriodo todavia tiene el valor inicial por calendario
+      // (nadie eligio otro período a mano todavia), lo alineamos con el
+      // período declarado real.
+      if(ST.sharedPeriodo === (ST.periodoActual || periodoCalendario())) ST.sharedPeriodo = r.periodoActual;
+      ST.periodoActual = r.periodoActual;
+    }
     ST.periodoActualDisponible = r.periodoActualDisponible || periodoCalendario();
 
     // ── Escuelas base ──
