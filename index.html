@@ -1101,6 +1101,11 @@ var ST = {
   sf:'all', editSId:null,
   vCtx:{id:null,idx:null}, pCtx:{id:null},
   cIdx:-1, detId:null,
+  // periodoActual: el período "declarado" (ver CAMBIOS v14 del backend).
+  // Arranca null y se completa apenas responde getAll(); mientras tanto
+  // periodoActual() usa el calculo por calendario como respaldo.
+  periodoActual: null,
+  periodoActualDisponible: null,
   sharedPeriodo: periodoActual(), // período vinculado entre secciones
   pdf:{est:[],k:[],banco:[],inc:[],locs:[],subs:[]}
 };
@@ -1112,11 +1117,26 @@ function el(id){return document.getElementById(id)}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
 function pj(s,fb){try{return s?JSON.parse(s):fb}catch(e){return fb}}
 function gid(){return Date.now().toString(36)+Math.random().toString(36).slice(2)}
-function periodoActual(){
+function periodoCalendario(){
   // Período XXXX-(XXXX+1) va del 1 mayo de XXXX al 30 abril de XXXX+1
-  // Ej: hoy 26/5/2026 → el período vigente es 2026-2027 (empezó 1/5/2026)
+  // Ej: hoy 26/5/2026 → el período que tocaria por calendario es 2026-2027
+  // (empezó 1/5/2026). Esto es solo el CALCULO por fecha — no es
+  // necesariamente "el período actual" que usa el resto de la app, ver
+  // periodoActual() abajo.
   var d=new Date(), y=d.getFullYear(), m=d.getMonth()+1;
   return m>=5 ? (y+'-'+(y+1)) : ((y-1)+'-'+y);
+}
+function periodoActual(){
+  // El período que se usa en TODA la app (título de Asambleas, combos,
+  // deuda de período, etc.) ya no se recalcula solo con la fecha de
+  // hoy — queda fijo en el ultimo que se confirmo con "Iniciar nuevo
+  // período" (ST.periodoActual, que llega del backend). Asi, pasar el
+  // 30 de abril no hace que la app "salte" sola al período siguiente
+  // antes de que el Consejo lo haya iniciado formalmente. Antes de la
+  // primera carga de datos (o en modo offline sin backend), todavia no
+  // hay valor guardado — en ese caso se usa el calculo por calendario
+  // como respaldo, para no dejar la app sin período mientras carga.
+  return ST.periodoActual || periodoCalendario();
 }
 function periodoAnterior(n){
   // Devuelve el período N posiciones atrás del actual
@@ -1399,6 +1419,12 @@ async function loadData(){
   try{
     var r=await gasReq({action:'getAll'});
     if(!r||!r.ok)throw new Error(r&&r.error?r.error:'Error desconocido');
+
+    // ── Período actual (ver CAMBIOS v14 del backend) ──
+    // Se toma el valor "declarado" que devuelve el backend, no un
+    // calculo local — asi coincide para todos los que usan la app.
+    if(r.periodoActual) ST.periodoActual = r.periodoActual;
+    ST.periodoActualDisponible = r.periodoActualDisponible || periodoCalendario();
 
     // ── Escuelas base ──
     var schoolsMap={}, schoolsByNum={};
@@ -2385,58 +2411,55 @@ async function saveCM(){
 // ════════════════════════════════════════════════════════════
 
 function checkNuevoPeriodo() {
-  // Mostrar botón si es mayo o si el período actual cambió
+  // Mostrar botón si hay un período nuevo disponible por calendario que
+  // todavía no se declaró como el actual (ver periodoActual() / v14).
   var wrap = el('nuevo-periodo-wrap');
   if (!wrap) return;
   // Solo admins
   if (!ST.user || ST.user.role !== 'admin') return;
-  var hoy = new Date();
-  var mes = hoy.getMonth() + 1; // 1-12
-  var dia = hoy.getDate();
-  var curPeriod = periodoActual();
-  // Mostrar desde el 1 de mayo
-  if (mes === 5 && dia >= 1) {
-    // Mostrar si hay escuelas con período deudor de 2+ ciclos (candidatas a actualizar)
-    var hayViejas = ST.schools.some(function(s) {
-      return s.TIENE_COOP === 'si' && periodoDebt(s) >= 2;
-    });
-    wrap.style.display = hayViejas ? '' : 'none';
-  } else {
-    wrap.style.display = 'none';
-  }
+  var disponible = ST.periodoActualDisponible || periodoCalendario();
+  var hayNuevo = disponible !== periodoActual();
+  wrap.style.display = hayNuevo ? '' : 'none';
 }
 
 async function iniciarNuevoPeriodo() {
-  var curPeriod = periodoActual();
-  var partes = curPeriod.split('-');
-  var anno = partes[0];
-  var fechaAsam = anno + '-05-20'; // 20 de mayo del año actual
+  var curPeriod = ST.periodoActualDisponible || periodoCalendario();
 
   // Solo actualizar escuelas que deben 2+ períodos (no las Al día ni Vigentes)
   var afectadas = ST.schools.filter(function(s) {
     return s.TIENE_COOP === 'si' && periodoDebt(s) >= 2;
   });
 
-  if (!afectadas.length) {
-    toast('✓ Todas las escuelas ya están al día o vigentes');
-    return;
-  }
-
   var msg = [
-    '¿Iniciar nuevo período ' + pLabel(curPeriod) + '?',
+    '¿Iniciar el período ' + pLabel(curPeriod) + '?',
     '',
     'Esto va a:',
-    '• Actualizar ' + afectadas.length + ' escuela(s) al período actual',
-    '• Asignar el 20 de mayo como fecha de asamblea a las que no tengan fecha',
-    '• Poner estado de asamblea en pendiente',
+    '• Marcar ' + pLabel(curPeriod) + ' como el período actual de toda la app',
+    afectadas.length ? '• Actualizar ' + afectadas.length + ' escuela(s) al período actual' : null,
+    afectadas.length ? '• Asignar el 20 de mayo como fecha de asamblea a las que no tengan fecha' : null,
+    afectadas.length ? '• Poner estado de asamblea en pendiente' : null,
     '',
     'Las escuelas Al día y Vigentes NO se modifican.'
-  ].join('\n');
+  ].filter(Boolean).join('\n');
   if (!confirm(msg)) return;
 
   var btn = document.querySelector('#nuevo-periodo-wrap button');
   if (btn) { btn.textContent = '⏳ Procesando...'; btn.disabled = true; }
 
+  // 1. Declarar el nuevo período actual para toda la app (ver v14).
+  var okPeriodo = true;
+  try {
+    if (ST.gasUrl) await gasReq({ action: 'setPeriodoActual', periodo: curPeriod });
+    ST.periodoActual = curPeriod;
+  } catch (e) {
+    okPeriodo = false;
+    console.error('No se pudo guardar el período actual:', e);
+  }
+
+  // 2. Actualizar las escuelas que quedaron atrasadas 2+ períodos.
+  var partes = curPeriod.split('-');
+  var anno = partes[0];
+  var fechaAsam = anno + '-05-20'; // 20 de mayo del año actual
   var errores = 0;
   for (var i = 0; i < afectadas.length; i++) {
     var s = afectadas[i];
@@ -2448,10 +2471,14 @@ async function iniciarNuevoPeriodo() {
   }
 
   if (btn) { btn.textContent = '🗓 Iniciar nuevo período'; btn.disabled = false; }
-  toast(errores > 0
-    ? '⚠ Período iniciado con ' + errores + ' errores de guardado'
-    : '✅ Nuevo período ' + pLabel(curPeriod) + ' iniciado para ' + afectadas.length + ' escuela(s)');
-  el('nuevo-periodo-wrap').style.display = 'none';
+  if (!okPeriodo) {
+    toast('⚠ No se pudo guardar el período actual. Probá de nuevo en un momento.');
+  } else {
+    toast(errores > 0
+      ? '⚠ Período iniciado con ' + errores + ' errores de guardado'
+      : '✅ Período ' + pLabel(curPeriod) + ' iniciado' + (afectadas.length ? ' para ' + afectadas.length + ' escuela(s)' : ''));
+    el('nuevo-periodo-wrap').style.display = 'none';
+  }
   renderAsam();
 }
 
