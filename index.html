@@ -732,7 +732,7 @@ body:has(.moverlay.open) .fab-back{display:none!important}
       <div class="ph">
         <div><div class="ph-ttl">Asambleas</div><div class="ph-sub" id="asam-lbl">—</div></div>
         <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-          <button class="btn btn-s" onclick="genPDFAsambleas()" style="gap:.5rem">
+          <button class="btn btn-s" id="btn-pdf-asam" onclick="genPDFAsambleas()" style="gap:.5rem">
             📄 Informe pendientes/sin fecha
           </button>
           <div id="nuevo-periodo-wrap" style="display:none">
@@ -750,7 +750,7 @@ body:has(.moverlay.open) .fab-back{display:none!important}
           <option value="pendiente">⏳ Pendiente</option>
           <option value="realizada">✅ Realizada</option>
         </select>
-        <select class="fsel" id="af-fecha" onchange="renderAsam()">
+        <select class="fsel" id="af-fecha" onchange="renderAsam()" title="También define qué incluye el informe PDF">
           <option value="">Con y sin fecha</option>
           <option value="con">📅 Con fecha cargada</option>
           <option value="sin">❓ Sin fecha cargada</option>
@@ -1147,6 +1147,7 @@ function getCordNum(loc){var c=ST.coords.find(function(c){return c.localidades.s
 function getCordLabel(loc){var n=getCordNum(loc);return n?(CORD[n]||'—'):'—'}
 function parseDate(ds){
   if(!ds) return null;
+  ds = String(ds).replace(/^['"]+|['"]+$/g,'').trim();
   // Handle GAS date format: 'Mon May 26 2025 00:00:00 GMT-0300 (...)'
   var m=ds.match(/(\d{4}-\d{2}-\d{2})/);
   if(m) return new Date(m[1]+'T00:00:00');
@@ -2513,6 +2514,14 @@ function renderAsam(){
   }
   var h=grp('PRÓXIMAS',prox,'🔜')+grp('FECHA VENCIDA',venc,'⏰')+grp('SIN FECHA',sf,'❓')+grp('REALIZADAS',real,'✅');
   e.innerHTML=h||'<div class="es"><div class="ei">📅</div><div class="et">Sin asambleas</div></div>';
+  // El boton de informe PDF respeta el mismo selector "Con y sin fecha":
+  // el texto avisa que es lo que se va a descargar.
+  var btnPdf=el('btn-pdf-asam');
+  if(btnPdf){
+    btnPdf.innerHTML = ff==='con' ? '📄 Informe (con fecha)'
+                      : ff==='sin' ? '📄 Informe (sin fecha)'
+                      : '📄 Informe pendientes/sin fecha';
+  }
 }
 function goToAsam(id){goTo('escuelas');openDetail(id);setTimeout(function(){renderDetail(id,'cooperadora')},50)}
 
@@ -2522,6 +2531,11 @@ function genPDFAsambleas(){
   if(!ST.schools.length){toast('⚠ Los datos todavía se están cargando, esperá un momento');return;}
   var fc=((el('af-coord')||{}).value)||'';
   var fd=((el('af-distrital')||{}).value)||'';
+  // ff: mismo selector "Con y sin fecha / Con fecha cargada / Sin fecha
+  // cargada" que ya se usa para filtrar la pantalla de Asambleas. Ahora
+  // tambien decide que secciones entran en el PDF, asi el informe
+  // descargado coincide con lo que se eligio ver en pantalla.
+  var ff=((el('af-fecha')||{}).value)||'';
   var list=ST.schools.filter(function(s){
     var tc=(s.TIENE_COOP||'').toLowerCase().trim();
     if(tc===''||tc==='no')return false;
@@ -2532,13 +2546,24 @@ function genPDFAsambleas(){
     if(fd&&fd!=='__none__'&&s.DISTRITAL!==fd)return false;
     return true;
   });
-  if(!list.length){toast('⚠ No hay asambleas pendientes o sin fecha con esos filtros');return;}
 
   // Una fecha guardada pero corrupta (no da un valor real via ddiff) se
   // trata como "sin fecha", igual que en la pantalla de Asambleas — asi
   // no aparece un "01/01/0202" ni ningun otro valor sin sentido en el PDF.
   var conFecha=list.filter(function(s){return s.FECHA_ASAMBLEA&&ddiff(s.FECHA_ASAMBLEA)!==null;}).sort(function(a,b){return new Date(a.FECHA_ASAMBLEA)-new Date(b.FECHA_ASAMBLEA)});
   var sinFecha=list.filter(function(s){return !s.FECHA_ASAMBLEA||ddiff(s.FECHA_ASAMBLEA)===null;}).sort(function(a,b){return (a.NOMBRE||'').localeCompare(b.NOMBRE||'','es')});
+
+  // Segun la eleccion del selector, se arma solo la tabla pedida.
+  var incluirCon = ff!=='sin';
+  var incluirSin = ff!=='con';
+  var totalPedido = (incluirCon?conFecha.length:0)+(incluirSin?sinFecha.length:0);
+  if(!totalPedido){
+    var msgVacio = ff==='con' ? '⚠ No hay asambleas pendientes con fecha cargada con esos filtros'
+                 : ff==='sin' ? '⚠ No hay asambleas pendientes sin fecha cargada con esos filtros'
+                 : '⚠ No hay asambleas pendientes o sin fecha con esos filtros';
+    toast(msgVacio);
+    return;
+  }
 
   var jsPDF=jsPDFClass;
   var doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
@@ -2558,15 +2583,19 @@ function genPDFAsambleas(){
     return p[2]+'/'+p[1]+'/'+p[0];
   }
 
+  var tituloInforme = ff==='con' ? 'Asambleas Pendientes — Con Fecha Cargada'
+                     : ff==='sin' ? 'Asambleas Pendientes — Sin Fecha Cargada'
+                     : 'Asambleas Pendientes o Sin Fecha';
+
   y=20;
   doc.setTextColor(13,47,110);doc.setFont('helvetica','bold');doc.setFontSize(14);
-  doc.text('Asambleas Pendientes o Sin Fecha',ML,y);
+  doc.text(tituloInforme,ML,y);
   y+=7;
   doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(90,90,110);
   var filtroTxt='Distrital: '+(fd==='__none__'?'Sin distrital':(fd||'Todos'))+(fc?' · Coordinador/a: '+fc:'');
   doc.text(filtroTxt,ML,y);
   y+=5;
-  doc.text('Generado el '+new Date().toLocaleDateString('es-AR')+' · Total: '+list.length,ML,y);
+  doc.text('Generado el '+new Date().toLocaleDateString('es-AR')+' · Total: '+totalPedido,ML,y);
   y+=8;
 
   var cW=[95,25,60];
@@ -2605,8 +2634,8 @@ function genPDFAsambleas(){
     y+=6;
   }
 
-  tabla('CON FECHA (PENDIENTES)',conFecha);
-  tabla('SIN FECHA CARGADA',sinFecha);
+  if(incluirCon) tabla('CON FECHA (PENDIENTES)',conFecha);
+  if(incluirSin) tabla('SIN FECHA CARGADA',sinFecha);
 
   var pages=doc.getNumberOfPages();
   for(var i=1;i<=pages;i++){
@@ -2615,8 +2644,9 @@ function genPDFAsambleas(){
     doc.setTextColor(160,160,160);
     doc.text('Consejo Escolar La Matanza · Desarrollado por Maggie Sotelo · Pág. '+i+'/'+pages,ML,PH-10);
   }
-  doc.save('asambleas_pendientes_'+new Date().toISOString().slice(0,10)+'.pdf');
-  toast('📄 Informe de asambleas pendientes generado ('+list.length+')');
+  var sufijoArchivo = ff==='con' ? 'con_fecha' : ff==='sin' ? 'sin_fecha' : 'pendientes';
+  doc.save('asambleas_'+sufijoArchivo+'_'+new Date().toISOString().slice(0,10)+'.pdf');
+  toast('📄 Informe generado ('+totalPedido+')');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -3709,10 +3739,18 @@ function normalizeDate(ds){
   // Returns 'YYYY-MM-DD' from any date string
   if(!ds) return '';
   ds = String(ds).trim();
-  // Already ISO format
-  if(/^\d{4}-\d{2}-\d{2}/.test(ds)) return ds.slice(0,10);
+  // Defensivo: saca comillas/apostrofes sueltos al principio o al final
+  // (ej: "'2026-04-23" que puede quedar del apostrofe de texto forzado
+  // de Sheets, o comillas de pegar un valor desde otra planilla). Sin
+  // esto, un caracter de mas hacia que ninguno de los formatos de abajo
+  // matchee y la fecha se mostrara trunca o rota.
+  ds = ds.replace(/^['"]+|['"]+$/g,'').trim();
+  // Fecha ISO en cualquier parte del texto, no solo al principio — por
+  // si quedo algo pegado adelante.
+  var isoM = ds.match(/(\d{4}-\d{2}-\d{2})/);
+  if(isoM) return isoM[1];
   // Sheets full timestamp: "Wed May 27 2026 00:00:00 GMT-0300..."
-  // or JS Date toString: "Wed May 28 2026 00:00:00 GMT-0300 (hora estándar de Argentina)"
+  // o JS Date toString: "Wed May 28 2026 00:00:00 GMT-0300 (hora estándar de Argentina)"
   var mn={'jan':'01','feb':'02','mar':'03','apr':'04','may':'05','jun':'06',
           'jul':'07','aug':'08','sep':'09','oct':'10','nov':'11','dec':'12'};
   var m = ds.match(/(\w{3})\s+(\d{1,2})\s+(\d{4})/i);
@@ -3721,8 +3759,8 @@ function normalizeDate(ds){
     var d = ('0'+m[2]).slice(-2);
     return m[3]+'-'+mo+'-'+d;
   }
-  // DD/MM/YYYY
-  m = ds.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  // DD/MM/YYYY (en cualquier parte del texto)
+  m = ds.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if(m) return m[3]+'-'+('0'+m[2]).slice(-2)+'-'+('0'+m[1]).slice(-2);
   return ds.slice(0,10);
 }
