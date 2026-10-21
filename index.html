@@ -167,8 +167,8 @@ body.dark #toast{background:#E8EEFF;color:#0C1220}
 .bn-i.on{color:var(--navy)}
 
 /* MAIN */
-.main{margin-left:var(--sw);flex:1;min-height:100vh;display:flex;flex-direction:column}
-.content{padding:2rem 2.5rem;flex:1;max-width:1400px;width:100%}
+.main{margin-left:var(--sw);flex:1;min-height:100vh;display:flex;flex-direction:column;min-width:0}
+.content{padding:2rem 2.5rem;flex:1;max-width:1400px;width:100%;min-width:0}
 
 /* SECTIONS */
 .sec{display:none}.sec.on{display:block}
@@ -202,9 +202,9 @@ body.dark #toast{background:#E8EEFF;color:#0C1220}
 .fsel:focus{outline:none;border-color:var(--navy)}
 
 /* ── SCHOOL GRID ── */
-.sg{display:grid;grid-template-columns:1fr;gap:.5rem}
-@media(min-width:1280px){.sg{grid-template-columns:1fr 1fr}}
-@media(min-width:1600px){.sg{grid-template-columns:1fr 1fr 1fr}}
+.sg{display:grid;grid-template-columns:minmax(0,1fr);gap:.5rem}
+@media(min-width:1280px){.sg{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}}
+@media(min-width:1600px){.sg{grid-template-columns:minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)}}
 .sc{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.875rem 1rem;cursor:pointer;display:flex;align-items:center;gap:.875rem;transition:box-shadow .15s,border-color .15s,transform .1s}
 .sc:hover{box-shadow:var(--shadow);border-color:#B8C8E8;transform:translateY(-1px)}
 .sc-av{width:44px;height:44px;border-radius:8px;background:var(--navy3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.68rem;color:var(--navy);flex-shrink:0;text-align:center;line-height:1.2;padding:.2rem}
@@ -250,8 +250,9 @@ body.dark #toast{background:#E8EEFF;color:#0C1220}
 .tab.on{color:var(--navy);border-bottom-color:var(--navy)}
 
 /* ── FORMS ── */
-.fg{display:grid;grid-template-columns:1fr 1fr;gap:.875rem 1.125rem}
+.fg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.875rem 1.125rem}
 .fg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.875rem 1.125rem}
+.fg .fi,.fg .fs,.fg .ft{min-width:0;max-width:100%;box-sizing:border-box}
 .c2{grid-column:span 2}.c3{grid-column:span 3}
 .ff{display:flex;flex-direction:column;gap:.35rem}
 .fl{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
@@ -442,7 +443,7 @@ body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
   .content{padding:.625rem .5rem;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
 
   /* Forms */
-  .fg,.fg3{grid-template-columns:1fr}
+  .fg,.fg3{grid-template-columns:minmax(0,1fr)}
   .c2,.c3{grid-column:span 1}
 
   /* Modal — sheet from bottom */
@@ -479,6 +480,11 @@ body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
   /* School detail */
   .back{font-size:.78rem;margin-bottom:.75rem}
   .tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:1rem;gap:0}
+  .tabs{max-width:100%}
+  .tab{flex:0 0 auto}
+  #detail-view,#list-view,.sec{min-width:0;max-width:100%}
+  #sf-bar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:.25rem}
+  #sf-bar .fp{flex:0 0 auto}
   .tab{padding:.5rem .75rem;font-size:.73rem;white-space:nowrap}
 
   /* Rec item */
@@ -534,7 +540,7 @@ body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
 
 /* ── Tablet only: 600-1023px ── */
 @media(min-width:600px) and (max-width:1023px){
-  .fg{grid-template-columns:1fr 1fr}
+  .fg{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
   .content{padding:1.25rem 1rem;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
   .modal{max-width:540px}
   .stats{display:flex;flex-wrap:wrap}
@@ -705,7 +711,7 @@ body:has(.moverlay.open) .fab-back{display:none!important}
           <select class="fsel" id="fl-tipo" onchange="renderSchools()"><option value="">Tipo cooperadora</option><option>Activa</option><option>Administrativa</option><option>✌️</option></select>
           <select class="fsel" id="fl-k" onchange="renderSchools()"><option value="">Kiosco</option><option value="con">Con kiosco</option><option value="sin">Sin kiosco</option></select>
           <select class="fsel" id="fl-sub" onchange="renderSchools()"><option value="">Subcomando</option><option value="__none__">Sin subcomando</option></select>
-          <select class="fsel" id="fl-especial" onchange="renderSchools()"><option value="">Casos especiales</option><option value="creacion">🆕 Creación</option><option value="reorganizacion">🔄 Reorganización</option><option value="visitada_fran">🚶 Visitada por Fran</option></select>
+          <select class="fsel" id="fl-especial" onchange="renderSchools()"><option value="">Casos especiales</option><option value="creacion">🆕 Creación</option><option value="reorganizacion">🔄 Reorganización</option><option value="visitada_fran">🚶 Visitada por Fran</option><option value="vinculado_cte">🔗 Vinculado con CTE</option></select>
           <button class="btn btn-s btn-sm" onclick="clrF()">✕ Limpiar</button>
         </div>
         <div id="sf-bar" class="fbar" style="margin-bottom:.625rem">
@@ -925,29 +931,16 @@ body:has(.moverlay.open) .fab-back{display:none!important}
         </div>
         <input type="hidden" id="rm-school">
       </div>
-      <div class="ff">
+      <div class="ff c2">
         <label class="fl">Fecha de recepción</label>
         <input class="fi" type="date" id="rm-fecha">
       </div>
-      <div class="ff">
-        <label class="fl">Período lectivo</label>
-        <select class="fs" id="rm-periodo" onchange="onRecPeriodoChange()"></select>
-      </div>
       <div class="ff c2">
         <label class="fl">Motivo / Trámite</label>
-        <select class="fs" id="rm-motivo" onchange="toggleReorgRow();toggleOtroDesc()">
-          <option value="Presentación documentación">Presentación documentación</option>
-          <option value="Consulta">Consulta</option>
-          <option value="Rendición de cuentas">Rendición de cuentas</option>
-          <option value="Renovación de autoridades">Renovación de autoridades</option>
-          <option value="Solicitud de reorganización">Solicitud de reorganización</option>
-          <option value="Inicio de reorganización">Inicio de reorganización</option>
-          <option value="Retiro de comprobantes">Retiro de comprobantes</option>
-          <option value="Otro">Otro</option>
-        </select>
+        <select class="fs" id="rm-motivo" onchange="toggleReorgRow();toggleOtroDesc()"></select>
       </div>
       <div class="ff c2" id="rm-otro-row" style="display:none">
-        <label class="fl">Aclaración del motivo</label>
+        <label class="fl">Escribí el motivo</label>
         <input class="fi" id="rm-otro-desc" placeholder="Describí el motivo...">
       </div>
       <div class="ff c2" id="rm-reorg-row" style="display:none">
@@ -1239,7 +1232,8 @@ function estadoEspecialBadge(s){
     var defs = {
       reorganizacion: ['ta','Cooperadora en proceso de reorganización','🔄 Reorganización'],
       creacion:       ['tg','Cooperadora de reciente creación','🆕 Creación'],
-      visitada_fran:  ['tb','Visitada por Fran','🚶 Visitada por Fran']
+      visitada_fran:  ['tb','Visitada por Fran','🚶 Visitada por Fran'],
+      vinculado_cte:  ['tb','Vinculado con CTE','🔗 Vinculado con CTE']
     };
     return vals.map(function(v){
       var d = defs[v];
@@ -1280,7 +1274,7 @@ async function saveSubcomandosR(){
 var SLOW_MSG='⏳ Esto está tardando más de lo normal… un momentito, ya casi está.';
 var SLOW_MS=7000;
 function friendlyErr(base,msg){var e=(base instanceof Error)?base:new Error(String(base));e.friendly=msg;return e}
-async function gasReq(payload){
+async function gasReqRaw(payload){
   var slowTimer=setTimeout(function(){toast(SLOW_MSG)},SLOW_MS);
   try{
     var res;
@@ -1306,6 +1300,19 @@ async function gasReq(payload){
   }finally{
     clearTimeout(slowTimer);
   }
+}
+
+// Las lecturas salen directo; las ESCRITURAS se encolan y viajan de a una,
+// en orden. Antes, varios guardados seguidos (tocar varias opciones rápido,
+// doble click) salían en paralelo y se pisaban entre sí en la planilla:
+// ahí se originaban las filas duplicadas y los datos que "no se guardaban".
+var _gasQueue = Promise.resolve();
+function gasReq(payload){
+  var a = payload && payload.action;
+  if(a==='getAll'||a==='ping'||a==='getUsers'||a==='getRecepciones') return gasReqRaw(payload);
+  var run = _gasQueue.then(function(){ return gasReqRaw(payload); });
+  _gasQueue = run.catch(function(){});
+  return run;
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1505,11 +1512,19 @@ async function loadData(){
         visitasMap[vKey].push({
           fecha:v.FECHA||'',tipo:v.TIPO||'',responsable:v.RESPONSABLE||'',
           descripcion:v.DESCRIPCION||'',proxAccion:v.PROX_ACCION||'',
-          fechaSeguimiento:v.FECHA_SEGUIMIENTO||'',_id:v.ID||''
+          fechaSeguimiento:v.FECHA_SEGUIMIENTO||'',_id:v.ID||'',
+          recId:v.REC_ID||'',fromRecepcion:!!v.REC_ID
         });
       });
       Object.keys(visitasMap).forEach(function(id){
-        if(schoolsMap[id])schoolsMap[id].VISITAS=JSON.stringify(visitasMap[id]);
+        // Se muestra una sola vez cada visita repetida (mismo día, tipo y
+        // texto). Al próximo guardado de la escuela la planilla queda limpia.
+        var vsn={};
+        var lista=visitasMap[id].filter(function(v){
+          var k=[normalizeDate(v.fecha),v.tipo,v.descripcion].join('||');
+          if(vsn[k])return false; vsn[k]=true; return true;
+        });
+        if(schoolsMap[id])schoolsMap[id].VISITAS=JSON.stringify(lista);
       });
     }
 
@@ -1528,7 +1543,12 @@ async function loadData(){
         });
       });
       Object.keys(periodosMap).forEach(function(id){
-        if(schoolsMap[id])schoolsMap[id].PERIODOS=JSON.stringify(periodosMap[id]);
+        var psn={};
+        var lista=periodosMap[id].filter(function(p){
+          if(!p.periodo)return true;
+          if(psn[p.periodo])return false; psn[p.periodo]=true; return true;
+        });
+        if(schoolsMap[id])schoolsMap[id].PERIODOS=JSON.stringify(lista);
       });
     }
 
@@ -1645,8 +1665,11 @@ async function loadData(){
     if(ST.fechasSospechosasTotal) console.warn('Fechas que no se pudieron corregir automáticamente:', ST.fechasSospechosas);
 
     // ── Recepciones ──
-    if(r.recepciones && r.recepciones.length){
-      // Normalize column names from Sheets to our format
+    // La planilla es la fuente de verdad. Lo que quedó solo en este
+    // navegador se conserva únicamente si es una recepción que no pudo
+    // enviarse (_pendiente) — y se reenvía — para que no reaparezcan copias
+    // viejas ni duplicados que ya se limpiaron en la planilla.
+    if(Array.isArray(r.recepciones)){
       var fromSheets = r.recepciones.map(function(row){
         return {
           id:           row.ID             || row.id             || '',
@@ -1655,36 +1678,42 @@ async function loadData(){
           schoolNumero: row.SCHOOL_NUMERO  || row.schoolNumero   || '',
           schoolLocalidad: row.SCHOOL_LOCALIDAD || row.schoolLocalidad || '',
           fecha:        normalizeDate(row.FECHA || row.fecha || ''),
-          periodo:      row.PERIODO        || row.periodo        || '',          motivo:       row.MOTIVO         || row.motivo         || '',
+          periodo:      row.PERIODO        || row.periodo        || '',
+          motivo:       row.MOTIVO         || row.motivo         || '',
           otroDesc:     row.OTRO_DESC      || row.otroDesc      || '',
           obs:          row.OBSERVACIONES  || row.obs            || '',
           alerta:       (row.ALERTA||row.alerta||'') === 'SI' || row.alerta === true,
           alertaDesc:   row.ALERTA_DESC    || row.alertaDesc     || '',
-          reorgFecha:   row.REORG_FECHA    || row.reorgFecha     || '',
+          reorgFecha:   normalizeDate(row.REORG_FECHA || row.reorgFecha || ''),
           etiq:         row.ETIQ           || row.etiq           || ''
         };
-      }).filter(function(r){ return r.id; });
+      }).filter(function(x){ return x.id; });
 
-      // Merge: Sheets is the source of truth — add anything not in localStorage
-      var local = getRec();
-      var localIds = new Set(local.map(function(r){ return r.id; }));
-      var sheetsIds = new Set(fromSheets.map(function(r){ return r.id; }));
+      function recSig(x){ return [x.schoolId, normalizeDate(x.fecha), (x.motivo||'').trim(), (x.otroDesc||'').trim(), (x.obs||'').trim()].join('||'); }
+      var idsSheet = {}, sigs = {}, finalRec = [];
+      fromSheets.forEach(function(x){
+        idsSheet[x.id] = true;
+        var k = recSig(x);
+        if(sigs[k]) return;            // fila repetida en la planilla: se muestra una sola vez
+        sigs[k] = true; finalRec.push(x);
+      });
 
-      // Add sheet entries missing from local
-      fromSheets.forEach(function(r){
-        if(!localIds.has(r.id)) local.push(r);
+      // Migración única: las recepciones que quedaron solo en este
+      // navegador (guardados que antes fallaban sin avisar) se reenvían.
+      var migKey = 'coop_rec_migrado_v16', yaMigrado = false;
+      try{ yaMigrado = localStorage.getItem(migKey) === '1'; }catch(e){}
+      var porReenviar = [];
+      getRec().forEach(function(l){
+        if(idsSheet[l.id]) return;                       // ya está en la planilla
+        var k = recSig(l);
+        if(sigs[k]) return;                              // es copia de una que ya está
+        if(l._pendiente || !yaMigrado){ sigs[k] = true; finalRec.push(l); porReenviar.push(l); }
       });
-      // Update local entries that exist in sheets (sheets wins)
-      local = local.map(function(r){
-        if(sheetsIds.has(r.id)){
-          var s = fromSheets.find(function(x){ return x.id === r.id; });
-          return s || r;
-        }
-        return r;
-      });
-      // Sort by date descending
-      local.sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
-      saveRec(local);
+      try{ localStorage.setItem(migKey,'1'); }catch(e){}
+
+      finalRec.sort(function(a,b){ return (b.fecha||'').localeCompare(a.fecha||''); });
+      saveRec(finalRec);
+      if(ST.gasUrl && porReenviar.length) reenviarRecepciones(porReenviar);
     }
 
   }catch(e){
@@ -1692,6 +1721,23 @@ async function loadData(){
     if(bn){el('conn-msg').textContent=e.friendly||('Uy, no pudimos cargar los datos. Probá de nuevo en un momento.');bn.style.display='flex';}
     loadSample();
   }
+}
+
+// Reenvía a la planilla recepciones que no habían podido guardarse.
+async function reenviarRecepciones(lista){
+  var enviadas = 0;
+  for(var i=0;i<lista.length;i++){
+    var e = Object.assign({}, lista[i]); delete e._pendiente;
+    try{
+      var rr = await gasReq({action:'saveRecepcion', data:e});
+      if(rr && rr.ok === false) continue;
+      var rec = getRec();
+      var ix = rec.findIndex(function(x){ return x.id === e.id; });
+      if(ix>=0){ delete rec[ix]._pendiente; saveRec(rec); }
+      enviadas++;
+    }catch(err){ console.warn('Reenvío de recepción falló:', err); }
+  }
+  if(enviadas) toast('✅ Se enviaron '+enviadas+' recepción'+(enviadas!==1?'es':'')+' que habían quedado sin guardar en la planilla');
 }
 
 async function saveSchoolR(s){
@@ -1736,7 +1782,11 @@ async function saveSchoolR(s){
         comRev:comRev
       });
     }catch(e1){
-      // Fallback: GAS viejo (todo en una hoja)
+      // Fallback a un GAS viejo SOLO si el backend no conoce esta acción.
+      // Para cualquier otro error (red, timeout, sistema ocupado) se avisa
+      // que falló: antes se reintentaba con el guardado viejo, que no
+      // guarda visitas ni períodos, y se mostraba "guardado" igual.
+      if(!/no reconocida/i.test(String(e1&&e1.message||e1))) throw e1;
       console.warn('saveSchoolFull failed, trying legacy saveSchool:', e1.message);
       var legacyData = Object.assign({}, schoolData, coopData, {
         VISITAS: JSON.stringify(visitas),
@@ -1950,6 +2000,7 @@ function renderSchools(){
       var fCreacion=list.filter(function(s){return multiHas(s.ESTADO_ESPECIAL,'creacion')}).length;
       var fReorg=list.filter(function(s){return multiHas(s.ESTADO_ESPECIAL,'reorganizacion')}).length;
       var fVisFran=list.filter(function(s){return multiHas(s.ESTADO_ESPECIAL,'visitada_fran')}).length;
+      var fCte=list.filter(function(s){return multiHas(s.ESTADO_ESPECIAL,'vinculado_cte')}).length;
       var parts=['<strong>'+list.length+' resultado'+(list.length!==1?'s':'')+'</strong>'];
       if(fAldia) parts.push('🟢 Al día: '+fAldia);
       if(fVigente) parts.push('🔵 Vigente: '+fVigente);
@@ -1960,6 +2011,7 @@ function renderSchools(){
       if(fCreacion) parts.push('🆕 Creación: '+fCreacion);
       if(fReorg) parts.push('🔄 Reorganización: '+fReorg);
       if(fVisFran) parts.push('🚶 Visitada por Fran: '+fVisFran);
+      if(fCte) parts.push('🔗 Vinculado con CTE: '+fCte);
       fsDiv.innerHTML=parts.join('&nbsp;&nbsp;·&nbsp;&nbsp;');
       fsDiv.style.display='block';
     } else {
@@ -2097,11 +2149,12 @@ function renderDetail(id,tab){
   var ps=pj(s.PERIODOS,[]),vs=pj(s.VISITAS,[]);
   // Count receptions for this school
   var recCount = getRec().filter(function(r){return r.schoolId===id;}).length;
-  var tabs=['general','cooperadora','comision','visitas'];
-  var tabLabels=['📋 General','🤝 Cooperadora','👤 Comisión','📍 Visitas ('+vs.length+')'];
+  var tabs=['general','cooperadora','comision','recepciones','visitas'];
+  var tabLabels=['📋 General','🤝 Cooperadora','👤 Comisión','📥 Recepciones ('+recCount+')','📍 Visitas ('+vs.length+')'];
   var tabHtml=tabs.map(function(t,i){return '<button class="tab'+(tab===t?' on':'')+'" data-tab="'+t+'" onclick="renderDetail(\''+id+'\',\''+t+'\')">'+tabLabels[i]+'</button>'}).join('');
   var body='';
-  if(tab==='general')body=tabGen(s,coord,cord);
+  if(tab==='general')body=recRecientesCard(s)+tabGen(s,coord,cord);
+  else if(tab==='recepciones')body=tabRecepciones(s);
   else if(tab==='cooperadora')body=tabCoop(s,ps);
   else if(tab==='comision')body=tabCom(s);
   else if(tab==='visitas')body=tabVis(s,vs);
@@ -2222,7 +2275,7 @@ function tabGen(s,coord,cord){
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Cooperadora</div>'+
     togRow('Estado cooperadora','TIENE_COOP',s,[['si','Con cooperadora',''],['tuvo','Sin cooperadora activa','oa'],['no','Nunca tuvo cooperadora','or']])+
     '<div class="ff c2"><label class="fl">Período activo</label><select class="fs" onchange="setF(\''+s.ID+'\',\'PERIODO_COOP\',this.value)">'+buildPeriodOpts(s.PERIODO_COOP||'',true)+'</select></div>'+
-    togRowMulti('Casos especiales (podés marcar más de uno)','ESTADO_ESPECIAL',s,[['reorganizacion','🔄 Reorganización','oa'],['creacion','🆕 Creación','og'],['visitada_fran','🚶 Visitada por Fran','']])+
+    togRowMulti('Casos especiales (podés marcar más de uno)','ESTADO_ESPECIAL',s,[['reorganizacion','🔄 Reorganización','oa'],['creacion','🆕 Creación','og'],['visitada_fran','🚶 Visitada por Fran',''],['vinculado_cte','🔗 Vinculado con CTE','']])+
 
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Asesora / Asesor</div>'+
     ff2('Nombre','ASESORA_NOMBRE',s)+
@@ -2309,6 +2362,52 @@ function tabCom(s){
     rolesR.map(function(r){return '<div style="margin-bottom:.875rem"><div class="fl" style="margin-bottom:.375rem">'+r[1]+'</div><div class="ff"><input class="fi" placeholder="Nombre" value="'+esc((cr[r[0]]||{}).nombre||'')+'" onchange="setCR(\''+s.ID+'\',\''+r[0]+'\',\'nombre\',this.value)"></div></div>'}).join('')+
     '<button class="btn btn-p" onclick="saveCom(\''+s.ID+'\')">💾 Guardar comisión</button>'+
   '</div>'
+}
+
+// ── Recepciones dentro de la ficha de la escuela ──────────────
+function recDeEscuela(id){
+  return getRec().filter(function(r){ return r.schoolId===id; })
+    .sort(function(a,b){ return (normalizeDate(b.fecha)||'').localeCompare(normalizeDate(a.fecha)||''); });
+}
+function recItemMini(r){
+  var iso = normalizeDate(r.fecha||'');
+  var fch = iso.length>=10 ? iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4) : '—';
+  var motivo = r.motivo==='Otro' && r.otroDesc ? 'Otro: '+r.otroDesc : (r.motivo||'—');
+  var isReorg = (r.motivo||'').toLowerCase().indexOf('reorganiz')>=0;
+  return '<div class="rec-item'+(r.alerta?' alerta':'')+(isReorg?' reorg':'')+'" style="margin-bottom:.5rem">'+
+    '<div class="rec-body2" style="padding:.6rem .8rem">'+
+      '<div class="rec-motivo-row" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">'+
+        '<span style="font-size:.78rem;font-weight:700;color:var(--navy)">'+esc(fch)+'</span>'+
+        '<span class="rec-motivo-pill'+(isReorg?' reorg-pill':'')+'">'+esc(motivo)+'</span>'+
+        (r.alerta?'<span class="alerta-pill">⚠️ '+esc(r.alertaDesc||'Requiere seguimiento')+'</span>':'')+
+        '<span style="margin-left:auto;display:flex;gap:.35rem">'+
+          '<button class="btn btn-s btn-xs" onclick="openRecEdit(\''+esc(r.id)+'\')">✏️</button>'+
+          '<button class="btn btn-d btn-xs" onclick="deleteRecepcion(\''+esc(r.id)+'\')">🗑</button>'+
+        '</span>'+
+      '</div>'+
+      (r.obs?'<div class="rec-obs-txt" style="margin-top:.4rem">'+esc(r.obs)+'</div>':'')+
+      (r.reorgFecha?'<div class="rec-reorg-row" style="margin-top:.3rem">🔄 Comienzo de reorganización: <strong>'+esc(r.reorgFecha.split('-').reverse().join('/'))+'</strong></div>':'')+
+    '</div></div>';
+}
+// Tarjeta "Últimas recepciones" (arriba de la pestaña General)
+function recRecientesCard(s){
+  var lista = recDeEscuela(s.ID);
+  var ult = lista.slice(0,3);
+  return '<div class="card card-p" style="max-width:680px;margin-bottom:1rem">'+
+    '<div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem;flex-wrap:wrap">'+
+      '<div style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);flex:1">📥 Últimas recepciones'+(lista.length?' ('+lista.length+')':'')+'</div>'+
+      (lista.length>3?'<button class="btn btn-s btn-xs" onclick="renderDetail(\''+esc(s.ID)+'\',\'recepciones\')">Ver todas</button>':'')+
+      '<button class="btn btn-p btn-xs" onclick="openRecModalForSchool(\''+esc(s.ID)+'\')">+ Nueva recepción</button>'+
+    '</div>'+
+    (ult.length ? ult.map(recItemMini).join('') : '<div style="font-size:.82rem;color:var(--muted)">Esta escuela todavía no tiene recepciones registradas.</div>')+
+  '</div>';
+}
+function tabRecepciones(s){
+  var lista = recDeEscuela(s.ID);
+  return '<div style="max-width:680px">'+
+    '<div style="display:flex;justify-content:flex-end;margin-bottom:1rem"><button class="btn btn-p" onclick="openRecModalForSchool(\''+esc(s.ID)+'\')">+ Nueva recepción</button></div>'+
+    (lista.length ? lista.map(recItemMini).join('') : '<div class="es"><div class="ei">📥</div><div class="et">Sin recepciones registradas</div></div>')+
+  '</div>';
 }
 
 function tabVis(s,vs){
@@ -3649,11 +3748,25 @@ function openRecModalForSchool(schoolId){
   }, 200);
 }
 
-function onRecPeriodoChange(){
-  var sel = el('rm-periodo');
-  if(sel && sel.value) {
-    ST.sharedPeriodo = sel.value;
-  }
+// Opciones de "Motivo / Trámite". "Otro" siempre va al final y habilita
+// el campo de texto libre.
+var REC_MOTIVOS = [
+  'Presentación documentación',
+  'Reorganización con funcionamiento',
+  'Reorganización sin funcionamiento',
+  'Creación de cooperadora',
+  'Presentación de Acta convocatoria y cierre de abril',
+  'Otro'
+];
+// Arma el desplegable. Si se está editando una recepción vieja cuyo
+// motivo ya no está en la lista (ej. "Consulta"), se agrega solo para
+// esa edición, así no se pierde ni se cambia sin querer.
+function fillMotivoSelect(actual){
+  var sel = el('rm-motivo'); if(!sel) return;
+  var lista = REC_MOTIVOS.slice();
+  if(actual && lista.indexOf(actual) < 0) lista.splice(lista.length-1, 0, actual);
+  sel.innerHTML = lista.map(function(m){ return '<option value="'+esc(m)+'">'+esc(m)+'</option>'; }).join('');
+  sel.value = actual && lista.indexOf(actual) >= 0 ? actual : REC_MOTIVOS[0];
 }
 
 function openRecModal(){
@@ -3663,11 +3776,8 @@ function openRecModal(){
   el('rm-save-btn').textContent = '💾 Guardar recepción';
   var hoy = new Date(); var m=hoy.getMonth()+1, d=hoy.getDate();
   el('rm-fecha').value = hoy.getFullYear()+'-'+(m<10?'0':'')+m+'-'+(d<10?'0':'')+d;
-  var perSel = el('rm-periodo');
-  perSel.innerHTML = buildPeriodOpts(ST.sharedPeriodo || periodoActual(), true);
-  perSel.value = ST.sharedPeriodo || periodoActual();
   el('rm-obs').value = '';
-  el('rm-motivo').value = 'Presentación documentación';
+  fillMotivoSelect('');
   el('rm-otro-desc').value = '';
   el('rm-otro-row').style.display = 'none';
   el('rm-alerta').checked = false;
@@ -3697,17 +3807,9 @@ function openRecEdit(id){
   var clr = el('rm-ac-clear'); if(clr) clr.classList.add('show');
 
   // Fill fields
-  el('rm-fecha').value = r.fecha || '';
-  var perSel = el('rm-periodo');
-  perSel.innerHTML = buildPeriodOpts(r.periodo || periodoActual(), true);
-  perSel.value = r.periodo || periodoActual();
+  el('rm-fecha').value = normalizeDate(r.fecha) || '';
   el('rm-obs').value = r.obs || '';
-  var motivoSel = el('rm-motivo');
-  // Set motivo — add option if not in list
-  var found = false;
-  for(var i=0;i<motivoSel.options.length;i++){ if(motivoSel.options[i].value===r.motivo){ found=true; break; } }
-  if(!found && r.motivo){ var opt=document.createElement('option'); opt.value=r.motivo; opt.textContent=r.motivo; motivoSel.appendChild(opt); }
-  motivoSel.value = r.motivo || 'Presentación documentación';
+  fillMotivoSelect(r.motivo || '');
   el('rm-otro-desc').value = r.otroDesc || '';
   toggleOtroDesc();
   el('rm-alerta').checked = !!r.alerta;
@@ -3732,7 +3834,9 @@ function toggleOtroDesc(){
 }
 function toggleReorgRow(){
   var m = el('rm-motivo').value;
-  var isReorg = m === 'Solicitud de reorganización' || m === 'Inicio de reorganización';
+  // Aplica a los dos motivos de reorganización (con / sin funcionamiento)
+  // y también a los viejos "Solicitud/Inicio de reorganización".
+  var isReorg = m.toLowerCase().indexOf('reorganiz') >= 0;
   el('rm-reorg-row').style.display = isReorg ? '' : 'none';
   if(!isReorg) el('rm-reorg-fecha').value = '';
 }
@@ -3742,10 +3846,25 @@ function onRmSchoolChange(){
   if(!id){ el('rm-school-info').innerHTML='Seleccioná una escuela'; el('rm-missing-info').style.display='none'; return; }
   var s = gS(id); if(!s) return;
   var e2 = etiq(s);
+  // Últimas recepciones de esta escuela (las 3 más recientes), sin contar
+  // la que se está editando en este momento.
+  var editId0 = el('rm-edit-id').value;
+  var ultimas = recDeEscuela(id).filter(function(r){ return r.id!==editId0; }).slice(0,3);
+  var ultHtml = ultimas.length
+    ? '<div style="margin-top:.6rem;padding-top:.5rem;border-top:1px solid var(--border);font-size:.76rem">'+
+        '<div style="font-weight:700;color:var(--navy);margin-bottom:.25rem">📥 Últimas recepciones</div>'+
+        ultimas.map(function(r){
+          var iso = normalizeDate(r.fecha||'');
+          var fch = iso.length>=10 ? iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4) : '—';
+          var mot = r.motivo==='Otro' && r.otroDesc ? 'Otro: '+r.otroDesc : (r.motivo||'—');
+          return '<div>• <strong>'+esc(fch)+'</strong> — '+esc(mot)+(r.alerta?' ⚠️':'')+'</div>';
+        }).join('')+
+      '</div>'
+    : '<div style="margin-top:.5rem;font-size:.76rem;color:var(--muted)">Todavía no tiene recepciones registradas.</div>';
   el('rm-school-info').innerHTML =
     '<strong>'+esc(s.NOMBRE)+'</strong><br>'+
     '<span style="font-size:.78rem;color:var(--muted)">'+esc(s.LOCALIDAD||'—')+' · '+esc(s.NUMERO||'—')+'</span>&nbsp;'+
-    '<span class="tag '+e2.c+'">'+e2.i+' '+e2.l+'</span>';
+    '<span class="tag '+e2.c+'">'+e2.i+' '+e2.l+'</span>'+ultHtml;
   var missing = [];
   if(!s.ASESORA_NOMBRE) missing.push('Nombre del asesor/a');
   if(!s.ASESORA_CONTACTO) missing.push('Contacto del asesor/a');
@@ -3763,69 +3882,98 @@ function onRmSchoolChange(){
 }
 
 var _savingRec = false;
+// Texto de la visita que se genera en la escuela a partir de una recepción
+function recVisitaTexto(entry){
+  var motivo = entry.motivo === 'Otro' && entry.otroDesc ? 'Otro: ' + entry.otroDesc : entry.motivo;
+  var motivoTexto = motivo + (entry.obs ? ' – ' + entry.obs : '');
+  return '📥 [Recepción] ' + motivoTexto + (entry.alerta ? ' ⚠️ ' + (entry.alertaDesc||'Requiere seguimiento') : '');
+}
 async function saveRecepcion(){
-  if(_savingRec) return; // prevent double-click
+  if(_savingRec) return; // evita doble click
   var sid = el('rm-school').value;
   if(!sid){ toast('⚠ Seleccioná una escuela'); return; }
   var s = gS(sid); if(!s) return;
+  var motivo = el('rm-motivo').value;
+  var otroDesc = motivo==='Otro' ? (el('rm-otro-desc').value||'').trim() : '';
+  if(motivo==='Otro' && !otroDesc){ toast('⚠ Escribí cuál es el motivo'); el('rm-otro-desc').focus(); return; }
+
   _savingRec = true;
   var btn = el('rm-save-btn'); if(btn){ btn.disabled=true; btn.textContent='Guardando...'; }
-
   var editId = el('rm-edit-id').value;
-  var rec = getRec();
   var isEdit = !!editId;
+  var syncOk = true;
+  try{
+    var rec = getRec();
+    var previo = isEdit ? rec.find(function(r){ return r.id === editId; }) : null;
+    var entry = {
+      id: isEdit ? editId : gid(),
+      schoolId: sid, schoolNombre: s.NOMBRE, schoolNumero: s.NUMERO,
+      schoolLocalidad: s.LOCALIDAD,
+      fecha: el('rm-fecha').value||new Date().toISOString().slice(0,10),
+      // El período lectivo ya no se pide en el formulario. Si se edita
+      // una recepción vieja se le conserva el que tenía.
+      periodo: previo ? (previo.periodo||'') : '',
+      motivo: motivo,
+      otroDesc: otroDesc,
+      obs: el('rm-obs').value.trim(), alerta: el('rm-alerta').checked,
+      alertaDesc: el('rm-alerta-desc').value.trim(),
+      reorgFecha: el('rm-reorg-fecha').value || '',
+      etiq: etiq(s).l
+    };
 
-  var entry = {
-    id: isEdit ? editId : gid(),
-    schoolId: sid, schoolNombre: s.NOMBRE, schoolNumero: s.NUMERO,
-    schoolLocalidad: s.LOCALIDAD,
-    fecha: el('rm-fecha').value||new Date().toISOString().slice(0,10),
-    periodo: el('rm-periodo').value,
-    motivo: el('rm-motivo').value,
-    otroDesc: el('rm-motivo').value==='Otro' ? (el('rm-otro-desc').value||'').trim() : '',
-    obs: el('rm-obs').value.trim(), alerta: el('rm-alerta').checked,
-    alertaDesc: el('rm-alerta-desc').value.trim(),
-    reorgFecha: el('rm-reorg-fecha').value || '',
-    etiq: etiq(s).l
-  };
+    if(isEdit){
+      var idx = rec.findIndex(function(r){ return r.id === editId; });
+      if(idx>=0) rec[idx] = entry; else rec.unshift(entry);
+    } else {
+      rec.unshift(entry);
+    }
+    saveRec(rec);
 
-  if(isEdit){
-    // Replace existing entry
-    var idx = rec.findIndex(function(r){ return r.id === editId; });
-    if(idx>=0) rec[idx] = entry; else rec.unshift(entry);
-  } else {
-    rec.unshift(entry);
+    if(ST.gasUrl){
+      try{
+        var rr = await gasReq({action:'saveRecepcion',data:entry});
+        if(rr && rr.ok === false) syncOk = false;
+      }catch(e){ syncOk = false; console.warn('GAS rec:',e); }
+      // Si no llegó a la planilla, queda marcada para reenviarse sola en
+      // la próxima carga (en vez de perderse en silencio).
+      if(!syncOk){ entry._pendiente = true; saveRec(rec); }
+    }
+
+    // Visita vinculada en la ficha de la escuela. Se marca con recId para
+    // poder actualizarla al editar y borrarla al eliminar la recepción.
+    try{
+      var vs = pj(s.VISITAS, []);
+      var vi = vs.findIndex(function(v){ return v.recId === entry.id; });
+      if(vi >= 0){
+        vs[vi].fecha = entry.fecha;
+        vs[vi].descripcion = recVisitaTexto(entry);
+      } else if(!isEdit){
+        vs.push({
+          fecha: entry.fecha, tipo: 'Presencial Consejo Escolar',
+          responsable: ST.user ? ST.user.name : '',
+          descripcion: recVisitaTexto(entry),
+          proxAccion: '', fechaSeguimiento: '', fromRecepcion: true, recId: entry.id
+        });
+      }
+      s.VISITAS = JSON.stringify(vs);
+      await saveSchoolR(s);
+    }catch(e){ console.warn('Visita desde recepción:', e); }
+
+    closeMov('rm-ov');
+    renderRecepcion(); renderRecStats();
+    // Si se cargó desde la ficha de la escuela, se actualiza ahí mismo
+    if(ST.detId === sid) renderDetail(sid, null);
+    if(syncOk) toast(isEdit ? '✅ Recepción actualizada – '+s.NOMBRE : '✅ Recepción registrada – '+s.NOMBRE);
+    else toast('⚠ Se guardó en este equipo pero NO se pudo enviar a Google Sheets. Revisá la conexión.');
+  }catch(err){
+    console.error('saveRecepcion:', err);
+    toast('⚠ No se pudo guardar la recepción: ' + (err && err.message ? err.message : 'error inesperado'));
+  }finally{
+    // Siempre se libera el botón, pase lo que pase — antes, un error a
+    // mitad de camino lo dejaba trabado y "Guardar" dejaba de responder.
+    _savingRec = false;
+    if(btn){ btn.disabled=false; btn.textContent = isEdit ? '💾 Guardar cambios' : '💾 Guardar recepción'; }
   }
-  saveRec(rec);
-
-  if(ST.gasUrl){ try{ await gasReq({action:'saveRecepcion',data:entry}); }catch(e){ console.warn('GAS rec:',e); } }
-
-  // Save as visit in school (only for new, not edits — to avoid duplicates)
-  if(!isEdit){
-    var vs = pj(s.VISITAS, []);
-    var motivoTexto = entry.motivo + (entry.obs ? ' – ' + entry.obs : '');
-    vs.push({
-      fecha: entry.fecha, tipo: 'Presencial Consejo Escolar',
-      responsable: ST.user ? ST.user.name : '',
-      descripcion: '📥 [Recepción] ' + motivoTexto + (entry.alerta ? ' ⚠️ ' + (entry.alertaDesc||'Requiere seguimiento') : ''),
-      proxAccion: '', fechaSeguimiento: '', fromRecepcion: true
-    });
-    s.VISITAS = JSON.stringify(vs);
-    try { await saveSchoolR(s); } catch(e) { console.warn('Visita desde recepción:', e); }
-  }
-
-  if(entry.periodo) ST.sharedPeriodo = entry.periodo;
-
-  closeMov('rm-ov');
-  renderRecepcion(); renderRecStats(); fillRecPerFilter();
-  var recFil = el('rec-filter-per');
-  if(recFil && entry.periodo){
-    var opt = recFil.querySelector('option[value="'+entry.periodo+'"]');
-    if(opt){ recFil.value = entry.periodo; renderRecepcion(); }
-  }
-  toast(isEdit ? '✅ Recepción actualizada – '+esc(s.NOMBRE) : '✅ Recepción registrada – '+esc(s.NOMBRE));
-  _savingRec = false;
-  if(btn){ btn.disabled=false; btn.textContent = isEdit ? '💾 Guardar cambios' : '💾 Guardar recepción'; }
 }
 
 function normalizeDate(ds){
@@ -3868,12 +4016,26 @@ function formatFecha(ds){
 
 async function deleteRecepcion(id){
   if(!confirm('¿Eliminar este registro?')) return;
+  var r0 = getRec().find(function(r){ return r.id===id; });
   saveRec(getRec().filter(function(r){ return r.id!==id; }));
   if(ST.gasUrl){
     try{ await gasReq({action:'deleteRecepcion', id:id}); }
-    catch(e){ console.warn('GAS deleteRec:', e); }
+    catch(e){ console.warn('GAS deleteRec:', e); toast('⚠ Se borró acá pero no en Google Sheets. Revisá la conexión.'); }
   }
-  renderRecepcion(); renderRecStats(); fillRecPerFilter();
+  // Se saca también la visita que esa recepción había generado en la escuela
+  if(r0){
+    var s = gS(r0.schoolId);
+    if(s){
+      var vs = pj(s.VISITAS, []);
+      var nv = vs.filter(function(v){ return v.recId !== id; });
+      if(nv.length !== vs.length){
+        s.VISITAS = JSON.stringify(nv);
+        try{ await saveSchoolR(s); }catch(e){ console.warn('Visita de recepción:', e); }
+      }
+    }
+  }
+  renderRecepcion(); renderRecStats();
+  if(r0 && ST.detId === r0.schoolId) renderDetail(r0.schoolId, null);
   toast('🗑 Recepción eliminada');
 }
 
@@ -4106,9 +4268,10 @@ function genInformeEscuela(id){
   // ── Sección: Recepciones ─────────────────────────────────
   var secRec = rec.length
     ? '<div class="section"><div class="sec-title">Recepciones en el Consejo Escolar ('+rec.length+')</div>'+
-      '<table><thead><tr><th>Fecha</th><th>Motivo</th><th>Observaciones</th><th>Período</th><th>Alerta</th></tr></thead><tbody>'+
+      '<table><thead><tr><th>Fecha</th><th>Motivo</th><th>Observaciones</th><th>Alerta</th></tr></thead><tbody>'+
       [].concat(rec).sort(function(a,b){return (b.fecha||'').localeCompare(a.fecha||'');}).map(function(r){
-        return '<tr><td>'+fd(r.fecha)+'</td><td>'+esc2(r.motivo||'—')+'</td><td>'+esc2(r.obs||'')+(r.reorgFecha?'<br><em>🔄 Reorg: '+fd(r.reorgFecha)+'</em>':'')+'</td><td style="white-space:nowrap">'+esc2(pLabel(r.periodo))+'</td><td>'+(r.alerta?'⚠️ '+esc2(r.alertaDesc||'Sí'):'')+'</td></tr>';
+        var mot = r.motivo==='Otro' && r.otroDesc ? 'Otro: '+r.otroDesc : (r.motivo||'—');
+        return '<tr><td>'+fd(r.fecha)+'</td><td>'+esc2(mot)+'</td><td>'+esc2(r.obs||'')+(r.reorgFecha?'<br><em>🔄 Reorg: '+fd(r.reorgFecha)+'</em>':'')+'</td><td>'+(r.alerta?'⚠️ '+esc2(r.alertaDesc||'Sí'):'')+'</td></tr>';
       }).join('')+'</tbody></table></div>'
     : '<div class="section"><div class="sec-title">Recepciones</div><p class="empty">Sin recepciones registradas.</p></div>';
 
