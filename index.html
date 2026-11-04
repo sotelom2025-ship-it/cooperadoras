@@ -1520,12 +1520,12 @@ function goTo(name){
 // ════════════════════════════════════════════════════════════
 // LOAD DATA
 // ════════════════════════════════════════════════════════════
-async function loadData(){
+async function loadData(fresh){
   var bn=el('conn-banner');if(bn)bn.style.display='none';
   ST.coords=JSON.parse(JSON.stringify(DEF_COORDS));
   if(!ST.gasUrl)return;
   try{
-    var r=await gasReq({action:'getAll'});
+    var r=await gasReq(fresh?{action:'getAll',fresh:true}:{action:'getAll'});
     if(!r||!r.ok)throw new Error(r&&r.error?r.error:'Error desconocido');
 
     // ── Período actual (ver CAMBIOS v14 del backend) ──
@@ -1774,7 +1774,7 @@ async function loadData(){
       // Migración única: las recepciones que quedaron solo en este
       // navegador (guardados que antes fallaban sin avisar) se reenvían.
       var migKey = 'coop_rec_migrado_v17_'+(ST.user?String(ST.user.u).toLowerCase():''), yaMigrado = false;
-      try{ yaMigrado = localStorage.getItem(migKey) === '1'; }catch(e){}
+      try{ yaMigrado = localStorage.getItem(migKey) === '1' || localStorage.getItem('coop_rec_migrado_v16') === '1'; }catch(e){}
       var porReenviar = [];
       getRec().forEach(function(l){
         if(idsSheet[l.id]) return;                       // ya está en la planilla
@@ -2191,7 +2191,7 @@ async function refreshApp(){
   var btn = document.querySelector('[onclick="refreshApp()"]');
   if(btn){ btn.textContent='⏳'; btn.disabled=true; }
   try{
-    await loadData();
+    await loadData(true);
     if(!ST.schools.length) loadSample();
     fillSelects();
     renderSchools();
@@ -3993,6 +3993,23 @@ function recVisitaTexto(entry){
   var motivoTexto = motivo + (entry.obs ? ' – ' + entry.obs : '');
   return (entry.origen==='CTE' ? '📥 [Recepción CTE'+(entry.cargadoPor?': '+entry.cargadoPor:'')+'] ' : '📥 [Recepción] ') + motivoTexto + (entry.alerta ? ' ⚠️ ' + (entry.alertaDesc||'Requiere seguimiento') : '');
 }
+async function enviarRecepcionEnSegundoPlano(entry, s, isEdit, nombreEsc){
+  var ok = true;
+  try{
+    var rr = await gasReq({action:'saveRecepcion',data:entry});
+    if(rr && rr.ok === false) ok = false;
+  }catch(e){ ok = false; console.warn('GAS rec:',e); }
+  if(!ok){
+    // Queda marcada para reenviarse sola en la próxima carga
+    try{
+      var lista = getRec(), ix = lista.findIndex(function(r){ return r.id === entry.id; });
+      if(ix>=0){ lista[ix]._pendiente = true; saveRec(lista); }
+    }catch(e){}
+  }
+  try{ await saveSchoolR(s); }catch(e){ console.warn('Visita desde recepción:', e); }
+  if(ok) toast(isEdit ? '✅ Recepción actualizada – '+nombreEsc : '✅ Recepción registrada – '+nombreEsc);
+  else toast('⚠ Se guardó en este equipo pero NO se pudo enviar a Google Sheets. Revisá la conexión.');
+}
 async function saveRecepcion(){
   if(_savingRec) return; // evita doble click
   var sid = el('rm-school').value;
@@ -4037,16 +4054,6 @@ async function saveRecepcion(){
     }
     saveRec(rec);
 
-    if(ST.gasUrl){
-      try{
-        var rr = await gasReq({action:'saveRecepcion',data:entry});
-        if(rr && rr.ok === false) syncOk = false;
-      }catch(e){ syncOk = false; console.warn('GAS rec:',e); }
-      // Si no llegó a la planilla, queda marcada para reenviarse sola en
-      // la próxima carga (en vez de perderse en silencio).
-      if(!syncOk){ entry._pendiente = true; saveRec(rec); }
-    }
-
     // Visita vinculada en la ficha de la escuela. Se marca con recId para
     // poder actualizarla al editar y borrarla al eliminar la recepción.
     try{
@@ -4064,15 +4071,22 @@ async function saveRecepcion(){
         });
       }
       s.VISITAS = JSON.stringify(vs);
-      await saveSchoolR(s);
     }catch(e){ console.warn('Visita desde recepción:', e); }
 
+    // La pantalla se actualiza AL INSTANTE; el envío a Google Sheets sigue
+    // en segundo plano (antes había que esperar los dos viajes al servidor
+    // con la ventana abierta). Si el envío falla, queda marcada como
+    // pendiente y se reenvía sola en la próxima carga.
     closeMov('rm-ov');
     renderRecepcion(); renderRecStats();
-    // Si se cargó desde la ficha de la escuela, se actualiza ahí mismo
     if(ST.detId === sid) renderDetail(sid, null);
-    if(syncOk) toast(isEdit ? '✅ Recepción actualizada – '+s.NOMBRE : '✅ Recepción registrada – '+s.NOMBRE);
-    else toast('⚠ Se guardó en este equipo pero NO se pudo enviar a Google Sheets. Revisá la conexión.');
+    var nombreEsc = s.NOMBRE;
+    if(ST.gasUrl){
+      toast('⏳ Guardado. Enviando a Google Sheets…');
+      enviarRecepcionEnSegundoPlano(entry, s, isEdit, nombreEsc);
+    } else {
+      toast(isEdit ? '✅ Recepción actualizada – '+nombreEsc : '✅ Recepción registrada – '+nombreEsc);
+    }
   }catch(err){
     console.error('saveRecepcion:', err);
     toast('⚠ No se pudo guardar la recepción: ' + (err && err.message ? err.message : 'error inesperado'));
