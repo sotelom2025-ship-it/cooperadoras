@@ -1280,7 +1280,29 @@ function showScreen(name){
 // ════════════════════════════════════════════════════════════
 // GAS
 // ════════════════════════════════════════════════════════════
-function loadUrl(){try{return localStorage.getItem(GAS_KEY)||''}catch(e){return ''}}
+// ── URL del servidor (Google Apps Script) ──────────────────────
+// Para cambiarla, editá SOLO esta línea y subí el archivo. Cuando cambia,
+// todos los usuarios pasan a la nueva URL solos al recargar la página
+// (se descarta la que tenían guardada). "Reconfigurar conexión" en la
+// pantalla de ingreso sigue sirviendo como salida de emergencia.
+var DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwAavVD89uIzEJ5wWGmYAC6T-lznUvTI8u5aPa3Iyae4DHFQfIY9kzBwMaI2tH58MKj/exec';
+var GAS_DEFAULT_KEY = 'coop_gas_default';
+function loadUrl(){
+  try{
+    if(DEFAULT_GAS_URL){
+      var guardada = localStorage.getItem(GAS_KEY)||'';
+      var baseGuardada = localStorage.getItem(GAS_DEFAULT_KEY)||'';
+      // Sin URL guardada, o la URL por defecto cambió desde la última vez: se usa la nueva
+      if(!guardada || baseGuardada !== DEFAULT_GAS_URL){
+        localStorage.setItem(GAS_KEY, DEFAULT_GAS_URL);
+        localStorage.setItem(GAS_DEFAULT_KEY, DEFAULT_GAS_URL);
+        return DEFAULT_GAS_URL;
+      }
+      return guardada;
+    }
+    return localStorage.getItem(GAS_KEY)||'';
+  }catch(e){ return DEFAULT_GAS_URL||''; }
+}
 function saveUrl(u){try{localStorage.setItem(GAS_KEY,u)}catch(e){}}
 function loadSubcomandos(){try{var raw=localStorage.getItem('coop_subcomandos');var v=raw?JSON.parse(raw):[];return Array.isArray(v)?v:[]}catch(e){return []}}
 function saveSubcomandosLocal(list){try{localStorage.setItem('coop_subcomandos',JSON.stringify(list))}catch(e){}}
