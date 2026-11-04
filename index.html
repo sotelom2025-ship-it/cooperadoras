@@ -245,9 +245,9 @@ body.dark #toast{background:#E8EEFF;color:#0C1220}
 
 /* ── TABS ── */
 .tabs{display:flex;border-bottom:1.5px solid var(--border);margin-bottom:1.5rem;overflow-x:auto}
-.tab{padding:.6rem 1.125rem;font-size:.8rem;font-weight:600;color:var(--muted);border-bottom:2.5px solid transparent;margin-bottom:-1.5px;white-space:nowrap;transition:color .15s,border-color .15s;cursor:pointer;border:none;background:none}
+.tab{padding:.6rem 1.125rem;font-size:.8rem;font-weight:600;color:var(--muted);border:none;border-bottom:3px solid transparent;margin-bottom:-1.5px;white-space:nowrap;transition:color .15s,border-color .15s,background .15s;cursor:pointer;background:none;border-radius:8px 8px 0 0}
 .tab:hover{color:var(--navy)}
-.tab.on{color:var(--navy);border-bottom-color:var(--navy)}
+.tab.on{color:var(--navy);font-weight:800;border-bottom-color:var(--navy);background:var(--navy3)}
 
 /* ── FORMS ── */
 .fg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:.875rem 1.125rem}
@@ -319,6 +319,15 @@ body.dark #toast{background:#E8EEFF;color:#0C1220}
 .lpill.on{background:var(--navy);border-color:var(--navy);color:#fff}
 
 /* ── USERS ── */
+.tag.tcte{background:#e6f4ea;color:#1b6b3a;border:1px solid #b9dfc6}
+.cte-banner{background:var(--navy3);color:var(--navy);border-radius:8px;padding:.55rem .8rem;font-size:.78rem;margin-bottom:.9rem;max-width:680px}
+.ro-cte .fi,.ro-cte .fs,.ro-cte textarea,.ro-cte select,.ro-cte input,.ro-cte .tg-o{pointer-events:none;opacity:.85}
+.ro-cte .tg-o.cte-edit{pointer-events:auto;opacity:1;cursor:pointer;box-shadow:0 0 0 2px var(--navy3)}
+.ro-cte button[onclick^="openPM"],.ro-cte button[onclick^="delP"],.ro-cte button[onclick^="openCM"],.ro-cte button[onclick^="saveCom"],.ro-cte button[onclick^="openSubMgmt"],.rol-cte #nuevo-periodo-wrap{display:none!important}
+.rol-cte [onclick^="openEditPeriodo"],.rol-cte [onclick^="deleteSchool"],.rol-cte [onclick^="openSM("]{display:none!important}
+.um-subs{display:flex;flex-direction:column;gap:.15rem;max-height:210px;overflow:auto;border:1px solid var(--border);border-radius:8px;padding:.4rem .6rem}
+.um-sub-opt{display:flex;align-items:center;gap:.5rem;font-size:.85rem;padding:.25rem 0;cursor:pointer}
+.um-sub-opt small{color:var(--muted);margin-left:auto;font-size:.7rem}
 .urow{display:flex;align-items:center;gap:.875rem;padding:.875rem 0;border-bottom:1px solid var(--border)}
 .urow:last-child{border-bottom:none}
 .uav{width:36px;height:36px;border-radius:50%;background:var(--navy3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;color:var(--navy);flex-shrink:0}
@@ -697,7 +706,7 @@ body:has(.moverlay.open) .fab-back{display:none!important}
       <div id="list-view">
         <div class="ph">
           <div><div class="ph-ttl">Escuelas</div><div class="ph-sub" id="sc-count">Cargando...</div></div>
-          <button class="btn btn-s" onclick="refreshApp()" title="Actualizar datos" style="margin-right:.5rem">🔄</button><button class="btn btn-p" onclick="openSM()">+ Nueva escuela</button>
+          <button class="btn btn-s" onclick="refreshApp()" title="Actualizar datos" style="margin-right:.5rem">🔄</button><button class="btn btn-s" id="btn-mi-pass" onclick="openPassModal()" title="Cambiar mi contraseña" style="margin-right:.5rem;display:none">🔑</button><button class="btn btn-p" id="btn-nueva-escuela" onclick="openSM()">+ Nueva escuela</button>
         </div>
         <div class="stats" id="sc-stats"></div>
         <div class="search-row">
@@ -849,6 +858,11 @@ body:has(.moverlay.open) .fab-back{display:none!important}
           <option value="">Todas</option>
           <option value="alerta">⚠️ Solo alertas</option>
           <option value="ok">✅ Sin alertas</option>
+        </select>
+        <select class="fsel" id="rec-filter-origen" onchange="renderRecepcion()" style="min-width:130px;flex:0 0 auto">
+          <option value="">Todo origen</option>
+          <option value="CTE">🧭 Solo CTE</option>
+          <option value="CONSEJO">🏛 Solo Consejo</option>
         </select>
       </div>
       <!-- Hidden element kept for JS compatibility -->
@@ -1049,10 +1063,23 @@ body:has(.moverlay.open) .fab-back{display:none!important}
   <div class="mbody"><div class="fg">
     <div class="ff c2"><label class="fl">Nombre completo</label><input class="fi" id="um-name" placeholder="Ej: Juan Pérez"></div>
     <div class="ff"><label class="fl">Usuario</label><input class="fi" id="um-user" placeholder="Ej: juan"></div>
-    <div class="ff"><label class="fl">Rol</label><select class="fs" id="um-role"><option value="user">👤 Usuario</option><option value="admin">👑 Administrador</option></select></div>
-    <div class="ff c2"><label class="fl">Contraseña</label><input class="fi" type="password" id="um-pass" placeholder="Contraseña"></div>
+    <div class="ff"><label class="fl">Rol</label><select class="fs" id="um-role" onchange="onUmRoleChange()"><option value="user">👤 Usuario (Consejo)</option><option value="cte">🧭 CTE</option><option value="admin">👑 Administrador</option></select></div>
+    <div class="ff c2"><label class="fl">Contraseña</label><input class="fi" type="password" id="um-pass" placeholder="Contraseña" autocomplete="new-password"></div>
+    <div class="ff c2" id="um-subs-wrap" style="display:none"><label class="fl">Subcomandos que puede ver</label><div id="um-subs" class="um-subs"></div><div style="font-size:.7rem;color:var(--muted);margin-top:.35rem">Solo va a ver las escuelas de los subcomandos marcados.</div></div>
   </div></div>
   <div class="mfoot"><button class="btn btn-s" onclick="closeMov('um-ov')">Cancelar</button><button class="btn btn-p" onclick="saveUserModal()">Guardar</button></div>
+</div></div>
+
+<!-- MODAL MI CONTRASEÑA -->
+<div class="moverlay" id="pw-ov" onclick="closeMov('pw-ov',event)">
+<div class="modal" onclick="void(0)" style="max-width:380px">
+  <div class="mhd"><span class="mttl">🔑 Mi contraseña</span><button class="mcl" onclick="closeMov('pw-ov')">✕</button></div>
+  <div class="mbody"><div class="fg">
+    <div class="ff c2"><label class="fl">Contraseña actual</label><input class="fi" type="password" id="pw-old" autocomplete="current-password"></div>
+    <div class="ff c2"><label class="fl">Contraseña nueva</label><input class="fi" type="password" id="pw-new" placeholder="Mínimo 6 caracteres" autocomplete="new-password"></div>
+    <div class="ff c2"><label class="fl">Repetir contraseña nueva</label><input class="fi" type="password" id="pw-new2" autocomplete="new-password"></div>
+  </div></div>
+  <div class="mfoot"><button class="btn btn-s" onclick="closeMov('pw-ov')">Cancelar</button><button class="btn btn-p" onclick="savePassModal()">Guardar</button></div>
 </div></div>
 
 <div id="toast"></div>
@@ -1062,16 +1089,9 @@ body:has(.moverlay.open) .fab-back{display:none!important}
 // ════════════════════════════════════════════════════════════
 // CONSTANTES
 // ════════════════════════════════════════════════════════════
-var USERS = [
-  {u:'Franco',p:'torales2024',role:'admin',name:'Franco Torales'},
-  {u:'Maggie',p:'sotelo2024',role:'admin',name:'Maggie Sotelo'},
-  {u:'Eze',p:'consejo2024',role:'user',name:'Eze'},
-  {u:'Adrian',p:'Cuello2026',role:'user',name:'Adrian Cuello'},
-  {u:'Gonza',p:'Tula2024',role:'user',name:'Gonza Tula'},
-  {u:'Marti',p:'consejo2026',role:'user',name:'Marti'},
-  {u:'Gael',p:'consejo2025',role:'user',name:'Gael'},
-  {u:'Edu',p:'consejo2',role:'user',name:'Edu'},
-];
+// Usuario del modo demo (sin conexión a Google Sheets). Los usuarios reales viven
+// SOLO en el servidor (hoja USUARIOS, contraseñas cifradas).
+var DEMO_USER = {u:'demo',name:'Demo',role:'admin',subcomandos:[]};
 var LOCS = ['Aldo Bonzi','Ciudad Evita','González Catán','Gregorio de Laferrere','Isidro Casanova','La Tablada','Lomas del Mirador','Manzanares','Ramos Mejía','Rafael Castillo','San Justo','Tapiales','Villa Celina','Villa Luzuriaga','Villa Madero','Virrey del Pino','20 de Junio'];
 var DEF_COORDS = [
   {nombre:'MAGGIE',cordon:'1',localidades:['Villa Luzuriaga','Ramos Mejía','Manzanares'],notas:''},
@@ -1088,7 +1108,7 @@ var GAS_KEY = 'coop_gas_url';
 // ESTADO
 // ════════════════════════════════════════════════════════════
 var ST = {
-  gasUrl:'', user:null,
+  gasUrl:'', user:null, token:'',
   schools:[], users:[], coords:JSON.parse(JSON.stringify(DEF_COORDS)),
   subcomandos:loadSubcomandos(),
   sf:'all', editSId:null,
@@ -1279,7 +1299,9 @@ async function gasReqRaw(payload){
   try{
     var res;
     try{
-      res=await fetch(ST.gasUrl,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain'},body:JSON.stringify(payload)});
+      var enviar=payload;
+      if(ST.token && payload.action!=='login' && payload.action!=='ping'){ enviar=Object.assign({},payload,{token:ST.token}); }
+      res=await fetch(ST.gasUrl,{method:'POST',redirect:'follow',headers:{'Content-Type':'text/plain'},body:JSON.stringify(enviar)});
     }catch(netErr){
       throw friendlyErr(netErr,'📡 No pudimos conectar. Revisá tu conexión a internet e intentá de nuevo en un momento.');
     }
@@ -1289,6 +1311,10 @@ async function gasReqRaw(payload){
       data=JSON.parse(text);
     }catch(parseErr){
       throw friendlyErr(parseErr,'😅 Uy, algo salió mal del otro lado. Probá de nuevo en un ratito.');
+    }
+    if(data && !data.ok && data.error==='SESION_INVALIDA'){
+      sesionVencida();
+      throw friendlyErr(data.error,'Tu sesión venció. Ingresá de nuevo.');
     }
     if(data && !data.ok && data.error){
       console.warn('GAS error ['+payload.action+']:', data.error);
@@ -1309,7 +1335,7 @@ async function gasReqRaw(payload){
 var _gasQueue = Promise.resolve();
 function gasReq(payload){
   var a = payload && payload.action;
-  if(a==='getAll'||a==='ping'||a==='getUsers'||a==='getRecepciones') return gasReqRaw(payload);
+  if(a==='getAll'||a==='ping'||a==='listUsers'||a==='getRecepciones'||a==='login') return gasReqRaw(payload);
   var run = _gasQueue.then(function(){ return gasReqRaw(payload); });
   _gasQueue = run.catch(function(){});
   return run;
@@ -1348,62 +1374,113 @@ function skipOB(){ST.gasUrl='';loadSample();showScreen('login')}
 function toggleOtroInput(){var s=el("sm-tip"),i=el("sm-otro");if(s&&i)i.style.display=s.value==="Otro"?"":"none";}
 function togglePw(){var i=el('lg-pass'),b=el('pw-btn');i.type=i.type==='password'?'text':'password';b.textContent=i.type==='password'?'👁':'🙈'}
 
+function esCTE(){ return !!(ST.user && ST.user.role==='cte'); }
+function esAdmin(){ return !!(ST.user && ST.user.role==='admin'); }
+function rolLabel(r){ return r==='admin'?'Administrador':(r==='cte'?'CTE':'Usuario'); }
+
 function finishLogin(found){
   el('lg-err').style.display='none';
   ST.user=found;
+  // Contraseña y datos viejos de versiones anteriores ya no se guardan en el navegador
+  try{ localStorage.removeItem('coop_users'); }catch(e){}
+  migrarRecLegacy();
   var av=el('u-av'),sn=el('u-name'),sr=el('u-role');
   if(av)av.textContent=found.name[0].toUpperCase();
   if(sn)sn.textContent=found.name;
-  if(sr)sr.textContent=found.role==='admin'?'Administrador':'Usuario';
-  var ni=el('ni-users'),bi=el('bi-users');
-  if(found.role==='admin'){if(ni)ni.style.display='';if(bi)bi.style.display='';}
+  if(sr)sr.textContent=rolLabel(found.role);
+  aplicarPermisosUI();
+  goTo('escuelas');
   showScreen('app');
   initApp();
+}
+
+// Muestra/oculta pantallas y botones según el rol
+function aplicarPermisosUI(){
+  var admin=esAdmin(), cte=esCTE();
+  ['ni-users','bi-users'].forEach(function(id){var n=el(id);if(n)n.style.display=admin?'':'none';});
+  var nc=el('ni-coords'); if(nc) nc.style.display=cte?'none':'';
+  var nb=el('btn-nueva-escuela'); if(nb) nb.style.display=cte?'none':'';
+  var pw=el('btn-mi-pass'); if(pw) pw.style.display=(ST.gasUrl&&ST.token)?'':'none';
+  document.body.classList.toggle('rol-cte',cte);
+  var fo=el('rec-filter-origen'); if(fo){ fo.style.display=cte?'none':''; fo.value=''; }
+}
+
+// La sesión del servidor venció (pasaron horas sin uso o se cambió algo del usuario)
+function sesionVencida(){
+  if(!ST.user) return;
+  limpiarSesionLocal();
+  var e=el('lg-err'); if(e){ e.textContent='Tu sesión venció. Ingresá de nuevo.'; e.style.display='block'; }
+  showScreen('login');
+}
+function limpiarSesionLocal(){
+  ST.user=null; ST.token=''; ST.schools=[]; ST.users=[]; ST.detId=null;
+  document.body.classList.remove('rol-cte');
+  ['list-view'].forEach(function(){});
+  var l=el('sc-list'); if(l) l.innerHTML='';
+  var d=el('detail-view'); if(d) d.innerHTML='';
+  var rl=el('rec-list'); if(rl) rl.innerHTML='';
 }
 
 async function doLogin(){
   var u=el('lg-user').value.trim(), p=el('lg-pass').value;
   var errEl=el('lg-err');
   if(!u||!p){errEl.textContent='Usuario o contraseña incorrectos.';errEl.style.display='block';return;}
-
-  // 1. Check local/cached users
-  var found=getUsers().find(function(x){return x.u.toLowerCase()===u.toLowerCase()&&x.p===p;});
-  if(found){finishLogin(found);return;}
-
-  // 2. Reload from Sheets and retry
   errEl.style.display='none';
-  try{
-    await loadUsersFromSheets();
-    found=getUsers().find(function(x){return x.u.toLowerCase()===u.toLowerCase()&&x.p===p;});
-    if(found){finishLogin(found);return;}
 
-    // 3. Last resort: getAll also returns users
-    if(ST.gasUrl){
-      var r=await gasReq({action:'getAll'});
-      if(r&&r.users&&r.users.length){
-        ST.users=r.users;
-        try{localStorage.setItem('coop_users',JSON.stringify(r.users));}catch(e){}
-        found=r.users.find(function(x){return x.u.toLowerCase()===u.toLowerCase()&&x.p===p;});
-        if(found){finishLogin(found);return;}
-      }
+  // Modo demo (sin conexión a Google Sheets)
+  if(!ST.gasUrl){
+    if(u.toLowerCase()==='demo'&&p==='demo'){ ST.token=''; finishLogin(Object.assign({},DEMO_USER)); return; }
+    errEl.textContent='Sin conexión a Google Sheets solo se puede entrar al modo demo (usuario: demo, contraseña: demo).';
+    errEl.style.display='block'; return;
+  }
+  var btn=document.querySelector('#scr-login .btn-p');
+  if(btn){ btn.disabled=true; }
+  try{
+    var r=await gasReq({action:'login',username:u,password:p});
+    if(r&&r.ok&&r.token&&r.user){
+      ST.token=r.token;
+      el('lg-pass').value='';
+      finishLogin(r.user);
+      return;
     }
+    errEl.textContent='Usuario o contraseña incorrectos.';
+    errEl.style.display='block';
   }catch(e){
     console.error('Login error:',e);
-    errEl.textContent=e.friendly||'No pudimos verificar tus datos. Probá de nuevo en un momento.';
+    var m=(e&&e.friendly)||'No pudimos verificar tus datos. Probá de nuevo en un momento.';
+    if(/no reconocida/i.test(m)) m='El servidor todavía tiene la versión anterior. Publicá el código nuevo (codigo_v17.gs) como "Nueva versión" en Apps Script.';
+    errEl.textContent=m;
     errEl.style.display='block';
-    return;
+  }finally{
+    if(btn){ btn.disabled=false; }
   }
-
-  errEl.textContent='Usuario o contraseña incorrectos.';
-  errEl.style.display='block';
 }
 
 function doLogout(){
   if(!confirm('¿Cerrar sesión?'))return;
-  ST.user=null;
+  var tk=ST.token;
+  if(ST.gasUrl&&tk){ gasReq({action:'logout',token:tk}).catch(function(){}); }
+  limpiarSesionLocal();
   el('lg-user').value='';el('lg-pass').value='';
   el('lg-err').style.display='none';
   showScreen('login');
+}
+
+// ── Mi contraseña ──
+function openPassModal(){
+  ['pw-old','pw-new','pw-new2'].forEach(function(i){el(i).value='';});
+  openMov('pw-ov');
+}
+async function savePassModal(){
+  var o=el('pw-old').value, n=el('pw-new').value, n2=el('pw-new2').value;
+  if(!o||!n){toast('⚠ Completá los campos');return;}
+  if(n.length<6){toast('⚠ La contraseña nueva debe tener al menos 6 caracteres');return;}
+  if(n!==n2){toast('⚠ Las contraseñas nuevas no coinciden');return;}
+  try{
+    await gasReq({action:'changePassword',oldPassword:o,newPassword:n});
+    closeMov('pw-ov');
+    toast('✅ Contraseña actualizada');
+  }catch(e){ toast('⚠ '+(e.friendly||e.message||'No se pudo cambiar la contraseña')); }
 }
 
 // Key listeners added in window.load handler above
@@ -1580,12 +1657,6 @@ async function loadData(){
 
     ST.schools=Object.keys(schoolsMap).map(function(k){return schoolsMap[k];});
 
-    // ── Usuarios ──
-    if(r.users&&r.users.length){
-      ST.users=r.users;
-      // Also update localStorage
-      try{localStorage.setItem('coop_users',JSON.stringify(r.users));}catch(e){}
-    }
 
     // Normalizar campos del Sheet (quitar comillas, normalizar valores)
     ST.schools.forEach(function(s){
@@ -1685,7 +1756,9 @@ async function loadData(){
           alerta:       (row.ALERTA||row.alerta||'') === 'SI' || row.alerta === true,
           alertaDesc:   row.ALERTA_DESC    || row.alertaDesc     || '',
           reorgFecha:   normalizeDate(row.REORG_FECHA || row.reorgFecha || ''),
-          etiq:         row.ETIQ           || row.etiq           || ''
+          etiq:         row.ETIQ           || row.etiq           || '',
+          origen:       row.ORIGEN         || row.origen         || '',
+          cargadoPor:   row.CARGADO_POR    || row.cargadoPor     || ''
         };
       }).filter(function(x){ return x.id; });
 
@@ -1700,7 +1773,7 @@ async function loadData(){
 
       // Migración única: las recepciones que quedaron solo en este
       // navegador (guardados que antes fallaban sin avisar) se reenvían.
-      var migKey = 'coop_rec_migrado_v16', yaMigrado = false;
+      var migKey = 'coop_rec_migrado_v17_'+(ST.user?String(ST.user.u).toLowerCase():''), yaMigrado = false;
       try{ yaMigrado = localStorage.getItem(migKey) === '1'; }catch(e){}
       var porReenviar = [];
       getRec().forEach(function(l){
@@ -2153,11 +2226,14 @@ function renderDetail(id,tab){
   var tabLabels=['📋 General','🤝 Cooperadora','👤 Comisión','📥 Recepciones ('+recCount+')','📍 Visitas ('+vs.length+')'];
   var tabHtml=tabs.map(function(t,i){return '<button class="tab'+(tab===t?' on':'')+'" data-tab="'+t+'" onclick="renderDetail(\''+id+'\',\''+t+'\')">'+tabLabels[i]+'</button>'}).join('');
   var body='';
-  if(tab==='general')body=recRecientesCard(s)+tabGen(s,coord,cord);
+  if(tab==='general')body=tabGen(s,coord,cord);
   else if(tab==='recepciones')body=tabRecepciones(s);
   else if(tab==='cooperadora')body=tabCoop(s,ps);
   else if(tab==='comision')body=tabCom(s);
   else if(tab==='visitas')body=tabVis(s,vs);
+  if(esCTE() && (tab==='general'||tab==='cooperadora'||tab==='comision')){
+    body='<div class="cte-banner">👁 Vista de solo lectura. Podés cargar <strong>recepciones</strong> y <strong>visitas</strong>, y marcar <strong>🔗 Vinculado con CTE</strong> en Casos especiales.</div><div class="ro-cte">'+body+'</div>';
+  }
   el('detail-view').innerHTML=
     '<button class="back" onclick="backToList()">← Volver a escuelas</button>'+
     '<div class="ph">'+
@@ -2173,7 +2249,7 @@ function renderDetail(id,tab){
       '<div class="det-actions">'+
         '<button class="btn btn-s btn-sm" onclick="genInformeEscuela(\''+esc(id)+'\')">📄 <span class="btn-icon-label">Informe</span></button>'+
         '<button class="btn btn-s btn-sm" onclick="openRecModalForSchool(\''+esc(id)+'\')">📥 <span class="btn-icon-label">Recepción</span></button>'+
-        '<button class="btn btn-s btn-sm" onclick="openSM(\''+esc(id)+'\')">✏️ <span class="btn-icon-label">Editar</span></button>'+
+        (esCTE()?'':'<button class="btn btn-s btn-sm" onclick="openSM(\''+esc(id)+'\')">✏️ <span class="btn-icon-label">Editar</span></button>')+
         (ST.user&&ST.user.role==='admin'?'<button class="btn btn-d btn-sm" onclick="deleteSchool(\''+esc(id)+'\')">🗑</button>':'')+
       '</div>'+
     '</div>'+
@@ -2197,7 +2273,7 @@ function multiHas(v,val){ return multiVals(v).indexOf(val)>=0; }
 // casos especiales de una cooperadora).
 function togRowMulti(lbl,key,s,opts){
   return '<div class="ff" style="margin-bottom:.875rem"><label class="fl">'+lbl+'</label><div class="tgg">'+
-    opts.map(function(o){var v=o[0],l=o[1],cls=o[2]||'';return '<div class="tg-o'+(multiHas(s[key],v)?' on'+(cls?' '+cls:''):'')+'" onclick="toggleFTMulti(\''+s.ID+'\',\''+key+'\',\''+v+'\',this,\''+cls+'\')">'+l+'</div>'}).join('')+
+    opts.map(function(o){var v=o[0],l=o[1],cls=o[2]||'';return '<div class="tg-o'+(v==='vinculado_cte'?' cte-edit':'')+(multiHas(s[key],v)?' on'+(cls?' '+cls:''):'')+'" onclick="toggleFTMulti(\''+s.ID+'\',\''+key+'\',\''+v+'\',this,\''+cls+'\')">'+l+'</div>'}).join('')+
   '</div></div>'
 }
 
@@ -2369,6 +2445,16 @@ function recDeEscuela(id){
   return getRec().filter(function(r){ return r.schoolId===id; })
     .sort(function(a,b){ return (normalizeDate(b.fecha)||'').localeCompare(normalizeDate(a.fecha)||''); });
 }
+function recOrigen(r){ return (r&&r.origen==='CTE')?'CTE':'CONSEJO'; }
+function recOrigenBadge(r){
+  if(recOrigen(r)!=='CTE') return '';
+  return '<span class="tag tcte" title="Cargada por un Coordinador Territorial Educativo">🧭 CTE'+(r.cargadoPor?' · '+esc(r.cargadoPor):'')+'</span>';
+}
+// Un CTE solo modifica/borra las recepciones que cargó él
+function puedeEditarRec(r){
+  if(!esCTE()) return true;
+  return recOrigen(r)==='CTE' && !!r.cargadoPor && r.cargadoPor===ST.user.name;
+}
 function recItemMini(r){
   var iso = normalizeDate(r.fecha||'');
   var fch = iso.length>=10 ? iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4) : '—';
@@ -2379,11 +2465,12 @@ function recItemMini(r){
       '<div class="rec-motivo-row" style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">'+
         '<span style="font-size:.78rem;font-weight:700;color:var(--navy)">'+esc(fch)+'</span>'+
         '<span class="rec-motivo-pill'+(isReorg?' reorg-pill':'')+'">'+esc(motivo)+'</span>'+
+        recOrigenBadge(r)+
         (r.alerta?'<span class="alerta-pill">⚠️ '+esc(r.alertaDesc||'Requiere seguimiento')+'</span>':'')+
-        '<span style="margin-left:auto;display:flex;gap:.35rem">'+
+        (puedeEditarRec(r)?'<span style="margin-left:auto;display:flex;gap:.35rem">'+
           '<button class="btn btn-s btn-xs" onclick="openRecEdit(\''+esc(r.id)+'\')">✏️</button>'+
           '<button class="btn btn-d btn-xs" onclick="deleteRecepcion(\''+esc(r.id)+'\')">🗑</button>'+
-        '</span>'+
+        '</span>':'')+
       '</div>'+
       (r.obs?'<div class="rec-obs-txt" style="margin-top:.4rem">'+esc(r.obs)+'</div>':'')+
       (r.reorgFecha?'<div class="rec-reorg-row" style="margin-top:.3rem">🔄 Comienzo de reorganización: <strong>'+esc(r.reorgFecha.split('-').reverse().join('/'))+'</strong></div>':'')+
@@ -2410,13 +2497,15 @@ function tabRecepciones(s){
   '</div>';
 }
 
+// Un CTE solo toca las visitas que cargó él (el servidor lo vuelve a verificar)
+function visPropia(v){ return !esCTE() || (v.responsable||'')===(ST.user?ST.user.name:'\u0000'); }
 function tabVis(s,vs){
   return '<div style="max-width:680px">'+
     '<div style="display:flex;justify-content:flex-end;margin-bottom:1rem"><button class="btn btn-p" onclick="openVM(\''+s.ID+'\',null)">+ Nueva visita</button></div>'+
     (!vs.length?'<div class="es"><div class="ei">📍</div><div class="et">Sin visitas registradas</div></div>':
       [].concat(vs).reverse().map(function(v,ri){var i=vs.length-1-ri;
         var recBadge = v.fromRecepcion ? '<span class="tag tb" style="font-size:.62rem;padding:.1rem .4rem;margin-left:.35rem">📥 Recepción</span>' : '';
-        return '<div class="vitem"><div class="vhd"><span class="vtipo">'+esc(v.tipo||'Presencial')+'</span>'+recBadge+'<span class="vdate">'+esc(v.fecha||'')+'</span><div style="display:flex;gap:.35rem;margin-left:auto">'+(!v.fromRecepcion?'<button class="btn btn-s btn-xs" onclick="openVM(\''+s.ID+'\','+i+')">✏️</button>':'')+'<button class="btn btn-d btn-xs" onclick="delV(\''+s.ID+'\','+i+')">🗑</button></div></div><div class="vdesc" '+(v.fromRecepcion?'':' onclick="openVM(\''+s.ID+'\','+i+')"')+'>'+esc(v.descripcion||'Sin descripción')+'</div>'+(v.responsable?'<div class="vdate" style="margin-top:.2rem">👤 '+esc(v.responsable)+'</div>':'')+(v.proxAccion?'<div class="vprox">→ '+esc(v.proxAccion)+'</div>':'')+'</div>';
+        return '<div class="vitem"><div class="vhd"><span class="vtipo">'+esc(v.tipo||'Presencial')+'</span>'+recBadge+'<span class="vdate">'+esc(v.fecha||'')+'</span><div style="display:flex;gap:.35rem;margin-left:auto">'+(visPropia(v)?((!v.fromRecepcion?'<button class="btn btn-s btn-xs" onclick="openVM(\''+s.ID+'\','+i+')">✏️</button>':'')+'<button class="btn btn-d btn-xs" onclick="delV(\''+s.ID+'\','+i+')">🗑</button>'):'')+'</div></div><div class="vdesc" '+(v.fromRecepcion||!visPropia(v)?'':' onclick="openVM(\''+s.ID+'\','+i+')"')+'>'+esc(v.descripcion||'Sin descripción')+'</div>'+(v.responsable?'<div class="vdate" style="margin-top:.2rem">👤 '+esc(v.responsable)+'</div>':'')+(v.proxAccion?'<div class="vprox">→ '+esc(v.proxAccion)+'</div>':'')+'</div>';
       }).join(''))+
   '</div>'
 }
@@ -2488,6 +2577,7 @@ function openVM(sid,idx){
   var td=new Date().toISOString().slice(0,10);
   if(idx!==null){var v=pj(gS(sid).VISITAS,[])[idx];el('vm-fecha').value=v.fecha||td;el('vm-tipo').value=v.tipo||'Presencial';el('vm-resp').value=v.responsable||'';el('vm-desc').value=v.descripcion||'';el('vm-prox').value=v.proxAccion||'';el('vm-seg').value=v.fechaSeguimiento||''}
   else{el('vm-fecha').value=td;el('vm-tipo').value='Presencial';el('vm-resp').value=ST.user?ST.user.name:'';['vm-desc','vm-prox','vm-seg'].forEach(function(i){el(i).value=''})}
+  el('vm-resp').disabled=esCTE();
   openMov('vm-ov');
 }
 var _savingVM = false;
@@ -2496,7 +2586,7 @@ async function saveVM(){
   _savingVM = true;
   var s=gS(ST.vCtx.id);if(!s){_savingVM=false;return;}
   var vs=pj(s.VISITAS,[]);
-  var v={fecha:el('vm-fecha').value,tipo:el('vm-tipo').value,responsable:el('vm-resp').value,descripcion:el('vm-desc').value,proxAccion:el('vm-prox').value,fechaSeguimiento:el('vm-seg').value};
+  var v={fecha:el('vm-fecha').value,tipo:el('vm-tipo').value,responsable:(esCTE()&&ST.user?ST.user.name:el('vm-resp').value),descripcion:el('vm-desc').value,proxAccion:el('vm-prox').value,fechaSeguimiento:el('vm-seg').value};
   if(ST.vCtx.idx!==null)vs[ST.vCtx.idx]=v;else vs.push(v);
   s.VISITAS=JSON.stringify(vs);await saveSchoolR(s);closeMov('vm-ov');renderDetail(ST.vCtx.id,'visitas');toast('✅ Visita guardada');
   _savingVM = false;
@@ -3410,49 +3500,6 @@ function genPDFPorSubcomando(){
   toast('📄 Informe por subcomando generado ('+nombres.length+' subcomando'+(nombres.length!==1?'s':'')+')');
 }
 
-function getUsers(){
-  // Priority: 1) ST.users from Sheets, 2) localStorage, 3) hardcoded defaults
-  if(ST.users && ST.users.length) return ST.users;
-  try{var s=localStorage.getItem('coop_users');if(s){var parsed=JSON.parse(s);if(parsed&&parsed.length)return parsed;}}catch(e){}
-  return USERS.map(function(u){return Object.assign({},u)});
-}
-
-async function loadUsersFromSheets(){
-  // Called before login to get fresh user list
-  if(!ST.gasUrl) return;
-  try{
-    // Try dedicated getUsers endpoint first
-    var r = await gasReq({action:'getUsers'});
-    if(r && r.ok && r.users && r.users.length){
-      ST.users = r.users;
-      try{localStorage.setItem('coop_users', JSON.stringify(r.users));}catch(e){}
-      return;
-    }
-    // Fallback: try getAll which also returns users in updated GAS
-    var r2 = await gasReq({action:'getAll'});
-    if(r2 && r2.ok && r2.users && r2.users.length){
-      ST.users = r2.users;
-      try{localStorage.setItem('coop_users', JSON.stringify(r2.users));}catch(e){}
-      // Also load schools while we're at it
-      if(r2.schools && r2.schools.length) ST.schools = r2.schools;
-      return;
-    }
-  }catch(e){
-    console.error('Could not load users:', e);
-    // Fall back to localStorage silently
-  }
-}
-function saveUsers(list){
-  ST.users = list;
-  // Save to localStorage as backup
-  try{localStorage.setItem('coop_users',JSON.stringify(list));}catch(e){}
-  // Save to Google Sheets
-  if(ST.gasUrl){
-    gasReq({action:'saveUsers', users:list}).catch(function(e){
-      console.error('Error saving users to Sheets:', e);
-    });
-  }
-}
 function reconfigSheets(){
   if(!confirm('¿Querés reconfigurar la conexión con Google Sheets?\n\nSe va a limpiar la URL guardada y vas a poder ingresar una nueva.')) return;
   try{ localStorage.removeItem('coop_gas_url'); }catch(e){}
@@ -3483,19 +3530,43 @@ function updateSheetsStatus(){
   }
 }
 
-function renderUsers(){
+// Subcomandos disponibles para asignar: los del catálogo + los que ya usan las escuelas
+function subcomandosDisponibles(){
+  var cuenta={}, nombres={};
+  function norm(x){return String(x||'').replace(/\s+/g,' ').trim();}
+  (ST.subcomandos||[]).forEach(function(n){n=norm(n);if(n){nombres[n.toLowerCase()]=n;if(!(n.toLowerCase() in cuenta))cuenta[n.toLowerCase()]=0;}});
+  (ST.schools||[]).forEach(function(s){var n=norm(s.SUBCOMANDO);if(!n)return;var k=n.toLowerCase();if(!nombres[k])nombres[k]=n;cuenta[k]=(cuenta[k]||0)+1;});
+  return Object.keys(nombres).sort().map(function(k){return {nombre:nombres[k],escuelas:cuenta[k]||0};});
+}
+
+async function cargarUsuarios(){
+  if(!ST.gasUrl||!ST.token){ ST.users=[Object.assign({},ST.user||DEMO_USER)]; return; }
+  try{ var r=await gasReq({action:'listUsers'}); ST.users=(r&&r.users)||[]; }
+  catch(e){ toast('⚠ '+(e.friendly||'No se pudo cargar la lista de usuarios')); }
+}
+
+async function renderUsers(){
   var e=el('users-list');if(!e)return;
-  var list=getUsers();
   updateSheetsStatus();
+  if(!ST.users||!ST.users.length) e.innerHTML='<div style="color:var(--muted);font-size:.85rem">Cargando usuarios…</div>';
+  await cargarUsuarios();
+  var list=ST.users||[];
   e.innerHTML='<div style="display:flex;justify-content:flex-end;margin-bottom:1rem">'+
     '<button class="btn btn-p btn-sm" onclick="openUserModal()">+ Nuevo usuario</button></div>'+
   list.map(function(u,i){
-    var isMe=ST.user&&u.u===ST.user.u;
+    var isMe=ST.user&&u.u.toLowerCase()===ST.user.u.toLowerCase();
+    var rol=u.role==='admin'?'👑 Administrador':(u.role==='cte'?'🧭 CTE':'👤 Usuario');
+    var subs='';
+    if(u.role==='cte'){
+      subs=(u.subcomandos&&u.subcomandos.length)
+        ? '<div style="margin-top:.3rem;display:flex;gap:.25rem;flex-wrap:wrap">'+u.subcomandos.map(function(s){return '<span class="tag tb" style="font-size:.64rem">'+esc(s)+'</span>';}).join('')+'</div>'
+        : '<div style="margin-top:.3rem;font-size:.7rem;color:var(--amber)">⚠ Sin subcomandos asignados: no ve ninguna escuela</div>';
+    }
     return '<div class="urow">'+
       '<div class="uav">'+esc((u.name||u.u)[0].toUpperCase())+'</div>'+
-      '<div style="flex:1">'+
+      '<div style="flex:1;min-width:0">'+
         '<div style="font-weight:600;font-size:.875rem">'+esc(u.name||u.u)+'</div>'+
-        '<div style="font-size:.73rem;color:var(--muted)">@'+esc(u.u)+' · '+(u.role==='admin'?'👑 Administrador':'👤 Usuario')+'</div>'+
+        '<div style="font-size:.73rem;color:var(--muted)">@'+esc(u.u)+' · '+rol+'</div>'+subs+
       '</div>'+
       (isMe?'<span class="tag tg" style="margin-right:.5rem">Tú</span>':'')+
       '<button class="btn btn-s btn-xs" onclick="openUserModal('+i+')" style="margin-right:.375rem">✏️</button>'+
@@ -3505,48 +3576,68 @@ function renderUsers(){
 }
 
 var editUserIdx = -1;
+function renderUmSubs(sel){
+  var box=el('um-subs'); if(!box) return;
+  var disp=subcomandosDisponibles();
+  var marcados={}; (sel||[]).forEach(function(s){marcados[String(s).toLowerCase()]=true;});
+  // Subcomandos asignados que ya no existen en el catálogo se conservan visibles
+  (sel||[]).forEach(function(s){ if(!disp.some(function(d){return d.nombre.toLowerCase()===String(s).toLowerCase();})) disp.push({nombre:s,escuelas:0}); });
+  box.innerHTML = disp.length ? disp.map(function(d,i){
+    return '<label class="um-sub-opt"><input type="checkbox" class="um-sub-chk" value="'+esc(d.nombre)+'"'+(marcados[d.nombre.toLowerCase()]?' checked':'')+'> <span>'+esc(d.nombre)+'</span> <small>'+d.escuelas+' escuela'+(d.escuelas!==1?'s':'')+'</small></label>';
+  }).join('') : '<div style="font-size:.8rem;color:var(--muted)">No hay subcomandos cargados todavía.</div>';
+}
+function onUmRoleChange(){
+  var w=el('um-subs-wrap'); if(w) w.style.display = el('um-role').value==='cte' ? '' : 'none';
+}
 function openUserModal(idx){
   editUserIdx = (idx !== undefined) ? idx : -1;
-  var list = getUsers();
-  var u = editUserIdx >= 0 ? list[editUserIdx] : null;
+  var u = editUserIdx >= 0 ? (ST.users||[])[editUserIdx] : null;
   el('um-title').textContent = u ? 'Editar Usuario' : 'Nuevo Usuario';
   el('um-name').value = u ? (u.name||'') : '';
   el('um-user').value = u ? (u.u||'') : '';
   el('um-pass').value = '';
   el('um-role').value = u ? (u.role||'user') : 'user';
-  el('um-pass').placeholder = u ? 'Dejar en blanco para no cambiar' : 'Contraseña';
+  el('um-pass').placeholder = u ? 'Dejar en blanco para no cambiar' : 'Mínimo 6 caracteres';
+  renderUmSubs(u&&u.subcomandos||[]);
+  onUmRoleChange();
   openMov('um-ov');
 }
-function saveUserModal(){
+var _savingUser=false;
+async function saveUserModal(){
+  if(_savingUser) return;
   var name=el('um-name').value.trim();
   var user=el('um-user').value.trim();
-  var pass=el('um-pass').value.trim();
+  var pass=el('um-pass').value;
   var role=el('um-role').value;
   if(!name||!user){toast('⚠ Nombre y usuario son requeridos');return;}
-  var list=getUsers();
-  if(editUserIdx>=0){
-    list[editUserIdx].name=name;
-    list[editUserIdx].u=user;
-    list[editUserIdx].role=role;
-    if(pass)list[editUserIdx].p=pass;
-  } else {
-    if(!pass){toast('⚠ La contraseña es requerida');return;}
-    var dup=list.find(function(x){return x.u.toLowerCase()===user.toLowerCase()});
-    if(dup){toast('⚠ Ya existe ese usuario');return;}
-    list.push({u:user,p:pass,role:role,name:name});
+  var orig = editUserIdx>=0 ? ST.users[editUserIdx].u : '';
+  if(!orig && pass.length<6){toast('⚠ La contraseña debe tener al menos 6 caracteres');return;}
+  if(orig && pass && pass.length<6){toast('⚠ La contraseña debe tener al menos 6 caracteres');return;}
+  var subs=[];
+  if(role==='cte'){
+    document.querySelectorAll('#um-subs .um-sub-chk:checked').forEach(function(c){subs.push(c.value);});
+    if(!subs.length && !confirm('Este CTE no tiene subcomandos asignados, así que no va a ver ninguna escuela. ¿Guardar igual?')) return;
   }
-  saveUsers(list);
-  closeMov('um-ov');
-  renderUsers();
-  toast('✅ Usuario guardado');
+  _savingUser=true;
+  try{
+    if(!ST.gasUrl||!ST.token){ toast('ℹ En modo demo no se pueden guardar usuarios'); closeMov('um-ov'); return; }
+    var r=await gasReq({action:'saveUser',data:{u:user,originalU:orig,name:name,role:role,password:pass,subcomandos:subs}});
+    ST.users=(r&&r.users)||ST.users;
+    closeMov('um-ov');
+    renderUsers();
+    toast('✅ Usuario guardado');
+  }catch(e){ toast('⚠ '+(e.friendly||e.message||'No se pudo guardar el usuario')); }
+  finally{ _savingUser=false; }
 }
-function deleteUser(idx){
-  var list=getUsers();
-  if(!confirm('¿Eliminar al usuario '+list[idx].name+'?'))return;
-  list.splice(idx,1);
-  saveUsers(list);
-  renderUsers();
-  toast('🗑 Usuario eliminado');
+async function deleteUser(idx){
+  var u=(ST.users||[])[idx]; if(!u) return;
+  if(!confirm('¿Eliminar al usuario '+u.name+'?'))return;
+  try{
+    var r=await gasReq({action:'deleteUser',username:u.u});
+    ST.users=(r&&r.users)||ST.users;
+    renderUsers();
+    toast('🗑 Usuario eliminado');
+  }catch(e){ toast('⚠ '+(e.friendly||e.message||'No se pudo eliminar')); }
 }
 
 // ════════════════════════════════════════════════════════════
@@ -3623,8 +3714,22 @@ async function saveEditPeriodo(){
 // ════════════════════════════════════════════════════════════
 // RECEPCIÓN
 // ════════════════════════════════════════════════════════════
-function getRec(){ try{var r=localStorage.getItem('coop_rec');return r?JSON.parse(r):[]}catch(e){return []} }
-function saveRec(arr){ try{localStorage.setItem('coop_rec',JSON.stringify(arr))}catch(e){} }
+// Las recepciones guardadas en el navegador son POR USUARIO (así un CTE no ve
+// las de otra persona que usó la misma computadora).
+function recKey(){ return 'coop_rec_'+(ST.user?String(ST.user.u).toLowerCase():'_nologin'); }
+function getRec(){ try{var r=localStorage.getItem(recKey());return r?JSON.parse(r):[]}catch(e){return []} }
+function saveRec(arr){ try{localStorage.setItem(recKey(),JSON.stringify(arr))}catch(e){} }
+// Versiones anteriores guardaban todo en 'coop_rec': se le pasa al primer usuario
+// del Consejo (no CTE) que entre, y se borra para que nadie más lo herede.
+function migrarRecLegacy(){
+  try{
+    if(esCTE()) return;
+    var old=localStorage.getItem('coop_rec');
+    if(old===null) return;
+    if(localStorage.getItem(recKey())===null) localStorage.setItem(recKey(),old);
+    localStorage.removeItem('coop_rec');
+  }catch(e){}
+}
 
 // ── AUTOCOMPLETE ESCUELA (recepción) ──────────────────────
 var AC = { selectedId: null, results: [], activeIdx: -1 };
@@ -3886,7 +3991,7 @@ var _savingRec = false;
 function recVisitaTexto(entry){
   var motivo = entry.motivo === 'Otro' && entry.otroDesc ? 'Otro: ' + entry.otroDesc : entry.motivo;
   var motivoTexto = motivo + (entry.obs ? ' – ' + entry.obs : '');
-  return '📥 [Recepción] ' + motivoTexto + (entry.alerta ? ' ⚠️ ' + (entry.alertaDesc||'Requiere seguimiento') : '');
+  return (entry.origen==='CTE' ? '📥 [Recepción CTE'+(entry.cargadoPor?': '+entry.cargadoPor:'')+'] ' : '📥 [Recepción] ') + motivoTexto + (entry.alerta ? ' ⚠️ ' + (entry.alertaDesc||'Requiere seguimiento') : '');
 }
 async function saveRecepcion(){
   if(_savingRec) return; // evita doble click
@@ -3918,7 +4023,10 @@ async function saveRecepcion(){
       obs: el('rm-obs').value.trim(), alerta: el('rm-alerta').checked,
       alertaDesc: el('rm-alerta-desc').value.trim(),
       reorgFecha: el('rm-reorg-fecha').value || '',
-      etiq: etiq(s).l
+      etiq: etiq(s).l,
+      // Quién la cargó (el servidor lo confirma; una edición conserva el original)
+      origen: previo&&previo.origen ? previo.origen : (esCTE()?'CTE':'CONSEJO'),
+      cargadoPor: previo&&previo.cargadoPor ? previo.cargadoPor : (ST.user?ST.user.name:'')
     };
 
     if(isEdit){
@@ -3949,7 +4057,7 @@ async function saveRecepcion(){
         vs[vi].descripcion = recVisitaTexto(entry);
       } else if(!isEdit){
         vs.push({
-          fecha: entry.fecha, tipo: 'Presencial Consejo Escolar',
+          fecha: entry.fecha, tipo: entry.origen==='CTE' ? 'Recepción CTE' : 'Presencial Consejo Escolar',
           responsable: ST.user ? ST.user.name : '',
           descripcion: recVisitaTexto(entry),
           proxAccion: '', fechaSeguimiento: '', fromRecepcion: true, recId: entry.id
@@ -3990,6 +4098,15 @@ function normalizeDate(ds){
   // si quedo algo pegado adelante.
   var isoM = ds.match(/(\d{4}-\d{2}-\d{2})/);
   if(isoM) return isoM[1];
+  // Número de serie de fecha de planilla (ej. "45400" = 24/04/2024), que queda
+  // así cuando una fecha se pega como número.
+  if(/^\d{5}(\.0+)?$/.test(ds)){
+    var serial=parseInt(ds,10);
+    if(serial>=36526 && serial<=60000){
+      var dt=new Date(Date.UTC(1899,11,30)+serial*86400000);
+      return dt.getUTCFullYear()+'-'+('0'+(dt.getUTCMonth()+1)).slice(-2)+'-'+('0'+dt.getUTCDate()).slice(-2);
+    }
+  }
   // Sheets full timestamp: "Wed May 27 2026 00:00:00 GMT-0300..."
   // o JS Date toString: "Wed May 28 2026 00:00:00 GMT-0300 (hora estándar de Argentina)"
   var mn={'jan':'01','feb':'02','mar':'03','apr':'04','may':'05','jun':'06',
@@ -4047,6 +4164,8 @@ function renderRecepcion(){
     if(q && !(r.schoolNombre||'').toLowerCase().includes(q) && !(r.schoolNumero||'').toLowerCase().includes(q)) return false;
     if(fa==='alerta' && !r.alerta) return false;
     if(fa==='ok' && r.alerta) return false;
+    var fo=(el('rec-filter-origen')||{}).value||'';
+    if(fo && recOrigen(r)!==fo) return false;
     return true;
   });
   if(!rec.length){
@@ -4085,7 +4204,7 @@ function renderRecepcion(){
       ? '<div class="rec-missing-row">'+
           '<span class="rec-miss-label">⚠️ Incompleto:</span> '+
           missing.map(function(m){return '<span class="miss-pill">'+esc(m)+'</span>';}).join(' ')+
-          ' <button class="btn btn-xs" onclick="goToRecSchool(\''+esc(r.schoolId)+'\');" style="margin-left:.35rem;background:var(--amber);color:#fff;border:none;border-radius:5px;padding:.15rem .55rem;font-size:.68rem;cursor:pointer">✏️ Completar</button>'+
+          (esCTE()?'':' <button class="btn btn-xs" onclick="goToRecSchool(\''+esc(r.schoolId)+'\');" style="margin-left:.35rem;background:var(--amber);color:#fff;border:none;border-radius:5px;padding:.15rem .55rem;font-size:.68rem;cursor:pointer">✏️ Completar</button>')+
         '</div>'
       : '';
 
@@ -4109,7 +4228,7 @@ function renderRecepcion(){
       // BODY: motivo + obs + reorg + alerta
       '<div class="rec-body2">'+
         '<div class="rec-motivo-row">'+
-          '<span class="'+motivoPillClass+'">'+esc(motivoDisplay)+'</span>'+
+          '<span class="'+motivoPillClass+'">'+esc(motivoDisplay)+'</span>'+recOrigenBadge(r)+
           (r.alerta?'<span class="alerta-pill">⚠️ '+esc(r.alertaDesc||'Requiere seguimiento')+'</span>':'')+
         '</div>'+
         (r.obs?'<div class="rec-obs-txt">'+esc(r.obs)+'</div>':'')+
@@ -4121,8 +4240,8 @@ function renderRecepcion(){
         '<div class="rec-foot-left"></div>'+
         '<div class="rec-actions2">'+
           '<button class="btn btn-s btn-xs" onclick="goToRecSchool(\''+esc(r.schoolId)+'\');">🏫 Ver escuela</button>'+
-          '<button class="btn btn-s btn-xs" onclick="openRecEdit(\''+esc(r.id)+'\');">✏️ Editar</button>'+
-          '<button class="btn btn-d btn-xs" onclick="deleteRecepcion(\''+esc(r.id)+'\');">🗑</button>'+
+          (puedeEditarRec(r)?'<button class="btn btn-s btn-xs" onclick="openRecEdit(\''+esc(r.id)+'\');">✏️ Editar</button>'+
+          '<button class="btn btn-d btn-xs" onclick="deleteRecepcion(\''+esc(r.id)+'\');">🗑</button>':'')+
         '</div>'+
       '</div>'+
     '</div>';
@@ -4422,6 +4541,22 @@ function genInformeRecepcion(){
 // ════════════════════════════════════════════════════════════
 // ARRANQUE — el script está al final del body, el DOM ya existe
 // ════════════════════════════════════════════════════════════
+// Un CTE solo mira las fichas: aunque algún botón quedara a la vista, estas
+// acciones no hacen nada (y el servidor las rechaza igual).
+(function(){
+  ['setF','setFT','toggleFTMulti','setCD','setCR','setCodigoOtro','saveCom','openSM','saveSM','deleteSchool',
+   'openPM','savePM','delP','openCM','saveCM','openSubMgmt','addSubcomando','deleteSubcomando',
+   'iniciarNuevoPeriodo','openEditPeriodo','saveEditPeriodo'].forEach(function(n){
+    var f=window[n]; if(typeof f!=='function') return;
+    window[n]=function(){
+      // Excepción: el CTE puede marcar/desmarcar "Vinculado con CTE"
+      if(n==='toggleFTMulti' && esCTE() && arguments[1]==='ESTADO_ESPECIAL' && arguments[2]==='vinculado_cte') return f.apply(this,arguments);
+      if(esCTE()){ toast('👁 Tu usuario CTE es de solo lectura en este apartado'); return; }
+      return f.apply(this,arguments);
+    };
+  });
+})();
+
 // Boot: wait for full page load including deferred scripts
 window.addEventListener('load', function() {
   // Attach key listeners
@@ -4432,10 +4567,6 @@ window.addEventListener('load', function() {
   // Load URL and show login
   var _su = loadUrl();
   if(_su) ST.gasUrl = _su;
-  // Load users from Sheets before showing login (async, non-blocking)
-  loadUsersFromSheets().then(function(){
-    // Users loaded, login is ready
-  }).catch(function(){});
   initDark();
   renderRecepcion();
   renderRecStats();
