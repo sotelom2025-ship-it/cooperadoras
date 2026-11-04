@@ -705,7 +705,7 @@ body:has(.moverlay.open) .fab-back{display:none!important}
     <div class="sec on" id="sec-escuelas">
       <div id="list-view">
         <div class="ph">
-          <div><div class="ph-ttl">Escuelas</div><div class="ph-sub" id="sc-count">Cargando...</div></div>
+          <div><div class="ph-ttl">Escuelas</div><div class="ph-sub" id="sc-count">Cargando...</div><div id="load-info" style="font-size:.68rem;color:var(--muted);margin-top:.15rem"></div></div>
           <button class="btn btn-s" onclick="refreshApp()" title="Actualizar datos" style="margin-right:.5rem">🔄</button><button class="btn btn-s" id="btn-mi-pass" onclick="openPassModal()" title="Cambiar mi contraseña" style="margin-right:.5rem;display:none">🔑</button><button class="btn btn-p" id="btn-nueva-escuela" onclick="openSM()">+ Nueva escuela</button>
         </div>
         <div class="stats" id="sc-stats"></div>
@@ -1525,7 +1525,9 @@ async function loadData(fresh){
   ST.coords=JSON.parse(JSON.stringify(DEF_COORDS));
   if(!ST.gasUrl)return;
   try{
+    var _t0=Date.now();
     var r=await gasReq(fresh?{action:'getAll',fresh:true}:{action:'getAll'});
+    try{ var _li=el('load-info'); if(_li && r){ _li.textContent='⏱ Carga '+((Date.now()-_t0)/1000).toFixed(1)+' s'+(r._ms!==undefined?' · servidor '+(r._ms/1000).toFixed(1)+' s'+(r._cache?' (desde caché)':''):''); } }catch(e){}
     if(!r||!r.ok)throw new Error(r&&r.error?r.error:'Error desconocido');
 
     // ── Período actual (ver CAMBIOS v14 del backend) ──
