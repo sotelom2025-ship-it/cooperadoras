@@ -388,7 +388,7 @@ body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
 .rec-school-name{font-weight:800;font-size:1rem;color:var(--text);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rec-school-loc{font-size:.78rem;color:var(--muted);margin-top:.1rem}
 .rec-fecha-badge{flex-shrink:0;text-align:right}
-.rec-fecha-d{font-size:1.3rem;font-weight:800;color:var(--navy);line-height:1}
+.rec-fecha-d{font-size:1rem;font-weight:800;color:var(--navy);line-height:1.1;white-space:nowrap}
 .rec-fecha-my{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
 .rec-body2{padding:.6rem 1rem;display:flex;flex-direction:column;gap:.35rem}
 .rec-motivo-row{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap}
@@ -500,7 +500,7 @@ body.dark .ac-num{background:var(--navy3);color:var(--navy2)}
   .rec-head{padding:.625rem .75rem;gap:.5rem}
   .rec-num{min-width:42px;height:42px;font-size:.6rem}
   .rec-school-name{font-size:.83rem}
-  .rec-fecha-d{font-size:1.1rem}
+  .rec-fecha-d{font-size:.9rem}
   .rec-body2{padding:.5rem .75rem}
   .rec-foot{padding:.4rem .625rem}
   .rec-actions2{gap:.25rem;flex-wrap:wrap}
@@ -1848,7 +1848,8 @@ async function saveSchoolR(s){
       CUIT:s.CUIT||'',SITUACION_CUIT:s.SITUACION_CUIT||'',
       BANCO:s.BANCO||'',CUENTA:s.CUENTA||'',SUCURSAL:s.SUCURSAL||'',
       CODIGO_OTRO:s.CODIGO_OTRO||'',
-      SUBCOMANDO:s.SUBCOMANDO||''
+      SUBCOMANDO:s.SUBCOMANDO||'',
+      OBSERVACIONES:s.OBSERVACIONES||''
     };
     // Save cooperadora data
     var coopData={
@@ -2386,6 +2387,8 @@ function tabGen(s,coord,cord){
     ff2('N° cuenta','CUENTA',s)+ff2('N° sucursal','SUCURSAL',s)+
     '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .25rem">Estatuto</div>'+
     '<div class="ff"><label class="fl">Estado del estatuto</label><select class="fs" onchange="setF(\''+s.ID+'\',\'ESTATUTO\',this.value)"><option value="">— Sin información —</option><option value="Estatuto actualizado"'+(s.ESTATUTO==='Estatuto actualizado'?' selected':'')+'>Estatuto actualizado</option><option value="Estatuto viejo"'+(s.ESTATUTO==='Estatuto viejo'?' selected':'')+'>Estatuto viejo</option><option value="Sin estatuto"'+(s.ESTATUTO==='Sin estatuto'?' selected':'')+'>Sin estatuto</option></select></div>'+
+  '<div class="c2" style="font-weight:700;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--navy);border-bottom:1px solid var(--navy3);padding-bottom:.5rem;margin:.875rem 0 .5rem">Observaciones</div>'+
+    '<div class="ff c2"><label class="fl">Dato adicional (texto libre)</label><textarea class="fi" rows="4" style="resize:vertical;min-height:90px;font-family:inherit" placeholder="Escribí acá cualquier dato adicional de la escuela…" onchange="setF(\''+s.ID+'\',\'OBSERVACIONES\',this.value)">'+esc(s.OBSERVACIONES||'')+'</textarea></div>'+
   '</div>'
 }
 
@@ -2481,7 +2484,7 @@ function puedeEditarRec(r){
 }
 function recItemMini(r){
   var iso = normalizeDate(r.fecha||'');
-  var fch = iso.length>=10 ? iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4) : '—';
+  var fch = iso.length>=10 ? fmtDMA(iso) : '—';
   var motivo = r.motivo==='Otro' && r.otroDesc ? 'Otro: '+r.otroDesc : (r.motivo||'—');
   var isReorg = (r.motivo||'').toLowerCase().indexOf('reorganiz')>=0;
   return '<div class="rec-item'+(r.alerta?' alerta':'')+(isReorg?' reorg':'')+'" style="margin-bottom:.5rem">'+
@@ -2497,7 +2500,7 @@ function recItemMini(r){
         '</span>':'')+
       '</div>'+
       (r.obs?'<div class="rec-obs-txt" style="margin-top:.4rem">'+esc(r.obs)+'</div>':'')+
-      (r.reorgFecha?'<div class="rec-reorg-row" style="margin-top:.3rem">🔄 Comienzo de reorganización: <strong>'+esc(r.reorgFecha.split('-').reverse().join('/'))+'</strong></div>':'')+
+      (r.reorgFecha?'<div class="rec-reorg-row" style="margin-top:.3rem">🔄 Comienzo de reorganización: <strong>'+esc(fmtDMA(r.reorgFecha))+'</strong></div>':'')+
     '</div></div>';
 }
 // Tarjeta "Últimas recepciones" (arriba de la pestaña General)
@@ -2529,7 +2532,7 @@ function tabVis(s,vs){
     (!vs.length?'<div class="es"><div class="ei">📍</div><div class="et">Sin visitas registradas</div></div>':
       [].concat(vs).reverse().map(function(v,ri){var i=vs.length-1-ri;
         var recBadge = v.fromRecepcion ? '<span class="tag tb" style="font-size:.62rem;padding:.1rem .4rem;margin-left:.35rem">📥 Recepción</span>' : '';
-        return '<div class="vitem"><div class="vhd"><span class="vtipo">'+esc(v.tipo||'Presencial')+'</span>'+recBadge+'<span class="vdate">'+esc(v.fecha||'')+'</span><div style="display:flex;gap:.35rem;margin-left:auto">'+(visPropia(v)?((!v.fromRecepcion?'<button class="btn btn-s btn-xs" onclick="openVM(\''+s.ID+'\','+i+')">✏️</button>':'')+'<button class="btn btn-d btn-xs" onclick="delV(\''+s.ID+'\','+i+')">🗑</button>'):'')+'</div></div><div class="vdesc" '+(v.fromRecepcion||!visPropia(v)?'':' onclick="openVM(\''+s.ID+'\','+i+')"')+'>'+esc(v.descripcion||'Sin descripción')+'</div>'+(v.responsable?'<div class="vdate" style="margin-top:.2rem">👤 '+esc(v.responsable)+'</div>':'')+(v.proxAccion?'<div class="vprox">→ '+esc(v.proxAccion)+'</div>':'')+'</div>';
+        return '<div class="vitem"><div class="vhd"><span class="vtipo">'+esc(v.tipo||'Presencial')+'</span>'+recBadge+'<span class="vdate">'+esc(v.fecha?fmtDMA(v.fecha):'')+'</span><div style="display:flex;gap:.35rem;margin-left:auto">'+(visPropia(v)?((!v.fromRecepcion?'<button class="btn btn-s btn-xs" onclick="openVM(\''+s.ID+'\','+i+')">✏️</button>':'')+'<button class="btn btn-d btn-xs" onclick="delV(\''+s.ID+'\','+i+')">🗑</button>'):'')+'</div></div><div class="vdesc" '+(v.fromRecepcion||!visPropia(v)?'':' onclick="openVM(\''+s.ID+'\','+i+')"')+'>'+esc(v.descripcion||'Sin descripción')+'</div>'+(v.responsable?'<div class="vdate" style="margin-top:.2rem">👤 '+esc(v.responsable)+'</div>':'')+(v.proxAccion?'<div class="vprox">→ '+esc(v.proxAccion)+(v.fechaSeguimiento?' <span style="opacity:.75">(seguimiento: '+esc(fmtDMA(v.fechaSeguimiento))+')</span>':'')+'</div>':'')+'</div>';
       }).join(''))+
   '</div>'
 }
@@ -2884,9 +2887,7 @@ function genPDFAsambleas(){
   }
   function fmtDate(d){
     if(!d) return '—';
-    var p=normalizeDate(d).split('-');
-    if(p.length!==3) return String(d);
-    return p[2]+'/'+p[1]+'/'+p[0];
+    return fmtDMA(d);
   }
 
   var tituloInforme = ff==='con' ? 'Asambleas Pendientes — Con Fecha Cargada'
@@ -3405,7 +3406,7 @@ function genPDF(){
     }
     if(iT){doc.setTextColor(70,70,120);doc.setFontSize(7);doc.text(fitText('Tipo: '+(s.TIPO_COOP||'—')+' | Doc: '+(s.DOC_ESTADO||'—'),PW-MR-(ML+4)-2),ML+4,ry);ry+=4.5;}
     if(iP)ps.forEach(function(p){doc.setTextColor(60,80,140);doc.setFontSize(7);doc.text(fitText('  '+pLabel(p.periodo)+' — '+(p.estado||'—')+' — '+(p.docestado||'sin doc'),PW-MR-(ML+4)-2),ML+4,ry);ry+=4.5;});
-    if(iV)vs.slice(-3).forEach(function(v){doc.setTextColor(80,80,80);doc.setFontSize(6.5);doc.text(fitText('  '+(v.fecha||'—')+' ['+(v.tipo||'—')+'] '+(v.descripcion||''),PW-MR-(ML+4)-2),ML+4,ry);ry+=5;});
+    if(iV)vs.slice(-3).forEach(function(v){doc.setTextColor(80,80,80);doc.setFontSize(6.5);doc.text(fitText('  '+(v.fecha?fmtDMA(v.fecha):'—')+' ['+(v.tipo||'—')+'] '+(v.descripcion||''),PW-MR-(ML+4)-2),ML+4,ry);ry+=5;});
     y+=rh;
   });
 
@@ -3984,7 +3985,7 @@ function onRmSchoolChange(){
         '<div style="font-weight:700;color:var(--navy);margin-bottom:.25rem">📥 Últimas recepciones</div>'+
         ultimas.map(function(r){
           var iso = normalizeDate(r.fecha||'');
-          var fch = iso.length>=10 ? iso.slice(8,10)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4) : '—';
+          var fch = iso.length>=10 ? fmtDMA(iso) : '—';
           var mot = r.motivo==='Otro' && r.otroDesc ? 'Otro: '+r.otroDesc : (r.motivo||'—');
           return '<div>• <strong>'+esc(fch)+'</strong> — '+esc(mot)+(r.alerta?' ⚠️':'')+'</div>';
         }).join('')+
@@ -4122,6 +4123,12 @@ async function saveRecepcion(){
   }
 }
 
+// Formato de fecha para MOSTRAR en toda la app: DD-MM-AAAA.
+// (Lo guardado en la planilla sigue siendo AAAA-MM-DD; esto solo cambia lo que se ve.)
+function fmtDMA(ds){
+  var iso = normalizeDate(ds||'');
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.slice(8,10)+'-'+iso.slice(5,7)+'-'+iso.slice(0,4) : (ds ? String(ds) : '—');
+}
 function normalizeDate(ds){
   // Returns 'YYYY-MM-DD' from any date string
   if(!ds) return '';
@@ -4229,9 +4236,7 @@ function renderRecepcion(){
     var fechaStr = normalizeDate(r.fecha || '');
     var fechaDia = '—', fechaMesAnio = '';
     if(fechaStr && fechaStr.length >= 10){
-      var fp = fechaStr.slice(0,10).split('-');
-      fechaDia = parseInt(fp[2],10);
-      fechaMesAnio = MESES[parseInt(fp[1],10)-1] + ' ' + fp[0];
+      fechaDia = fmtDMA(fechaStr);   // DD-MM-AAAA
     }
 
     var isReorg = (r.motivo||'').toLowerCase().includes('reorganiz');
@@ -4270,7 +4275,7 @@ function renderRecepcion(){
           (r.alerta?'<span class="alerta-pill">⚠️ '+esc(r.alertaDesc||'Requiere seguimiento')+'</span>':'')+
         '</div>'+
         (r.obs?'<div class="rec-obs-txt">'+esc(r.obs)+'</div>':'')+
-        (r.reorgFecha?'<div class="rec-reorg-row">🔄 Inicio de reorganización: <strong>'+esc(r.reorgFecha.split('-').reverse().join('/'))+'</strong></div>':'')+
+        (r.reorgFecha?'<div class="rec-reorg-row">🔄 Inicio de reorganización: <strong>'+esc(fmtDMA(r.reorgFecha))+'</strong></div>':'')+
         missingHtml+
       '</div>'+
       // FOOTER: acciones
@@ -4334,7 +4339,7 @@ function genInformeEscuela(id){
   var hoy = new Date();
   var fechaGen = hoy.toLocaleDateString('es-AR',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
-  function fd(d){ if(!d) return '—'; var p=normalizeDate(d).split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
+  function fd(d){ if(!d) return '—'; return fmtDMA(d); }
   function esc2(t){ return String(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
   // ── CSS ─────────────────────────────────────────────────
@@ -4413,6 +4418,11 @@ function genInformeEscuela(id){
       '<div class="field"><div class="field-lbl">Contacto</div><div class="field-val">'+esc2(s.ASESORA_CONTACTO||'—')+'</div></div>'+
     '</div></div>';
 
+  // ── Sección: Observaciones ───────────────────────────────
+  var secObs = s.OBSERVACIONES ?
+    '<div class="section"><div class="sec-title">Observaciones</div>'+
+    '<div class="field-val" style="white-space:pre-wrap">'+esc2(s.OBSERVACIONES)+'</div></div>' : '';
+
   // ── Sección: Historial de períodos ───────────────────────
   var secPeriodos = ps.length
     ? '<div class="section"><div class="sec-title">Historial de períodos</div>'+
@@ -4459,7 +4469,7 @@ function genInformeEscuela(id){
           (s.CUIT?'<span>🪪 CUIT: '+esc2(s.CUIT)+'</span>':'')+
         '</div>'+
       '</div>'+
-      secGeneral + secCoop + secAsesor + secPeriodos + secRec + secVis +
+      secGeneral + secCoop + secAsesor + secObs + secPeriodos + secRec + secVis +
       '<div class="footer">'+
         '<span>Consejo Escolar La Matanza</span>'+
         '<span>Generado el '+esc2(fechaGen)+'</span>'+
@@ -4493,7 +4503,7 @@ function genInformeRecepcion(){
   var recMes    = rec.filter(function(r){ return r.fecha >= mesStr; });
   var recAnio   = rec.filter(function(r){ return r.fecha >= anioStr; });
 
-  function fDate(d){ return d ? d.split('-').reverse().join('/') : '—'; }
+  function fDate(d){ return d ? fmtDMA(d) : '—'; }
   function pct(n,t){ return t ? Math.round(n/t*100)+'%' : '0%'; }
 
   function buildResumen(arr, titulo){
